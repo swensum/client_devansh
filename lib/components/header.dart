@@ -19,7 +19,7 @@ class Header extends StatelessWidget {
             fit: BoxFit.contain,
           ),
 
-          const SizedBox(width: 40),
+          const SizedBox(width: 350),
 
           // Navigation Menus (Centered)
           Row(
@@ -35,7 +35,8 @@ class Header extends StatelessWidget {
             ],
           ),
 
-          const Spacer(),
+          const SizedBox(width: 80),
+
 
           // Search Bar
           SizedBox(
@@ -90,11 +91,11 @@ class Header extends StatelessWidget {
                       "Account",
                       style: TextStyle(
                         color: Colors.white,
-                        fontSize: 14,
+                        fontSize: 16,
                         fontWeight: FontWeight.w500,
                       ),
                     ),
-                    const SizedBox(height: 1),
+                    const SizedBox(height: 0),
                     Row(
                       children: [
                         _buildAuthLink("Register"),
@@ -136,7 +137,7 @@ class Header extends StatelessWidget {
         title,
         style: const TextStyle(
           color: Colors.white70,
-          fontSize: 12,
+          fontSize: 11,
         ),
       ),
     );
