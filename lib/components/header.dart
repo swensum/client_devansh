@@ -6,7 +6,7 @@ class Header extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      height: 80,
+      height: 100,
       padding: const EdgeInsets.symmetric(horizontal: 20),
       color: Colors.blueGrey[900],
       child: Row(
@@ -19,7 +19,7 @@ class Header extends StatelessWidget {
             fit: BoxFit.contain,
           ),
 
-          const SizedBox(width: 350),
+          const SizedBox(width: 230),
 
           // Navigation Menus (Centered)
           Row(
@@ -37,11 +37,10 @@ class Header extends StatelessWidget {
 
           const SizedBox(width: 80),
 
-
           // Search Bar
           SizedBox(
-            width: 200,
-            height: 40,
+            width: 250,
+            height: 35,
             child: TextField(
               decoration: InputDecoration(
                 hintText: "Search...",
@@ -61,7 +60,7 @@ class Header extends StatelessWidget {
                   ),
                 ),
                 border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(20),
+                  borderRadius: BorderRadius.circular(30),
                   borderSide: BorderSide.none,
                 ),
                 contentPadding: const EdgeInsets.symmetric(vertical: 8),
@@ -69,7 +68,7 @@ class Header extends StatelessWidget {
             ),
           ),
 
-          const SizedBox(width: 25),
+          const SizedBox(width: 50),
 
           // Account Section
           SizedBox(
@@ -110,6 +109,15 @@ class Header extends StatelessWidget {
                 ),
               ],
             ),
+          ),
+
+          const SizedBox(width: 30),
+
+          // Order Icon (Right End)
+          const Icon(
+            Icons.receipt_long,
+            color: Colors.white,
+            size: 30,
           ),
         ],
       ),
