@@ -70,7 +70,7 @@ class _HeaderState extends State<Header> {
                   showWhenUnlinked: false,
                   targetAnchor: Alignment.bottomLeft,
                   followerAnchor: Alignment.topLeft,
-                  offset: const Offset(0, 8), // small gap below the menu item
+                  offset: const Offset(0, 15), // small gap below the menu item
                   child: MouseRegion(
                     onEnter: (_) => _cancelClose(),
                     onExit: (_) => _scheduleClose(),
@@ -78,7 +78,7 @@ class _HeaderState extends State<Header> {
                       elevation: 8,
                       borderRadius: BorderRadius.circular(8),
                       child: Container(
-                        width: 200,
+                        width: 180,
                         decoration: BoxDecoration(
                           color: Colors.white,
                           borderRadius: BorderRadius.circular(8),
