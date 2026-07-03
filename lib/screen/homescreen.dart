@@ -1,4 +1,5 @@
 import 'package:devansh/components/header.dart';
+import 'package:devansh/components/stat.dart';
 
 import 'package:flutter/material.dart';
 import 'dart:async';
@@ -325,7 +326,7 @@ class _HomePageState extends State<HomePage> {
             ),
 
            
-           // const StatsSection(),
+           const StatsSection(),
 
             // About Section
 
