@@ -1,4 +1,5 @@
 import 'package:devansh/components/header.dart';
+
 import 'package:flutter/material.dart';
 import 'dart:async';
 
@@ -9,18 +10,21 @@ class HomePage extends StatefulWidget {
   State<HomePage> createState() => _HomePageState();
 }
 
+// Where the text block sits over the image
+enum HeroTextAlign { left, right, center }
+
 // Bundles everything that changes per-slide together
 class _HeroSlide {
   final String image;
   final String headline;
   final String subtext;
-  final bool alignRight; // false = text on left, true = text on right
+  final HeroTextAlign align;
 
   const _HeroSlide({
     required this.image,
     required this.headline,
     required this.subtext,
-    this.alignRight = false,
+    this.align = HeroTextAlign.left,
   });
 }
 
@@ -34,15 +38,23 @@ class _HomePageState extends State<HomePage> {
       subtext:
           "Discover modern, durable, and elegant cabinet & door handles "
           "crafted to complement every interior.",
-      alignRight: false,
+      align: HeroTextAlign.left,
     ),
     _HeroSlide(
       image: 'assets/port2.png',
       headline: "Timeless Design Meets Everyday Durability",
       subtext:
-          "Designed for modern homes and premium spaces, our aldrops deliver, "
+          "Designed for modern homes and premium spaces, our aldrops deliver "
           "reliable protection with a refined matte-black aesthetic.",
-      alignRight: true, // product sits on the left in this image
+      align: HeroTextAlign.right, // product sits on the left in this image
+    ),
+    _HeroSlide(
+      image: 'assets/port3.png',
+      headline: "Crafted Details, Built to Impress",
+      subtext:
+          "A collection of fittings and finishes designed to bring "
+          "precision and character to every corner of your home.",
+      align: HeroTextAlign.center,
     ),
   ];
 
@@ -102,19 +114,42 @@ class _HomePageState extends State<HomePage> {
                     onPageChanged: (index) {
                       setState(() {
                         _pageCounter = index;
-                        _currentIndex = index % _slides.length; // wraps 0,1,0,1...
+                        _currentIndex = index % _slides.length; // wraps 0,1,2,0,1,2...
                       });
                     },
                     itemBuilder: (context, index) {
                       final slide = _slides[index % _slides.length];
-                      final alignment = slide.alignRight
-                          ? Alignment.centerRight
-                          : Alignment.centerLeft;
-                      final crossAlign = slide.alignRight
-                          ? CrossAxisAlignment.end
-                          : CrossAxisAlignment.start;
-                      final textAlign =
-                          slide.alignRight ? TextAlign.right : TextAlign.left;
+
+                      // Derive alignment/gradient/text-align from the enum
+                      late final Alignment boxAlignment;
+                      late final CrossAxisAlignment crossAlign;
+                      late final TextAlign textAlign;
+                      late final Alignment gradientBegin;
+                      late final Alignment gradientEnd;
+
+                      switch (slide.align) {
+                        case HeroTextAlign.left:
+                          boxAlignment = Alignment.centerLeft;
+                          crossAlign = CrossAxisAlignment.start;
+                          textAlign = TextAlign.left;
+                          gradientBegin = Alignment.centerLeft;
+                          gradientEnd = Alignment.centerRight;
+                          break;
+                        case HeroTextAlign.right:
+                          boxAlignment = Alignment.centerRight;
+                          crossAlign = CrossAxisAlignment.end;
+                          textAlign = TextAlign.right;
+                          gradientBegin = Alignment.centerRight;
+                          gradientEnd = Alignment.centerLeft;
+                          break;
+                        case HeroTextAlign.center:
+                          boxAlignment = Alignment.center;
+                          crossAlign = CrossAxisAlignment.center;
+                          textAlign = TextAlign.center;
+                          gradientBegin = Alignment.center;
+                          gradientEnd = Alignment.center;
+                          break;
+                      }
 
                       return Stack(
                         fit: StackFit.expand,
@@ -125,35 +160,37 @@ class _HomePageState extends State<HomePage> {
                             fit: BoxFit.cover,
                           ),
 
-                          // Gradient overlay — dark side sits behind the
-                          // text, faded out on the side with the product
-                          Container(
-                            decoration: BoxDecoration(
-                              gradient: LinearGradient(
-                                begin: slide.alignRight
-                                    ? Alignment.centerRight
-                                    : Alignment.centerLeft,
-                                end: slide.alignRight
-                                    ? Alignment.centerLeft
-                                    : Alignment.centerRight,
-                                colors: [
-                                  Colors.black.withOpacity(0.55),
-                                  Colors.black.withOpacity(0.0),
-                                ],
-                                stops: const [0.0, 0.7],
+                          // Overlay — side gradient for left/right slides,
+                          // even darkening for center slides so the text
+                          // stays readable regardless of what's behind it.
+                          if (slide.align == HeroTextAlign.center)
+                            Container(
+                              color: Colors.black.withOpacity(0.4),
+                            )
+                          else
+                            Container(
+                              decoration: BoxDecoration(
+                                gradient: LinearGradient(
+                                  begin: gradientBegin,
+                                  end: gradientEnd,
+                                  colors: [
+                                    Colors.black.withOpacity(0.55),
+                                    Colors.black.withOpacity(0.0),
+                                  ],
+                                  stops: const [0.0, 0.7],
+                                ),
                               ),
                             ),
-                          ),
 
-                          // Text content — changes per slide, and flips
-                          // side based on slide.alignRight
+                          // Text content — changes per slide, and
+                          // repositions based on slide.align
                           Positioned(
                             left: 60,
                             right: 60,
                             top: 0,
                             bottom: 0,
                             child: Align(
-                              alignment: alignment,
+                              alignment: boxAlignment,
                               child: ConstrainedBox(
                                 constraints: const BoxConstraints(maxWidth: 520),
                                 child: Column(
@@ -278,6 +315,17 @@ class _HomePageState extends State<HomePage> {
                 ],
               ),
             ),
+
+            // Divider bar — visually separates the hero section from
+            // what follows
+            Container(
+              width: double.infinity,
+              height: 4,
+              color: const Color.fromRGBO(245, 171, 30, 1),
+            ),
+
+           
+           // const StatsSection(),
 
             // About Section
 

@@ -136,7 +136,7 @@ class _HeaderState extends State<Header> {
     return Container(
       height: 100,
       padding: const EdgeInsets.symmetric(horizontal: 20),
-      color: Colors.blueGrey[900],
+      color: Colors.black87,
       child: Row(
         children: [
           // Logo
