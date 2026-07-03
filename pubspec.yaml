@@ -54,7 +54,8 @@ flutter:
   assets:
     - assets/port.jpg
     - assets/logo.png
-    - assets/port2.jpg
+    - assets/port2.png
+    - assets/port3.png
   uses-material-design: true
 
 
