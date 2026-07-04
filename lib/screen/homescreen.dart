@@ -1,3 +1,4 @@
+import 'package:devansh/components/about.dart';
 import 'package:devansh/components/header.dart';
 import 'package:devansh/components/stat.dart';
 
@@ -317,20 +318,22 @@ class _HomePageState extends State<HomePage> {
               ),
             ),
 
-            // Divider bar — visually separates the hero section from
-            // what follows
             Container(
               width: double.infinity,
-              height: 4,
+              height: 2,
               color: const Color.fromRGBO(245, 171, 30, 1),
             ),
 
            
            const StatsSection(),
+            Container(
+              width: double.infinity,
+              height: 2,
+              color: const Color.fromRGBO(245, 171, 30, 1),
+            ),
+const AboutSection(),
 
-            // About Section
-
-            // Rest of homepage content will go here
+         
           ],
         ),
       ),

@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 
-/// Data model for a single stat item (e.g. "15+ Years Legacy")
 class StatItem {
   final IconData icon;
   final String value;
@@ -13,9 +12,6 @@ class StatItem {
   });
 }
 
-/// A horizontal band showing key business figures — legacy years,
-/// products, customers, and partner companies. Designed to sit right
-/// below the hero carousel as a "trust bar" section.
 class StatsSection extends StatelessWidget {
   const StatsSection({super.key});
 
@@ -46,12 +42,11 @@ class StatsSection extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       width: double.infinity,
-      color: Colors.blueGrey[900],
-      padding: const EdgeInsets.symmetric(horizontal: 40, vertical: 50),
+      color: Colors.black,
+      padding: const EdgeInsets.symmetric(horizontal: 40, vertical: 30),
       child: LayoutBuilder(
         builder: (context, constraints) {
-          // On narrow screens, wrap into two rows instead of squeezing
-          // four items into one line.
+          
           final isNarrow = constraints.maxWidth < 700;
 
           return Wrap(
