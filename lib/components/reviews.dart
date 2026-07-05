@@ -42,7 +42,7 @@ class ReviewsSection extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       width: double.infinity,
-      color: Colors.white,
+      color: Colors.black,
       padding: const EdgeInsets.symmetric(horizontal: 30, vertical: 60),
       child: Center(
         child: ConstrainedBox(
@@ -56,7 +56,7 @@ class ReviewsSection extends StatelessWidget {
                 style: TextStyle(
                   fontSize: 30,
                   fontWeight: FontWeight.bold,
-                  color: Colors.blueGrey[900],
+                  color: Colors.white,
                   letterSpacing: 1.1,
                 ),
               ),
@@ -74,7 +74,7 @@ class ReviewsSection extends StatelessWidget {
                 textAlign: TextAlign.center,
                 style: TextStyle(
                   fontSize: 14,
-                  color: Colors.blueGrey[700],
+                  color: Colors.white.withOpacity(0.6),
                   letterSpacing: 0.3,
                 ),
               ),
@@ -153,7 +153,7 @@ class _ReviewCardState extends State<_ReviewCard> {
         curve: Curves.easeOut,
         padding: const EdgeInsets.all(20),
         decoration: BoxDecoration(
-          color: Colors.white,
+          color: Colors.white.withOpacity(0.12),
           borderRadius: BorderRadius.circular(12),
           border: Border.all(
             color: _isHovered
@@ -175,7 +175,7 @@ class _ReviewCardState extends State<_ReviewCard> {
             // Quote icon
             Icon(
               Icons.format_quote,
-              color: const Color.fromRGBO(245, 171, 30, 0.5),
+              color: const Color.fromARGB(186, 245, 170, 30),
               size: 28,
             ),
             const SizedBox(height: 10),
@@ -186,7 +186,7 @@ class _ReviewCardState extends State<_ReviewCard> {
                 widget.review.message,
                 style: TextStyle(
                   fontSize: 13.5,
-                  color: Colors.blueGrey[800],
+                  color: Colors.white,
                   height: 1.5,
                 ),
               ),
@@ -233,14 +233,14 @@ class _ReviewCardState extends State<_ReviewCard> {
                         style: TextStyle(
                           fontSize: 13,
                           fontWeight: FontWeight.w600,
-                          color: Colors.blueGrey[900],
+                          color: Colors.white,
                         ),
                       ),
                       Text(
                         widget.review.role,
                         style: TextStyle(
                           fontSize: 11,
-                          color: Colors.grey.shade500,
+                          color: Colors.white.withOpacity(0.6),
                         ),
                       ),
                     ],
