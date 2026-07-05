@@ -40,7 +40,7 @@ class CategoriesSection extends StatelessWidget {
 
               // Underline bar
               Container(
-                width: 100,
+                width: 50,
                 height: 3,
                 color: const Color.fromRGBO(245, 171, 30, 1),
               ),
@@ -56,9 +56,11 @@ class CategoriesSection extends StatelessWidget {
                   letterSpacing: 0.3,
                 ),
               ),
-              const SizedBox(height: 56),
+              const SizedBox(height: 36),
 
-              
+              // Logo boxes — sized bigger, with a clear gap, and the
+              // section's max width widened so all 6 still fit in one row
+              // (6 x 180 + 5 x 24 = 1200px, fits within 1250px max width)
               Wrap(
                 alignment: WrapAlignment.center,
                 spacing: 24,
@@ -114,8 +116,7 @@ class _CompanyLogoBoxState extends State<_CompanyLogoBox> {
         transform: Matrix4.identity()..scale(_isHovered ? 1.04 : 1.0),
         transformAlignment: Alignment.center,
         decoration: BoxDecoration(
-          // Dim white background — subtle contrast against the black
-          // section without going full white or full black
+         
           color: Colors.white.withOpacity(0.12),
           borderRadius: BorderRadius.circular(12),
           border: Border.all(
@@ -196,9 +197,9 @@ class _ViewAllButtonState extends State<_ViewAllButton> {
               ),
             ),
             const SizedBox(width: 8),
-            AnimatedSlide(
-              duration: const Duration(milliseconds: 200),
-              offset: _isHovered ? const Offset(0.15, 0) : Offset.zero,
+            AnimatedRotation(
+              duration: const Duration(milliseconds: 300),
+              turns: _isHovered ? 0.125 : 0.0, // rotates ~45 degrees clockwise
               child: const Icon(
                 Icons.arrow_forward,
                 color: Color.fromRGBO(245, 171, 30, 1),
