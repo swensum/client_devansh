@@ -60,16 +60,12 @@ class CategoriesSection extends StatelessWidget {
                 "Premium hardware from the world's most trusted brands",
                 textAlign: TextAlign.center,
                 style: TextStyle(
-                  fontSize: 14,
+                  fontSize: 16,
                   color: Colors.white.withOpacity(0.6),
                   letterSpacing: 0.3,
                 ),
               ),
               const SizedBox(height: 36),
-
-              // Logo boxes — sized bigger, with a clear gap, and the
-              // section's max width widened so all 6 still fit in one row
-              // (6 x 180 + 5 x 24 = 1200px, fits within 1250px max width)
               Wrap(
                 alignment: WrapAlignment.center,
                 spacing: 24,
@@ -146,8 +142,7 @@ class _CompanyLogoBoxState extends State<_CompanyLogoBox> {
           child: Image.asset(
             widget.company.logo,
             fit: BoxFit.contain,
-            // Fallback to the company name as text if a logo file
-            // is missing, so the layout never breaks silently
+            
             errorBuilder: (context, error, stackTrace) => Text(
               widget.company.name,
               textAlign: TextAlign.center,

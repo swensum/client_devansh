@@ -148,7 +148,7 @@ class TopProductsSection extends StatelessWidget {
           "Our best-selling hardware, loved by customers",
           textAlign: TextAlign.center,
           style: TextStyle(
-            fontSize: 15,
+            fontSize: 16,
             color: Colors.white.withOpacity(0.7),
             letterSpacing: 0.5,
           ),

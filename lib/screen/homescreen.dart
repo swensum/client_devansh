@@ -2,6 +2,7 @@ import 'package:devansh/components/about.dart';
 import 'package:devansh/components/categories.dart';
 import 'package:devansh/components/header.dart';
 import 'package:devansh/components/product.dart';
+import 'package:devansh/components/reviews.dart';
 import 'package:devansh/components/stat.dart';
 
 import 'package:flutter/material.dart';
@@ -359,6 +360,12 @@ class _HomePageState extends State<HomePage> {
             ),
             const CategoriesSection(),
             const TopProductsSection(),
+             Container(
+              width: double.infinity,
+              height: 2,
+              color: const Color.fromRGBO(245, 171, 30, 1),
+            ),
+const ReviewsSection(),
           ],
         ),
       ),
