@@ -40,10 +40,19 @@ class CategoriesSection extends StatelessWidget {
 
               // Underline bar
               Container(
-                width: 50,
-                height: 3,
-                color: const Color.fromRGBO(245, 171, 30, 1),
-              ),
+          width: 60,
+          height: 3,
+          decoration: BoxDecoration(
+            gradient: LinearGradient(
+              colors: [
+                const Color.fromRGBO(245, 171, 30, 0.5),
+                const Color.fromRGBO(245, 171, 30, 1),
+                const Color.fromRGBO(245, 171, 30, 0.5),
+              ],
+            ),
+            borderRadius: BorderRadius.circular(2),
+          ),
+        ),
               const SizedBox(height: 12),
 
               // Subtitle
@@ -188,7 +197,7 @@ class _ViewAllButtonState extends State<_ViewAllButton> {
           mainAxisSize: MainAxisSize.min,
           children: [
             const Text(
-              "View All Companies",
+              "View All Products",
               style: TextStyle(
                 fontSize: 14,
                 fontWeight: FontWeight.w600,

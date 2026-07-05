@@ -114,18 +114,7 @@ class TopProductsSection extends StatelessWidget {
     return Column(
       children: [
         // Decorative top line
-        Container(
-          width: 50,
-          height: 2,
-          decoration: BoxDecoration(
-            gradient: LinearGradient(
-              colors: [
-                const Color.fromRGBO(245, 171, 30, 0.3),
-                const Color.fromRGBO(245, 171, 30, 1),
-              ],
-            ),
-          ),
-        ),
+       
         const SizedBox(height: 16),
 
         const Text(
@@ -459,8 +448,7 @@ class _ViewAllProductsButton extends StatefulWidget {
   const _ViewAllProductsButton();
 
   @override
-  State<_ViewAllProductsButton> createState() =>
-      _ViewAllProductsButtonState();
+  State<_ViewAllProductsButton> createState() => _ViewAllProductsButtonState();
 }
 
 class _ViewAllProductsButtonState extends State<_ViewAllProductsButton> {
@@ -473,51 +461,38 @@ class _ViewAllProductsButtonState extends State<_ViewAllProductsButton> {
       onEnter: (_) => setState(() => _isHovered = true),
       onExit: (_) => setState(() => _isHovered = false),
       child: AnimatedContainer(
-        duration: const Duration(milliseconds: 300),
-        padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 16),
+        duration: const Duration(milliseconds: 200),
+        padding: const EdgeInsets.symmetric(horizontal: 26, vertical: 12),
         decoration: BoxDecoration(
-          gradient: _isHovered
-              ? LinearGradient(
-                  begin: Alignment.centerLeft,
-                  end: Alignment.centerRight,
-                  colors: [
-                    const Color.fromRGBO(245, 171, 30, 0.9),
-                    const Color.fromRGBO(255, 181, 40, 1),
-                  ],
-                )
-              : null,
-          color: _isHovered ? null : const Color.fromRGBO(245, 171, 30, 1),
-          borderRadius: BorderRadius.circular(10),
-          boxShadow: _isHovered
-              ? [
-                  BoxShadow(
-                    color: const Color.fromRGBO(245, 171, 30, 0.3),
-                    blurRadius: 20,
-                    spreadRadius: 5,
-                    offset: const Offset(0, 4),
-                  ),
-                ]
-              : null,
+          border: Border.all(
+            color: Color.fromRGBO(245, 171, 30, _isHovered ? 1.0 : 0.6),
+            width: 1.5,
+          ),
+          borderRadius: BorderRadius.circular(8),
+          color: _isHovered
+              ? const Color.fromRGBO(245, 171, 30, 0.08)
+              : Colors.transparent,
         ),
         child: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
             const Text(
-              "View All Products",
+              "View All Companies",
               style: TextStyle(
-                fontSize: 15,
+                fontSize: 14,
                 fontWeight: FontWeight.w600,
-                color: Colors.black,
-                letterSpacing: 0.5,
+                color: Colors.white,
+                letterSpacing: 0.3,
               ),
             ),
-            const SizedBox(width: 10),
-            Transform(
-              transform: Matrix4.identity()..translate(_isHovered ? 8.0 : 0.0),
+            const SizedBox(width: 8),
+            AnimatedRotation(
+              duration: const Duration(milliseconds: 300),
+              turns: _isHovered ? 0.125 : 0.0, // rotates ~45 degrees clockwise
               child: const Icon(
                 Icons.arrow_forward,
-                color: Colors.black,
-                size: 18,
+                color: Color.fromRGBO(245, 171, 30, 1),
+                size: 16,
               ),
             ),
           ],
