@@ -1,4 +1,5 @@
 import 'package:devansh/components/about.dart';
+import 'package:devansh/components/categories.dart';
 import 'package:devansh/components/header.dart';
 import 'package:devansh/components/stat.dart';
 
@@ -116,7 +117,8 @@ class _HomePageState extends State<HomePage> {
                     onPageChanged: (index) {
                       setState(() {
                         _pageCounter = index;
-                        _currentIndex = index % _slides.length; // wraps 0,1,2,0,1,2...
+                        _currentIndex =
+                            index % _slides.length; // wraps 0,1,2,0,1,2...
                       });
                     },
                     itemBuilder: (context, index) {
@@ -157,18 +159,13 @@ class _HomePageState extends State<HomePage> {
                         fit: StackFit.expand,
                         children: [
                           // Background image for this slide
-                          Image.asset(
-                            slide.image,
-                            fit: BoxFit.cover,
-                          ),
+                          Image.asset(slide.image, fit: BoxFit.cover),
 
                           // Overlay — side gradient for left/right slides,
                           // even darkening for center slides so the text
                           // stays readable regardless of what's behind it.
                           if (slide.align == HeroTextAlign.center)
-                            Container(
-                              color: Colors.black.withOpacity(0.4),
-                            )
+                            Container(color: Colors.black.withOpacity(0.4))
                           else
                             Container(
                               decoration: BoxDecoration(
@@ -194,7 +191,9 @@ class _HomePageState extends State<HomePage> {
                             child: Align(
                               alignment: boxAlignment,
                               child: ConstrainedBox(
-                                constraints: const BoxConstraints(maxWidth: 520),
+                                constraints: const BoxConstraints(
+                                  maxWidth: 520,
+                                ),
                                 child: Column(
                                   crossAxisAlignment: crossAlign,
                                   mainAxisSize: MainAxisSize.min,
@@ -202,7 +201,9 @@ class _HomePageState extends State<HomePage> {
                                     // AnimatedSwitcher gives a smooth fade
                                     // when the text itself changes
                                     AnimatedSwitcher(
-                                      duration: const Duration(milliseconds: 500),
+                                      duration: const Duration(
+                                        milliseconds: 500,
+                                      ),
                                       child: Text(
                                         slide.headline,
                                         key: ValueKey<String>(slide.headline),
@@ -217,7 +218,9 @@ class _HomePageState extends State<HomePage> {
                                     ),
                                     const SizedBox(height: 16),
                                     AnimatedSwitcher(
-                                      duration: const Duration(milliseconds: 500),
+                                      duration: const Duration(
+                                        milliseconds: 500,
+                                      ),
                                       child: Text(
                                         slide.subtext,
                                         key: ValueKey<String>(slide.subtext),
@@ -233,10 +236,14 @@ class _HomePageState extends State<HomePage> {
 
                                     // Hover animation wrapper
                                     MouseRegion(
-                                      onEnter: (_) => setState(() => _isHovered = true),
-                                      onExit: (_) => setState(() => _isHovered = false),
+                                      onEnter: (_) =>
+                                          setState(() => _isHovered = true),
+                                      onExit: (_) =>
+                                          setState(() => _isHovered = false),
                                       child: AnimatedContainer(
-                                        duration: const Duration(milliseconds: 200),
+                                        duration: const Duration(
+                                          milliseconds: 200,
+                                        ),
                                         transform: Matrix4.identity()
                                           ..scale(_isHovered ? 1.05 : 1.0),
                                         child: ElevatedButton(
@@ -245,15 +252,26 @@ class _HomePageState extends State<HomePage> {
                                           },
                                           style: ElevatedButton.styleFrom(
                                             backgroundColor: _isHovered
-                                                ? const Color.fromRGBO(255, 181, 40, 1)
-                                                : const Color.fromRGBO(245, 171, 30, 1),
+                                                ? const Color.fromRGBO(
+                                                    255,
+                                                    181,
+                                                    40,
+                                                    1,
+                                                  )
+                                                : const Color.fromRGBO(
+                                                    245,
+                                                    171,
+                                                    30,
+                                                    1,
+                                                  ),
                                             foregroundColor: Colors.black,
                                             padding: const EdgeInsets.symmetric(
                                               horizontal: 28,
                                               vertical: 18,
                                             ),
                                             shape: RoundedRectangleBorder(
-                                              borderRadius: BorderRadius.circular(6),
+                                              borderRadius:
+                                                  BorderRadius.circular(6),
                                             ),
                                             elevation: _isHovered ? 8 : 2,
                                           ),
@@ -269,7 +287,9 @@ class _HomePageState extends State<HomePage> {
                                               ),
                                               const SizedBox(width: 10),
                                               AnimatedRotation(
-                                                duration: const Duration(milliseconds: 300),
+                                                duration: const Duration(
+                                                  milliseconds: 300,
+                                                ),
                                                 turns: _isHovered ? 0.125 : 0.0,
                                                 child: const Icon(
                                                   Icons.arrow_forward,
@@ -324,16 +344,19 @@ class _HomePageState extends State<HomePage> {
               color: const Color.fromRGBO(245, 171, 30, 1),
             ),
 
-           
-           const StatsSection(),
+            const StatsSection(),
             Container(
               width: double.infinity,
               height: 2,
               color: const Color.fromRGBO(245, 171, 30, 1),
             ),
-const AboutSection(),
-
-         
+            const AboutSection(),
+            Container(
+              width: double.infinity,
+              height: 2,
+              color: const Color.fromRGBO(245, 171, 30, 1),
+            ),
+            const CategoriesSection(),
           ],
         ),
       ),
