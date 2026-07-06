@@ -63,13 +63,12 @@ class _HomePageState extends State<HomePage> {
     ),
   ];
 
-  // Large arbitrary starting page — lets us always scroll forward
-  // (incrementing) without ever needing to jump back to a lower index.
+  
   static const int _initialPage = 10000;
 
   late final PageController _pageController;
-  int _currentIndex = 0; // real slide index (wrapped), used for dots/text
-  int _pageCounter = _initialPage; // raw page number, always increasing
+  int _currentIndex = 0; 
+  int _pageCounter = _initialPage; 
   Timer? _autoScrollTimer;
 
   @override
