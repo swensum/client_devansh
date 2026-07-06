@@ -21,7 +21,7 @@ class HomePage extends StatefulWidget {
 
 class _HomePageState extends State<HomePage> {
    final ScrollController _scrollController = ScrollController();
-   bool _showHeader = false; 
+  bool _showHeader = true;
   double _lastOffset = 0;
 
   @override
@@ -32,12 +32,18 @@ class _HomePageState extends State<HomePage> {
 
   void _handleScroll() {
     final offset = _scrollController.offset;
-   
+    final delta = offset - _lastOffset;
 
-    if (offset > 50 && !_showHeader) {
+    if (offset < 50) {
+      // Always show header near the very top, regardless of direction.
+      if (!_showHeader) setState(() => _showHeader = true);
+    } else if (delta > 4 && _showHeader) {
+      // Scrolling down past the threshold — hide it.
+      setState(() => _showHeader = false);
+    } else if (delta < -4 && !_showHeader) {
+      // Scrolling up — bring it back.
       setState(() => _showHeader = true);
     }
-    // No hiding logic – it stays visible forever after appearing.
     _lastOffset = offset;
   }
 
