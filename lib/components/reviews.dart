@@ -1,8 +1,28 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 
-class ReviewsSection extends StatelessWidget {
+class ReviewsSection extends StatefulWidget {
   const ReviewsSection({super.key});
 
+  @override
+  State<ReviewsSection> createState() => _ReviewsSectionState();
+}
+
+class _Review {
+  final String name;
+  final String role;
+  final String message;
+  final int rating;
+
+  const _Review({
+    required this.name,
+    required this.role,
+    required this.message,
+    required this.rating,
+  });
+}
+
+class _ReviewsSectionState extends State<ReviewsSection> {
   static const List<_Review> _reviews = [
     _Review(
       name: "Ramesh Karki",
@@ -36,7 +56,84 @@ class ReviewsSection extends StatelessWidget {
           "looks a lot more premium than the price suggests.",
       rating: 5,
     ),
+    _Review(
+      name: "Bikash Adhikari",
+      role: "Furniture Maker",
+      message:
+          "Consistent quality across every batch we've ordered. "
+          "It's become our go-to source for premium hardware.",
+      rating: 5,
+    ),
   ];
+
+  // Unbounded page counter — always increases, so auto-rotation only
+  // ever moves in one direction (same technique as the hero carousel).
+  static const int _initialPage = 10000;
+  late final PageController _pageController;
+  int _pageCounter = _initialPage;
+  Timer? _autoScrollTimer;
+
+  // How many cards are visible at once — 4 on desktop, fewer on
+  // narrower screens. viewportFraction is fixed per PageController,
+  // so we pick this once based on screen width.
+  int _visibleCount = 4;
+
+  @override
+  void initState() {
+    super.initState();
+    final width = WidgetsBinding.instance.platformDispatcher.views.first
+            .physicalSize.width /
+        WidgetsBinding.instance.platformDispatcher.views.first
+            .devicePixelRatio;
+
+    if (width < 700) {
+      _visibleCount = 1;
+    } else if (width < 1000) {
+      _visibleCount = 2;
+    } else {
+      _visibleCount = 4;
+    }
+
+    _pageController = PageController(
+      initialPage: _initialPage,
+      viewportFraction: 1 / _visibleCount,
+    );
+    _startAutoScroll();
+  }
+
+  void _startAutoScroll() {
+    _autoScrollTimer = Timer.periodic(const Duration(seconds: 4), (timer) {
+      _goToPage(_pageCounter + 1);
+    });
+  }
+
+  void _goToPage(int page) {
+    if (!_pageController.hasClients) return;
+    _pageController.animateToPage(
+      page,
+      duration: const Duration(milliseconds: 600),
+      curve: Curves.easeInOut,
+    );
+  }
+
+  void _handleNext() {
+    _autoScrollTimer?.cancel();
+    _goToPage(_pageCounter + 1);
+    _startAutoScroll();
+  }
+
+  void _handlePrevious() {
+    _autoScrollTimer?.cancel();
+    _goToPage(_pageCounter - 1);
+    _startAutoScroll();
+  }
+
+  @override
+  void dispose() {
+    _autoScrollTimer?.cancel();
+    _pageController.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -46,12 +143,12 @@ class ReviewsSection extends StatelessWidget {
       padding: const EdgeInsets.symmetric(horizontal: 30, vertical: 60),
       child: Center(
         child: ConstrainedBox(
-          constraints: const BoxConstraints(maxWidth: 1200),
+          constraints: const BoxConstraints(maxWidth: 1300),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.center,
             children: [
               // Section Title
-              Text(
+              const Text(
                 "What Our Customers Say",
                 style: TextStyle(
                   fontSize: 30,
@@ -62,11 +159,20 @@ class ReviewsSection extends StatelessWidget {
               ),
               const SizedBox(height: 10),
 
-              Container(
-                width: 50,
-                height: 3,
-                color: const Color.fromRGBO(245, 171, 30, 1),
-              ),
+            Container(
+          width: 60,
+          height: 3,
+          decoration: BoxDecoration(
+            gradient: LinearGradient(
+              colors: [
+                const Color.fromRGBO(245, 171, 30, 0.5),
+                const Color.fromRGBO(245, 171, 30, 1),
+                const Color.fromRGBO(245, 171, 30, 0.5),
+              ],
+            ),
+            borderRadius: BorderRadius.circular(2),
+          ),
+        ),
               const SizedBox(height: 12),
 
               Text(
@@ -78,32 +184,46 @@ class ReviewsSection extends StatelessWidget {
                   letterSpacing: 0.3,
                 ),
               ),
-              const SizedBox(height: 40),
+              const SizedBox(height: 60),
 
-              // Review Grid — responsive column count
-              LayoutBuilder(
-                builder: (context, constraints) {
-                  final crossAxisCount = constraints.maxWidth > 950
-                      ? 4
-                      : constraints.maxWidth > 620
-                          ? 2
-                          : 1;
-
-                  return GridView.builder(
-                    shrinkWrap: true,
-                    physics: const NeverScrollableScrollPhysics(),
-                    itemCount: _reviews.length,
-                    gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-                      crossAxisCount: crossAxisCount,
-                      crossAxisSpacing: 20,
-                      mainAxisSpacing: 20,
-                      childAspectRatio: 0.95,
+              // Carousel row: left arrow — 4 review cards — right arrow
+              Row(
+                crossAxisAlignment: CrossAxisAlignment.center,
+                children: [
+                  _NavArrowButton(
+                    icon: Icons.keyboard_double_arrow_left,
+                    onTap: _handlePrevious,
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: SizedBox(
+                      height: 300,
+                      child: PageView.builder(
+                        controller: _pageController,
+                        padEnds: false,
+                        onPageChanged: (index) {
+                          setState(() {
+                            _pageCounter = index;
+                          });
+                        },
+                        itemBuilder: (context, index) {
+                          final review = _reviews[index % _reviews.length];
+                          return Padding(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 15,
+                            ),
+                            child: _ReviewCard(review: review),
+                          );
+                        },
+                      ),
                     ),
-                    itemBuilder: (context, index) {
-                      return _ReviewCard(review: _reviews[index]);
-                    },
-                  );
-                },
+                  ),
+                  const SizedBox(width: 12),
+                  _NavArrowButton(
+                    icon: Icons.keyboard_double_arrow_right,
+                    onTap: _handleNext,
+                  ),
+                ],
               ),
             ],
           ),
@@ -113,20 +233,53 @@ class ReviewsSection extends StatelessWidget {
   }
 }
 
-class _Review {
-  final String name;
-  final String role;
-  final String message;
-  final int rating;
+class _NavArrowButton extends StatefulWidget {
+  final IconData icon;
+  final VoidCallback onTap;
 
-  const _Review({
-    required this.name,
-    required this.role,
-    required this.message,
-    required this.rating,
-  });
+  const _NavArrowButton({required this.icon, required this.onTap});
+
+  @override
+  State<_NavArrowButton> createState() => _NavArrowButtonState();
 }
 
+class _NavArrowButtonState extends State<_NavArrowButton> {
+  bool _isHovered = false;
+
+  @override
+  Widget build(BuildContext context) {
+    return MouseRegion(
+      cursor: SystemMouseCursors.click,
+      onEnter: (_) => setState(() => _isHovered = true),
+      onExit: (_) => setState(() => _isHovered = false),
+      child: GestureDetector(
+        onTap: widget.onTap,
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 200),
+          padding: const EdgeInsets.all(10),
+          decoration: BoxDecoration(
+            color: _isHovered
+                ? const Color.fromRGBO(245, 171, 30, 1)
+                : Colors.white.withOpacity(0.08),
+            shape: BoxShape.circle,
+            border: Border.all(
+              color: _isHovered
+                  ? Colors.transparent
+                  : Colors.white.withOpacity(0.2),
+            ),
+          ),
+          child: Icon(
+            widget.icon,
+            size: 22,
+            color: _isHovered ? Colors.black : Colors.white,
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+// Unchanged from the original design
 class _ReviewCard extends StatefulWidget {
   final _Review review;
 
@@ -173,9 +326,9 @@ class _ReviewCardState extends State<_ReviewCard> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             // Quote icon
-            Icon(
+            const Icon(
               Icons.format_quote,
-              color: const Color.fromARGB(186, 245, 170, 30),
+              color: Color.fromARGB(186, 245, 170, 30),
               size: 28,
             ),
             const SizedBox(height: 10),
@@ -184,7 +337,7 @@ class _ReviewCardState extends State<_ReviewCard> {
             Expanded(
               child: Text(
                 widget.review.message,
-                style: TextStyle(
+                style: const TextStyle(
                   fontSize: 13.5,
                   color: Colors.white,
                   height: 1.5,
@@ -230,7 +383,7 @@ class _ReviewCardState extends State<_ReviewCard> {
                     children: [
                       Text(
                         widget.review.name,
-                        style: TextStyle(
+                        style: const TextStyle(
                           fontSize: 13,
                           fontWeight: FontWeight.w600,
                           color: Colors.white,
