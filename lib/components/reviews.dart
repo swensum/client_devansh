@@ -140,7 +140,7 @@ class _ReviewsSectionState extends State<ReviewsSection> {
     return Container(
       width: double.infinity,
       color: Colors.black,
-      padding: const EdgeInsets.symmetric(horizontal: 30, vertical: 60),
+      padding: const EdgeInsets.symmetric(horizontal: 30, vertical: 80),
       child: Center(
         child: ConstrainedBox(
           constraints: const BoxConstraints(maxWidth: 1300),
@@ -180,7 +180,7 @@ class _ReviewsSectionState extends State<ReviewsSection> {
                 textAlign: TextAlign.center,
                 style: TextStyle(
                   fontSize: 14,
-                  color: Colors.white.withOpacity(0.6),
+                  color: Colors.white.withValues(alpha: 0.6),
                   letterSpacing: 0.3,
                 ),
               ),
@@ -260,12 +260,12 @@ class _NavArrowButtonState extends State<_NavArrowButton> {
           decoration: BoxDecoration(
             color: _isHovered
                 ? const Color.fromRGBO(245, 171, 30, 1)
-                : Colors.white.withOpacity(0.08),
+                : Colors.white.withValues(alpha: 0.08),
             shape: BoxShape.circle,
             border: Border.all(
               color: _isHovered
                   ? Colors.transparent
-                  : Colors.white.withOpacity(0.2),
+                  : Colors.white.withValues(alpha: 0.2),
             ),
           ),
           child: Icon(
@@ -306,7 +306,7 @@ class _ReviewCardState extends State<_ReviewCard> {
         curve: Curves.easeOut,
         padding: const EdgeInsets.all(20),
         decoration: BoxDecoration(
-          color: Colors.white.withOpacity(0.12),
+          color: Colors.white.withValues(alpha: 0.12),
           borderRadius: BorderRadius.circular(12),
           border: Border.all(
             color: _isHovered
@@ -316,7 +316,7 @@ class _ReviewCardState extends State<_ReviewCard> {
           ),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withOpacity(_isHovered ? 0.10 : 0.04),
+              color: Colors.black.withValues(alpha: _isHovered ? 0.10 : 0.04),
               blurRadius: _isHovered ? 16 : 6,
               offset: const Offset(0, 6),
             ),
@@ -393,7 +393,7 @@ class _ReviewCardState extends State<_ReviewCard> {
                         widget.review.role,
                         style: TextStyle(
                           fontSize: 11,
-                          color: Colors.white.withOpacity(0.6),
+                          color: Colors.white.withValues(alpha: 0.6),
                         ),
                       ),
                     ],

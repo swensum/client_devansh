@@ -78,7 +78,7 @@ class _TopProductsSectionState extends State<TopProductsSection> {
         gradient: LinearGradient(
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
-          colors: [Colors.black.withOpacity(0.9), Colors.black.withOpacity(0.7)],
+          colors: [Colors.black.withValues(alpha: 0.9), Colors.black.withValues(alpha: 0.7)],
         ),
       ),
       child: Center(
@@ -175,7 +175,7 @@ class _TopProductsSectionState extends State<TopProductsSection> {
                             decoration: BoxDecoration(
                               color: isActive
                                   ? const Color.fromRGBO(245, 171, 30, 1)
-                                  : Colors.white.withOpacity(0.3),
+                                  : Colors.white.withValues(alpha: 0.3),
                               borderRadius: BorderRadius.circular(4),
                             ),
                           );
@@ -249,7 +249,7 @@ class _TopProductsSectionState extends State<TopProductsSection> {
         Text(
           "Our best-selling hardware, loved by customers",
           textAlign: TextAlign.center,
-          style: TextStyle(fontSize: 16, color: Colors.white.withOpacity(0.7), letterSpacing: 0.5),
+          style: TextStyle(fontSize: 16, color: Colors.white.withValues(alpha: 0.7), letterSpacing: 0.5),
         ),
       ],
     );
@@ -348,7 +348,7 @@ class _PremiumProductCardState extends State<_PremiumProductCard>
           scale: _scaleAnimation,
           child: Container(
             decoration: BoxDecoration(
-              color: Colors.white.withOpacity(0.12),
+              color: Colors.white.withValues(alpha: 0.12),
               borderRadius: BorderRadius.circular(_cardRadius),
               border: Border.all(
                 color: _isHovered
@@ -358,7 +358,7 @@ class _PremiumProductCardState extends State<_PremiumProductCard>
               ),
               boxShadow: [
                 BoxShadow(
-                  color: Colors.black.withOpacity(_isHovered ? 0.15 : 0.06),
+                  color: Colors.black.withValues(alpha: _isHovered ? 0.15 : 0.06),
                   blurRadius: _isHovered ? 20 : 8,
                   offset: Offset(0, _isHovered ? 8 : 4),
                   spreadRadius: _isHovered ? 2 : 0,
@@ -405,7 +405,7 @@ class _PremiumProductCardState extends State<_PremiumProductCard>
                               gradient: LinearGradient(
                                 begin: Alignment.topCenter,
                                 end: Alignment.bottomCenter,
-                                colors: [Colors.transparent, Colors.black.withOpacity(0.7)],
+                                colors: [Colors.transparent, Colors.black.withValues(alpha: 0.7)],
                               ),
                             ),
                           ),
@@ -526,9 +526,9 @@ class _PremiumProductCardState extends State<_PremiumProductCard>
     return Container(
       padding: const EdgeInsets.all(8),
       decoration: BoxDecoration(
-        color: backgroundColor ?? Colors.black.withOpacity(0.7),
+        color: backgroundColor ?? Colors.black.withValues(alpha: 0.7),
         shape: BoxShape.circle,
-        border: Border.all(color: borderColor ?? Colors.white.withOpacity(0.2), width: 1),
+        border: Border.all(color: borderColor ?? Colors.white.withValues(alpha: 0.2), width: 1),
       ),
       child: Icon(icon, size: 16, color: color),
     );

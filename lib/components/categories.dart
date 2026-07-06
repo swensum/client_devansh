@@ -61,7 +61,7 @@ class CategoriesSection extends StatelessWidget {
                 textAlign: TextAlign.center,
                 style: TextStyle(
                   fontSize: 16,
-                  color: Colors.white.withOpacity(0.6),
+                  color: Colors.white.withValues(alpha: 0.6),
                   letterSpacing: 0.3,
                 ),
               ),
@@ -112,49 +112,48 @@ class _CompanyLogoBoxState extends State<_CompanyLogoBox> {
       cursor: SystemMouseCursors.click,
       onEnter: (_) => setState(() => _isHovered = true),
       onExit: (_) => setState(() => _isHovered = false),
-      child: AnimatedContainer(
-        duration: const Duration(milliseconds: 200),
-        curve: Curves.easeOut,
-        width: 180,
-        height: 115,
-        padding: const EdgeInsets.symmetric(horizontal: 22, vertical: 18),
-        transform: Matrix4.identity()..scale(_isHovered ? 1.04 : 1.0),
-        transformAlignment: Alignment.center,
-        decoration: BoxDecoration(
-         
-          color: Colors.white.withOpacity(0.12),
-          borderRadius: BorderRadius.circular(12),
-          border: Border.all(
-            color: _isHovered
-                ? const Color.fromRGBO(245, 171, 30, 1)
-                : Colors.white.withOpacity(0.15),
-            width: _isHovered ? 2 : 1,
-          ),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withOpacity(_isHovered ? 0.25 : 0.12),
-              blurRadius: _isHovered ? 16 : 8,
-              offset: const Offset(0, 4),
-            ),
-          ],
+      child: Transform.scale(
+  scale: _isHovered ? 1.04 : 1.0,
+  child: AnimatedContainer(
+    duration: const Duration(milliseconds: 200),
+    curve: Curves.easeOut,
+    width: 180,
+    height: 115,
+    padding: const EdgeInsets.symmetric(horizontal: 22, vertical: 18),
+    decoration: BoxDecoration(
+      color: Colors.white.withValues(alpha: 0.12),
+      borderRadius: BorderRadius.circular(12),
+      border: Border.all(
+        color: _isHovered
+            ? const Color.fromRGBO(245, 171, 30, 1)
+            : Colors.white.withValues(alpha: 0.15),
+        width: _isHovered ? 2 : 1,
+      ),
+      boxShadow: [
+        BoxShadow(
+          color: Colors.black.withValues(alpha: _isHovered ? 0.25 : 0.12),
+          blurRadius: _isHovered ? 16 : 8,
+          offset: const Offset(0, 4),
         ),
-        child: Center(
-          child: Image.asset(
-            widget.company.logo,
-            fit: BoxFit.contain,
-            
-            errorBuilder: (context, error, stackTrace) => Text(
-              widget.company.name,
-              textAlign: TextAlign.center,
-              style: const TextStyle(
-                fontSize: 14,
-                fontWeight: FontWeight.w600,
-                color: Colors.white,
-              ),
-            ),
+      ],
+    ),
+    child: Center(
+      child: Image.asset(
+        widget.company.logo,
+        fit: BoxFit.contain,
+        errorBuilder: (context, error, stackTrace) => Text(
+          widget.company.name,
+          textAlign: TextAlign.center,
+          style: const TextStyle(
+            fontSize: 14,
+            fontWeight: FontWeight.w600,
+            color: Colors.white,
           ),
         ),
       ),
+    ),
+  ),
+),
     );
   }
 }

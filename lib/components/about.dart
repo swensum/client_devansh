@@ -13,8 +13,8 @@ class AboutSection extends StatelessWidget {
           begin: Alignment.centerLeft,
           end: Alignment.centerRight,
           colors: [
-            Colors.black.withOpacity(0.85),
-            Colors.black.withOpacity(0.6),
+            Colors.black.withValues(alpha: 0.85),
+            Colors.black.withValues(alpha: 0.6),
           ],
           stops: const [0.0, 0.65],
         ),
@@ -72,7 +72,7 @@ class AboutSection extends StatelessWidget {
                       style: TextStyle(
                         fontSize: 18,
                         height: 1.6,
-                        color: Colors.white.withOpacity(0.9),
+                        color: Colors.white.withValues(alpha: 0.9),
                       ),
                     ),
                   ],
