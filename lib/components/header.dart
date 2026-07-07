@@ -9,14 +9,17 @@ class Header extends StatefulWidget {
 }
 
 class _HeaderState extends State<Header> {
+  static const double _navBreakpoint = 1120;
+  static const double _compactBreakpoint = 820;
+  static const double _tightBreakpoint = 620;
+
   int _hoveredIndex = -1;
   bool _hoveredAccount = false;
   bool _hoveredRegister = false;
   bool _hoveredLogin = false;
   bool _hoveredOrder = false;
   bool _hoveredPersonIcon = false;
-
-  // Which dropdown is currently open (-1 = none)
+  bool _hoveredHamburger = false;
   int _openIndex = -1;
 
   // Dropdown data
@@ -25,9 +28,6 @@ class _HeaderState extends State<Header> {
     2: ["New Arrivals", "Best Sellers", "Special Offers", "Seasonal"],
     3: ["About Us", "Contact", "FAQs", "Shipping Info", "Terms & Conditions"],
   };
-
-  // One LayerLink per dropdown-enabled menu item — anchors the dropdown
-  // to that item's exact position on screen.
   final Map<int, LayerLink> _layerLinks = {
     1: LayerLink(),
     2: LayerLink(),
@@ -36,6 +36,11 @@ class _HeaderState extends State<Header> {
 
   OverlayEntry? _overlayEntry;
   Timer? _closeTimer;
+
+  // Mobile sidebar menu
+  OverlayEntry? _mobileMenuOverlay;
+  final GlobalKey<_MobileSidebarState> _mobileSidebarKey =
+      GlobalKey<_MobileSidebarState>();
 
   void _cancelClose() {
     _closeTimer?.cancel();
@@ -123,153 +128,221 @@ class _HeaderState extends State<Header> {
     _overlayEntry = null;
     _openIndex = -1;
   }
+  void _toggleMobileMenu() {
+    if (_mobileMenuOverlay != null) {
+      _mobileSidebarKey.currentState?.close();
+    } else {
+      _openMobileMenu();
+    }
+  }
+
+  void _openMobileMenu() {
+    _removeMobileOverlay();
+
+    _mobileMenuOverlay = OverlayEntry(
+      builder: (context) {
+        return _MobileSidebar(
+          key: _mobileSidebarKey,
+          dropdownItems: _dropdownItems,
+          onSelect: (item) {
+            _mobileSidebarKey.currentState?.close();
+            print('Selected: $item');
+          },
+          onClosed: _removeMobileOverlay,
+        );
+      },
+    );
+
+    Overlay.of(context).insert(_mobileMenuOverlay!);
+    setState(() {});
+  }
+
+  void _removeMobileOverlay() {
+    _mobileMenuOverlay?.remove();
+    _mobileMenuOverlay = null;
+    if (mounted) setState(() {});
+  }
 
   @override
   void dispose() {
     _closeTimer?.cancel();
     _removeOverlay();
+    _removeMobileOverlay();
     super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      height: 100,
-      padding: const EdgeInsets.symmetric(horizontal: 20),
-       color: const Color(0xFF1A1A1A),
-      child: Row(
-        children: [
-          // Logo
-          Image.asset(
-            'assets/logo.png',
-            height: 50,
-            width: 250,
-            fit: BoxFit.contain,
-          ),
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final bool isNarrow = constraints.maxWidth < _navBreakpoint;
+        final bool isCompact = constraints.maxWidth < _compactBreakpoint;
+        final bool isTight = constraints.maxWidth < _tightBreakpoint;
 
-          const SizedBox(width: 220),
-
-          // Navigation Menus
-          Row(
-            mainAxisAlignment: MainAxisAlignment.center,
+        return Container(
+          height: 100,
+          padding: EdgeInsets.symmetric(horizontal: isTight ? 10 : 20),
+          color: const Color(0xFF1A1A1A),
+          child: Row(
             children: [
-              _buildMenuItem("Home", showArrow: false, index: 0),
-              const SizedBox(width: 40),
-              _buildMenuItem("Shop", showArrow: true, index: 1),
-              const SizedBox(width: 30),
-              _buildMenuItem("Collection", showArrow: true, index: 2),
-              const SizedBox(width: 30),
-              _buildMenuItem("Pages", showArrow: true, index: 3),
-            ],
-          ),
-
-          const SizedBox(width: 50),
-
-          // Search Bar
-          SizedBox(
-            width: 250,
-            height: 38,
-            child: TextField(
-              decoration: InputDecoration(
-                hintText: "Search...",
-                hintStyle: const TextStyle(color: Colors.grey),
-                filled: true,
-                fillColor: Colors.white,
-                prefixIcon: Container(
-                  margin: const EdgeInsets.all(2),
-                  decoration: const BoxDecoration(
-                    color: Colors.black,
-                    shape: BoxShape.circle,
-                  ),
-                  child: const Icon(
-                    Icons.search,
-                    color: Colors.white,
-                    size: 18,
-                  ),
-                ),
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(30),
-                  borderSide: BorderSide.none,
-                ),
-                contentPadding: const EdgeInsets.symmetric(vertical: 8),
+              // Logo — smaller once things get very narrow
+              Image.asset(
+                'assets/logo.png',
+                height: isTight ? 40 : 50,
+                width: isTight ? 150 : 250,
+                fit: BoxFit.contain,
               ),
-            ),
-          ),
 
-          const SizedBox(width: 50),
+              const Spacer(flex: 2),
 
-          // Account Section
-          SizedBox(
-            height: 80,
-            child: Row(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                MouseRegion(
-                  cursor: SystemMouseCursors.click,
-                  onEnter: (_) => setState(() => _hoveredPersonIcon = true),
-                  onExit: (_) => setState(() => _hoveredPersonIcon = false),
-                  child: Icon(
-                    Icons.person,
-                    color: _hoveredPersonIcon
-                        ? const Color.fromRGBO(245, 171, 30, 1)
-                        : Colors.white,
-                    size: 40,
+              // Navigation Menus — hidden below the breakpoint
+              if (!isNarrow)
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    _buildMenuItem("Home", showArrow: false, index: 0),
+                    const SizedBox(width: 40),
+                    _buildMenuItem("Shop", showArrow: true, index: 1),
+                    const SizedBox(width: 30),
+                    _buildMenuItem("Collection", showArrow: true, index: 2),
+                    const SizedBox(width: 30),
+                    _buildMenuItem("Pages", showArrow: true, index: 3),
+                  ],
+                ),
+
+              SizedBox(width: isTight ? 10: 20),
+              SizedBox(
+                width: isTight ? 170 : (isCompact ? 170 : 250),
+                height: 38,
+                child: TextField(
+                  decoration: InputDecoration(
+                    hintText: "Search...",
+                    hintStyle: const TextStyle(color: Colors.grey),
+                    filled: true,
+                    fillColor: Colors.white,
+                    prefixIcon: Container(
+                      margin: const EdgeInsets.all(2),
+                      decoration: const BoxDecoration(
+                        color: Colors.black,
+                        shape: BoxShape.circle,
+                      ),
+                      child: const Icon(
+                        Icons.search,
+                        color: Colors.white,
+                        size: 18,
+                      ),
+                    ),
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(30),
+                      borderSide: BorderSide.none,
+                    ),
+                    contentPadding: const EdgeInsets.symmetric(vertical: 8),
                   ),
                 ),
-                const SizedBox(width: 5),
-                Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  crossAxisAlignment: CrossAxisAlignment.start,
+              ),
+
+              const Spacer(flex: 1),
+
+              // Account Section
+              SizedBox(
+                height: 80,
+                child: Row(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
                     MouseRegion(
                       cursor: SystemMouseCursors.click,
-                      onEnter: (_) => setState(() => _hoveredAccount = true),
-                      onExit: (_) => setState(() => _hoveredAccount = false),
-                      child: Text(
-                        "Account",
-                        style: TextStyle(
-                          color: _hoveredAccount
-                              ? const Color.fromRGBO(245, 171, 30, 1)
-                              : Colors.white,
-                          fontSize: 16,
-                          fontWeight: FontWeight.w500,
-                        ),
+                      onEnter: (_) =>
+                          setState(() => _hoveredPersonIcon = true),
+                      onExit: (_) =>
+                          setState(() => _hoveredPersonIcon = false),
+                      child: Icon(
+                        Icons.person,
+                        color: _hoveredPersonIcon
+                            ? const Color.fromRGBO(245, 171, 30, 1)
+                            : Colors.white,
+                        size: isTight ? 35 : 40,
                       ),
                     ),
-                    const SizedBox(height: 0),
-                    Row(
-                      children: [
-                        _buildAuthLink("Register"),
-                        const Text(
-                          " | ",
-                          style: TextStyle(color: Colors.white70, fontSize: 12),
-                        ),
-                        _buildAuthLink("Login"),
-                      ],
-                    ),
+                   
+                    if (!isCompact) ...[
+                      const SizedBox(width: 5),
+                      Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          MouseRegion(
+                            cursor: SystemMouseCursors.click,
+                            onEnter: (_) =>
+                                setState(() => _hoveredAccount = true),
+                            onExit: (_) =>
+                                setState(() => _hoveredAccount = false),
+                            child: Text(
+                              "Account",
+                              style: TextStyle(
+                                color: _hoveredAccount
+                                    ? const Color.fromRGBO(245, 171, 30, 1)
+                                    : Colors.white,
+                                fontSize: 16,
+                                fontWeight: FontWeight.w500,
+                              ),
+                            ),
+                          ),
+                          const SizedBox(height: 0),
+                          Row(
+                            children: [
+                              _buildAuthLink("Register"),
+                              const Text(
+                                " | ",
+                                style: TextStyle(
+                                    color: Colors.white70, fontSize: 12),
+                              ),
+                              _buildAuthLink("Login"),
+                            ],
+                          ),
+                        ],
+                      ),
+                    ],
                   ],
                 ),
+              ),
+
+              SizedBox(width: isTight ? 10 : 20),
+
+              // Order Icon
+              MouseRegion(
+                cursor: SystemMouseCursors.click,
+                onEnter: (_) => setState(() => _hoveredOrder = true),
+                onExit: (_) => setState(() => _hoveredOrder = false),
+                child: Icon(
+                  Icons.receipt_long,
+                  color: _hoveredOrder
+                      ? const Color.fromRGBO(245, 171, 30, 1)
+                      : Colors.white,
+                  size: isTight ? 25 : 30,
+                ),
+              ),
+              if (isNarrow) ...[
+                SizedBox(width: isTight ? 14 : 16),
+                MouseRegion(
+                  cursor: SystemMouseCursors.click,
+                  onEnter: (_) => setState(() => _hoveredHamburger = true),
+                  onExit: (_) => setState(() => _hoveredHamburger = false),
+                  child: GestureDetector(
+                    onTap: _toggleMobileMenu,
+                    child: Icon(
+                      Icons.menu,
+                      color: _hoveredHamburger
+                          ? const Color.fromRGBO(245, 171, 30, 1)
+                          : Colors.white,
+                      size: isTight ? 32 : 32,
+                    ),
+                  ),
+                ),
               ],
-            ),
+            ],
           ),
-
-          const SizedBox(width: 30),
-
-          // Order Icon
-          MouseRegion(
-            cursor: SystemMouseCursors.click,
-            onEnter: (_) => setState(() => _hoveredOrder = true),
-            onExit: (_) => setState(() => _hoveredOrder = false),
-            child: Icon(
-              Icons.receipt_long,
-              color: _hoveredOrder
-                  ? const Color.fromRGBO(245, 171, 30, 1)
-                  : Colors.white,
-              size: 30,
-            ),
-          ),
-        ],
-      ),
+        );
+      },
     );
   }
 
@@ -360,6 +433,9 @@ class _HeaderState extends State<Header> {
   }
 }
 
+// ---------------------------------------------------------------------------
+// Desktop dropdown (unchanged)
+// ---------------------------------------------------------------------------
 class _DropdownList extends StatefulWidget {
   final List<String> items;
   final void Function(String item) onSelect;
@@ -428,6 +504,232 @@ class _DropdownListState extends State<_DropdownList> {
               ),
             ),
           ),
+        );
+      }).toList(),
+    );
+  }
+}
+
+class _MobileSidebar extends StatefulWidget {
+  final Map<int, List<String>> dropdownItems;
+  final void Function(String item) onSelect;
+  final VoidCallback onClosed;
+
+  const _MobileSidebar({
+    super.key,
+    required this.dropdownItems,
+    required this.onSelect,
+    required this.onClosed,
+  });
+
+  @override
+  State<_MobileSidebar> createState() => _MobileSidebarState();
+}
+
+class _MobileSidebarState extends State<_MobileSidebar>
+    with SingleTickerProviderStateMixin {
+  late final AnimationController _controller;
+  late final Animation<Offset> _slide;
+
+  static const double _sidebarWidth = 280;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 220),
+    );
+    _slide = Tween<Offset>(
+      begin: const Offset(1, 0),
+      end: Offset.zero,
+    ).animate(CurvedAnimation(parent: _controller, curve: Curves.easeOut));
+    _controller.forward();
+  }
+
+  Future<void> close() async {
+    if (_controller.status == AnimationStatus.reverse ||
+        _controller.status == AnimationStatus.dismissed) {
+      return;
+    }
+    await _controller.reverse();
+    widget.onClosed();
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Positioned.fill(
+      child: Stack(
+        children: [
+          // Dimmed scrim – tap anywhere to dismiss.
+          FadeTransition(
+            opacity: _controller,
+            child: GestureDetector(
+              behavior: HitTestBehavior.opaque,
+              onTap: close,
+              child: Container(color: Colors.black.withValues(alpha: 0.45)),
+            ),
+          ),
+          // Sliding panel.
+          Align(
+            alignment: Alignment.centerRight,
+            child: SlideTransition(
+              position: _slide,
+              child: SizedBox(
+                width: _sidebarWidth,
+                height: double.infinity,
+                child: Row(
+                  children: [
+                    // Gold accent strip
+                    Container(
+                      width: 3,
+                      color: const Color.fromRGBO(245, 171, 30, 1),
+                    ),
+                    // Main panel with rounded corner
+                    Expanded(
+                      child: ClipRRect(
+                        borderRadius: const BorderRadius.only(
+                          topLeft: Radius.circular(16),
+                        ),
+                        child: Material(
+                          elevation: 16,
+                          color: const Color(0xFF1A1A1A),   // Same as navbar
+                          child: SafeArea(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                // Header with gold underline
+                                Padding(
+                                  padding: const EdgeInsets.fromLTRB(16, 12, 8, 8),
+                                  child: Column(
+                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    children: [
+                                      Row(
+                                        mainAxisAlignment:
+                                            MainAxisAlignment.spaceBetween,
+                                        children: [
+                                          const Text(
+                                            "Menu",
+                                            style: TextStyle(
+                                              fontSize: 18,
+                                              fontWeight: FontWeight.w600,
+                                              color: Colors.white,
+                                            ),
+                                          ),
+                                          IconButton(
+                                            onPressed: close,
+                                            icon: const Icon(Icons.close,
+                                                color: Colors.white),
+                                            splashRadius: 20,
+                                          ),
+                                        ],
+                                      ),
+                                      const SizedBox(height: 1),
+                                      Container(
+                                        height: 2,
+                                        width: 30,
+                                        color:
+                                            const Color.fromRGBO(245, 171, 30, 1),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                                  const SizedBox(height: 10),
+                                const Divider(
+                                  height: 1,
+                                  color: Color(0xFF444444),
+                                ),
+                                  const SizedBox(height: 8),
+                                // Scrollable menu
+                                Expanded(
+                                  child: SingleChildScrollView(
+                                    child: _MobileNavMenu(
+                                      dropdownItems: widget.dropdownItems,
+                                      onSelect: widget.onSelect,
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _MobileNavMenu extends StatelessWidget {
+  final Map<int, List<String>> dropdownItems;
+  final void Function(String item) onSelect;
+
+  const _MobileNavMenu({
+    required this.dropdownItems,
+    required this.onSelect,
+  });
+
+  static const List<String> _labels = ["Home", "Shop", "Collection", "Pages"];
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: _labels.asMap().entries.map((entry) {
+        final index = entry.key;
+        final label = entry.value;
+        final subItems = dropdownItems[index];
+
+        if (subItems == null) {
+          // "Home" – just a tappable row
+          return ListTile(
+            dense: true,
+            title: Text(
+              label,
+              style: const TextStyle(color: Colors.white, fontSize: 14),
+            ),
+            onTap: () => onSelect(label),
+          );
+        }
+  
+        // Items with sub‑menus (Shop, Collection, Pages)
+        return ExpansionTile(
+          tilePadding: const EdgeInsets.symmetric(horizontal: 16),
+          iconColor: Colors.white,
+          collapsedIconColor: Colors.white70,
+          title: Text(
+            label,
+            style: const TextStyle(color: Colors.white, fontSize: 14),
+          ),
+          children: subItems
+              .map(
+                (item) => ListTile(
+                  dense: true,
+                  contentPadding: const EdgeInsets.only(left: 32, right: 16),
+                  title: Text(
+                    item,
+                    style: const TextStyle(
+                      color: Colors.white70,
+                      fontSize: 13,
+                    ),
+                  ),
+                  onTap: () => onSelect(item),
+                ),
+              )
+              .toList(),
         );
       }).toList(),
     );

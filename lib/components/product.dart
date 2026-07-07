@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:visibility_detector/visibility_detector.dart';
 
 class TopProductsSection extends StatefulWidget {
   const TopProductsSection({super.key});
@@ -29,6 +30,15 @@ class _TopProductsSectionState extends State<TopProductsSection> {
 
   late final PageController _pageController;
   int _currentPage = 0;
+
+  // Once true, stays true — one-shot reveal, doesn't replay on re-scroll.
+  bool _visible = false;
+
+  void _handleVisibility(VisibilityInfo info) {
+    if (!_visible && info.visibleFraction > 0.2) {
+      setState(() => _visible = true);
+    }
+  }
 
   List<List<_Product>> get _pages {
     final pages = <List<_Product>>[];
@@ -71,147 +81,146 @@ class _TopProductsSectionState extends State<TopProductsSection> {
   Widget build(BuildContext context) {
     final pages = _pages;
 
-    return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.symmetric(horizontal: 30, vertical: 60),
-      decoration: BoxDecoration(
-        gradient: LinearGradient(
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-          colors: [Colors.black.withValues(alpha: 0.9), Colors.black.withValues(alpha: 0.7)],
+    return VisibilityDetector(
+      key: const Key('top-products-section-visibility'),
+      onVisibilityChanged: _handleVisibility,
+      child: Container(
+        width: double.infinity,
+        padding: const EdgeInsets.symmetric(horizontal: 30, vertical: 60),
+        decoration: BoxDecoration(
+          gradient: LinearGradient(
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+            colors: [Colors.black.withValues(alpha: 0.9), Colors.black.withValues(alpha: 0.7)],
+          ),
         ),
-      ),
-      child: Center(
-        child: SizedBox(
-          width: double.infinity,
-          child: Stack(
-            children: [
-              Center(
-                child: ConstrainedBox(
-                  constraints: const BoxConstraints(maxWidth: 1200),
-                  child: Column(
-                    children: [
-                      _buildSectionHeader(),
-                      const SizedBox(height: 40),
-                      LayoutBuilder(
-                        builder: (context, constraints) {
-                          final crossAxisCount = constraints.maxWidth > 900
-                              ? 4
-                              : constraints.maxWidth > 600
-                                  ? 3
-                                  : constraints.maxWidth > 400
-                                      ? 2
-                                      : 1;
+        child: Center(
+          child: SizedBox(
+            width: double.infinity,
+            child: Stack(
+              children: [
+                Center(
+                  child: ConstrainedBox(
+                    constraints: const BoxConstraints(maxWidth: 1200),
+                    child: Column(
+                      children: [
+                        _buildSectionHeader(),
+                        const SizedBox(height: 40),
+                        _RevealOnVisible(
+                          visible: _visible,
+                          delay: const Duration(milliseconds: 400),
+                          child: LayoutBuilder(
+                            builder: (context, constraints) {
+                              final crossAxisCount = constraints.maxWidth > 900
+                                  ? 4
+                                  : constraints.maxWidth > 600
+                                      ? 3
+                                      : constraints.maxWidth > 400
+                                          ? 2
+                                          : 1;
 
-                          final rows = (_perPage / crossAxisCount).ceil();
-                          final estimatedHeight =
-                              rows * 380.0 + (rows - 1) * 20.0 + (_gridPadding * 2);
+                              final rows = (_perPage / crossAxisCount).ceil();
+                              final estimatedHeight =
+                                  rows * 380.0 + (rows - 1) * 20.0 + (_gridPadding * 2);
 
-                          return SizedBox(
-                            height: estimatedHeight,
-                            child: PageView.builder(
-                              controller: _pageController,
-                              physics: const NeverScrollableScrollPhysics(),
-                              itemCount: pages.length,
-                              // Default clip (hardEdge) here is important —
-                              // it cuts each page off cleanly at its own
-                              // boundary during the slide. The 16px inner
-                              // padding below already gives hover-scaled
-                              // cards enough room, so the outer page itself
-                              // doesn't need to skip clipping. Without this,
-                              // the outgoing page's edge briefly lingers
-                              // visible past the boundary, causing a flash.
-                              // Pre-builds the neighboring page instead of
-                              // building it only once the slide starts —
-                              // this removes the stutter on the first
-                              // frame of the animation.
-                              allowImplicitScrolling: true,
-                              onPageChanged: (index) =>
-                                  setState(() => _currentPage = index),
-                              itemBuilder: (context, pageIndex) {
-                                final pageProducts = pages[pageIndex];
-                                // RepaintBoundary lets Flutter cache each
-                                // page as its own raster layer, so sliding
-                                // it just moves a cached image instead of
-                                // redrawing every card's shadow/blur each
-                                // frame — this is the main fix for the lag.
-                                return RepaintBoundary(
-                                  child: Padding(
-                                    padding: const EdgeInsets.all(_gridPadding),
-                                    child: GridView.builder(
-                                      clipBehavior: Clip.none,
-                                      physics: const NeverScrollableScrollPhysics(),
-                                      itemCount: pageProducts.length,
-                                      gridDelegate:
-                                          SliverGridDelegateWithFixedCrossAxisCount(
-                                        crossAxisCount: crossAxisCount,
-                                        crossAxisSpacing: 20,
-                                        mainAxisSpacing: 20,
-                                        childAspectRatio: 0.75,
+                              return SizedBox(
+                                height: estimatedHeight,
+                                child: PageView.builder(
+                                  controller: _pageController,
+                                  physics: const NeverScrollableScrollPhysics(),
+                                  itemCount: pages.length,
+                                  allowImplicitScrolling: true,
+                                  onPageChanged: (index) =>
+                                      setState(() => _currentPage = index),
+                                  itemBuilder: (context, pageIndex) {
+                                    final pageProducts = pages[pageIndex];
+                                    return RepaintBoundary(
+                                      child: Padding(
+                                        padding: const EdgeInsets.all(_gridPadding),
+                                        child: GridView.builder(
+                                          clipBehavior: Clip.none,
+                                          physics: const NeverScrollableScrollPhysics(),
+                                          itemCount: pageProducts.length,
+                                          gridDelegate:
+                                              SliverGridDelegateWithFixedCrossAxisCount(
+                                            crossAxisCount: crossAxisCount,
+                                            crossAxisSpacing: 20,
+                                            mainAxisSpacing: 20,
+                                            childAspectRatio: 0.75,
+                                          ),
+                                          itemBuilder: (context, index) {
+                                            return _PremiumProductCard(
+                                              product: pageProducts[index],
+                                            );
+                                          },
+                                        ),
                                       ),
-                                      itemBuilder: (context, index) {
-                                        return _PremiumProductCard(
-                                          product: pageProducts[index],
-                                        );
-                                      },
-                                    ),
-                                  ),
-                                );
-                              },
-                            ),
-                          );
-                        },
-                      ),
-                      const SizedBox(height: 24),
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: List.generate(pages.length, (i) {
-                          final isActive = i == _currentPage;
-                          return AnimatedContainer(
-                            duration: const Duration(milliseconds: 300),
-                            margin: const EdgeInsets.symmetric(horizontal: 4),
-                            width: isActive ? 20 : 8,
-                            height: 8,
-                            decoration: BoxDecoration(
-                              color: isActive
-                                  ? const Color.fromRGBO(245, 171, 30, 1)
-                                  : Colors.white.withValues(alpha: 0.3),
-                              borderRadius: BorderRadius.circular(4),
-                            ),
-                          );
-                        }),
-                      ),
-                      const SizedBox(height: 24),
-                      const _ViewAllProductsButton(),
-                    ],
+                                    );
+                                  },
+                                ),
+                              );
+                            },
+                          ),
+                        ),
+                        const SizedBox(height: 24),
+                        _RevealOnVisible(
+                          visible: _visible,
+                          delay: const Duration(milliseconds: 500),
+                          child: Row(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: List.generate(pages.length, (i) {
+                              final isActive = i == _currentPage;
+                              return AnimatedContainer(
+                                duration: const Duration(milliseconds: 300),
+                                margin: const EdgeInsets.symmetric(horizontal: 4),
+                                width: isActive ? 20 : 8,
+                                height: 8,
+                                decoration: BoxDecoration(
+                                  color: isActive
+                                      ? const Color.fromRGBO(245, 171, 30, 1)
+                                      : Colors.white.withValues(alpha: 0.3),
+                                  borderRadius: BorderRadius.circular(4),
+                                ),
+                              );
+                            }),
+                          ),
+                        ),
+                        const SizedBox(height: 24),
+                        _RevealOnVisible(
+                          visible: _visible,
+                          delay: const Duration(milliseconds: 600),
+                          child: const _ViewAllProductsButton(),
+                        ),
+                      ],
+                    ),
                   ),
                 ),
-              ),
-              Positioned(
-                left: 0,
-                top: 0,
-                bottom: 0,
-                child: Center(
-                  child: _NavArrow(
-                    icon: Icons.keyboard_double_arrow_left,
-                    enabled: _currentPage != 0,
-                    onTap: _goToPrevious,
+                Positioned(
+                  left: 0,
+                  top: 0,
+                  bottom: 0,
+                  child: Center(
+                    child: _NavArrow(
+                      icon: Icons.keyboard_double_arrow_left,
+                      enabled: _currentPage != 0,
+                      onTap: _goToPrevious,
+                    ),
                   ),
                 ),
-              ),
-              Positioned(
-                right: 0,
-                top: 0,
-                bottom: 0,
-                child: Center(
-                  child: _NavArrow(
-                    icon: Icons.keyboard_double_arrow_right,
-                    enabled: _currentPage != pages.length - 1,
-                    onTap: _goToNext,
+                Positioned(
+                  right: 0,
+                  top: 0,
+                  bottom: 0,
+                  child: Center(
+                    child: _NavArrow(
+                      icon: Icons.keyboard_double_arrow_right,
+                      enabled: _currentPage != pages.length - 1,
+                      onTap: _goToNext,
+                    ),
                   ),
                 ),
-              ),
-            ],
+              ],
+            ),
           ),
         ),
       ),
@@ -221,37 +230,104 @@ class _TopProductsSectionState extends State<TopProductsSection> {
   Widget _buildSectionHeader() {
     return Column(
       children: [
-        const Text(
-          "Top Products",
-          style: TextStyle(
-            fontSize: 34,
-            fontWeight: FontWeight.bold,
-            color: Colors.white,
-            letterSpacing: 1.5,
+        _RevealOnVisible(
+          visible: _visible,
+          delay: const Duration(milliseconds: 0),
+          child: const Text(
+            "Top Products",
+            style: TextStyle(
+              fontSize: 34,
+              fontWeight: FontWeight.bold,
+              color: Colors.white,
+              letterSpacing: 1.5,
+            ),
           ),
         ),
         const SizedBox(height: 10),
-        Container(
-          width: 60,
-          height: 3,
-          decoration: BoxDecoration(
-            gradient: LinearGradient(
-              colors: [
-                const Color.fromRGBO(245, 171, 30, 0.5),
-                const Color.fromRGBO(245, 171, 30, 1),
-                const Color.fromRGBO(245, 171, 30, 0.5),
-              ],
+        _RevealOnVisible(
+          visible: _visible,
+          delay: const Duration(milliseconds: 100),
+          child: Container(
+            width: 60,
+            height: 3,
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
+                colors: [
+                  const Color.fromRGBO(245, 171, 30, 0.5),
+                  const Color.fromRGBO(245, 171, 30, 1),
+                  const Color.fromRGBO(245, 171, 30, 0.5),
+                ],
+              ),
+              borderRadius: BorderRadius.circular(2),
             ),
-            borderRadius: BorderRadius.circular(2),
           ),
         ),
         const SizedBox(height: 12),
-        Text(
-          "Our best-selling hardware, loved by customers",
-          textAlign: TextAlign.center,
-          style: TextStyle(fontSize: 16, color: Colors.white.withValues(alpha: 0.7), letterSpacing: 0.5),
+        _RevealOnVisible(
+          visible: _visible,
+          delay: const Duration(milliseconds: 200),
+          child: Text(
+            "Our best-selling hardware, loved by customers",
+            textAlign: TextAlign.center,
+            style: TextStyle(fontSize: 16, color: Colors.white.withValues(alpha: 0.7), letterSpacing: 0.5),
+          ),
         ),
       ],
+    );
+  }
+}
+class _RevealOnVisible extends StatefulWidget {
+  final bool visible;
+  final Duration delay;
+  final Widget child;
+
+  const _RevealOnVisible({
+    required this.visible,
+    required this.delay,
+    required this.child,
+  });
+
+  @override
+  State<_RevealOnVisible> createState() => _RevealOnVisibleState();
+}
+
+class _RevealOnVisibleState extends State<_RevealOnVisible> {
+  bool _scheduled = false;
+  bool _started = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _maybeSchedule();
+  }
+
+  @override
+  void didUpdateWidget(covariant _RevealOnVisible oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    _maybeSchedule();
+  }
+
+  void _maybeSchedule() {
+    if (widget.visible && !_scheduled) {
+      _scheduled = true;
+      Future.delayed(widget.delay, () {
+        if (mounted) setState(() => _started = true);
+      });
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return AnimatedOpacity(
+      duration: const Duration(milliseconds: 500),
+      curve: Curves.easeOut,
+      opacity: _started ? 1.0 : 0.0,
+      child: AnimatedSlide(
+        duration: const Duration(milliseconds: 500),
+        curve: Curves.easeOutCubic,
+        offset: _started ? Offset.zero : const Offset(0, 0.15),
+        child: widget.child,
+      ),
     );
   }
 }
