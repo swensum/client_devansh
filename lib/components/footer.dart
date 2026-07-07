@@ -36,7 +36,7 @@ class Footer extends StatelessWidget {
       child: Column(
         children: [
           Container(
-            padding: const EdgeInsets.symmetric(horizontal: 30, vertical: 60),
+            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 60),
             child: Center(
               child: ConstrainedBox(
                 constraints: const BoxConstraints(maxWidth: 1200),
@@ -119,39 +119,36 @@ class Footer extends StatelessWidget {
   }
 
   Widget _buildBrandColumn() {
-    return Padding(
-      padding: const EdgeInsets.only(right: 20, bottom: 10),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          const Text(
-            "DEVANSH",
-            style: TextStyle(
-              fontSize: 22,
-              fontWeight: FontWeight.bold,
-              color: Colors.white,
-              letterSpacing: 1.5,
-            ),
-          ),
-          const SizedBox(height: 14),
-          Text(
-            "Premium cabinet and door hardware crafted for modern homes "
-            "and everyday durability.",
-            style: TextStyle(fontSize: 13.5, height: 1.6, color: Colors.white.withValues(alpha: 0.6)),
-          ),
-          const SizedBox(height: 20),
-          Row(
-            children: _socials
-                .map((s) => Padding(
-                      padding: const EdgeInsets.only(right: 10),
-                      child: _SocialIcon(icon: s.icon),
-                    ))
-                .toList(),
-          ),
-        ],
-      ),
-    );
-  }
+  return Padding(
+    padding: const EdgeInsets.only(right: 20, bottom: 10),
+    child: Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        // ─── Logo instead of text ────────────────────────────────
+        Image.asset(
+          'assets/logo.png',          // <── your logo asset path
+          height: 60,                 // adjust as needed
+          fit: BoxFit.contain,
+        ),
+        const SizedBox(height: 14),
+        Text(
+          "Premium cabinet and door hardware crafted for modern homes "
+          "and everyday durability.",
+          style: TextStyle(fontSize: 13.5, height: 1.6, color: Colors.white.withValues(alpha: 0.6)),
+        ),
+        const SizedBox(height: 20),
+        Row(
+          children: _socials
+              .map((s) => Padding(
+                    padding: const EdgeInsets.only(right: 10),
+                    child: _SocialIcon(icon: s.icon),
+                  ))
+              .toList(),
+        ),
+      ],
+    ),
+  );
+}
 
   Widget _buildLinkColumn(String title, List<_FooterLink> links) {
     return Padding(

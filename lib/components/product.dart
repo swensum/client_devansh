@@ -193,7 +193,7 @@ class _TopProductsSectionState extends State<TopProductsSection> {
                 bottom: 0,
                 child: Center(
                   child: _NavArrow(
-                    icon: Icons.chevron_left,
+                    icon: Icons.keyboard_double_arrow_left,
                     enabled: _currentPage != 0,
                     onTap: _goToPrevious,
                   ),
@@ -205,7 +205,7 @@ class _TopProductsSectionState extends State<TopProductsSection> {
                 bottom: 0,
                 child: Center(
                   child: _NavArrow(
-                    icon: Icons.chevron_right,
+                    icon: Icons.keyboard_double_arrow_right,
                     enabled: _currentPage != pages.length - 1,
                     onTap: _goToNext,
                   ),
