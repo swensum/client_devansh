@@ -9,7 +9,6 @@ import 'package:devansh/components/stat.dart';
 
 import 'package:flutter/material.dart';
 import 'dart:async';
-
 const double _kHeaderHeight = 100;
 
 class HomePage extends StatefulWidget {
@@ -20,38 +19,18 @@ class HomePage extends StatefulWidget {
 }
 
 class _HomePageState extends State<HomePage> {
-   final ScrollController _scrollController = ScrollController();
-  bool _showHeader = true;
-  double _lastOffset = 0;
+   bool _headerRevealed = false;
+
 
   @override
   void initState() {
     super.initState();
-    _scrollController.addListener(_handleScroll);
-  }
-
-  void _handleScroll() {
-    final offset = _scrollController.offset;
-    final delta = offset - _lastOffset;
-
-    if (offset < 50) {
-      // Always show header near the very top, regardless of direction.
-      if (!_showHeader) setState(() => _showHeader = true);
-    } else if (delta > 4 && _showHeader) {
-      // Scrolling down past the threshold — hide it.
-      setState(() => _showHeader = false);
-    } else if (delta < -4 && !_showHeader) {
-      // Scrolling up — bring it back.
-      setState(() => _showHeader = true);
-    }
-    _lastOffset = offset;
-  }
-
-  @override
-  void dispose() {
-    _scrollController.removeListener(_handleScroll);
-    _scrollController.dispose();
-    super.dispose();
+    // Slide the header in shortly after first paint, regardless of scroll.
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      Future.delayed(const Duration(milliseconds: 150), () {
+        if (mounted) setState(() => _headerRevealed = true);
+      });
+    });
   }
 @override
   Widget build(BuildContext context) {
@@ -59,7 +38,7 @@ class _HomePageState extends State<HomePage> {
       body: Stack(
         children: [
           SingleChildScrollView(
-            controller: _scrollController,
+             
             child: Column(
               children: [
                 const SizedBox(height: _kHeaderHeight), // reserve space
@@ -79,11 +58,16 @@ class _HomePageState extends State<HomePage> {
               ],
             ),
           ),
-          AnimatedSlide(
-            duration: const Duration(milliseconds: 300),
-            curve: Curves.easeInOut,
-            offset: _showHeader ? Offset.zero : const Offset(0, -1),
-            child: const Header(),
+            Positioned(
+            top: 0,
+            left: 0,
+            right: 0,
+            child: AnimatedSlide(
+              duration: const Duration(milliseconds: 500),
+              curve: Curves.easeOutCubic,
+              offset: _headerRevealed ? Offset.zero : const Offset(0, -1),
+              child: const Header(),
+            ),
           ),
         ],
       ),
