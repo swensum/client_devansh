@@ -9,6 +9,7 @@ import 'package:devansh/components/stat.dart';
 
 import 'package:flutter/material.dart';
 import 'dart:async';
+
 const double _kHeaderHeight = 100;
 
 class HomePage extends StatefulWidget {
@@ -19,8 +20,7 @@ class HomePage extends StatefulWidget {
 }
 
 class _HomePageState extends State<HomePage> {
-   bool _headerRevealed = false;
-
+  bool _headerRevealed = false;
 
   @override
   void initState() {
@@ -32,13 +32,13 @@ class _HomePageState extends State<HomePage> {
       });
     });
   }
-@override
+
+  @override
   Widget build(BuildContext context) {
     return Scaffold(
       body: Stack(
         children: [
           SingleChildScrollView(
-             
             child: Column(
               children: [
                 const SizedBox(height: _kHeaderHeight), // reserve space
@@ -58,7 +58,7 @@ class _HomePageState extends State<HomePage> {
               ],
             ),
           ),
-            Positioned(
+          Positioned(
             top: 0,
             left: 0,
             right: 0,
@@ -75,7 +75,6 @@ class _HomePageState extends State<HomePage> {
   }
 }
 
-
 class _Divider extends StatelessWidget {
   const _Divider();
 
@@ -88,7 +87,6 @@ class _Divider extends StatelessWidget {
     );
   }
 }
-
 
 enum HeroTextAlign { left, right, center }
 
@@ -133,6 +131,9 @@ const List<HeroSlide> _kSlides = [
   ),
 ];
 
+// ---------------------------------------------------------------------------
+// Responsive Hero Carousel
+// ---------------------------------------------------------------------------
 class HeroCarousel extends StatefulWidget {
   const HeroCarousel({super.key});
 
@@ -160,7 +161,6 @@ class _HeroCarouselState extends State<HeroCarousel>
 
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
-   
     switch (state) {
       case AppLifecycleState.resumed:
         _startAutoScroll();
@@ -197,8 +197,19 @@ class _HeroCarouselState extends State<HeroCarousel>
 
   @override
   Widget build(BuildContext context) {
+    // Choose a responsive aspect ratio based on screen width
+    final screenWidth = MediaQuery.of(context).size.width;
+    double aspectRatio;
+    if (screenWidth > 900) {
+      aspectRatio = 16 / 8;  // desktop – wider
+    } else if (screenWidth > 600) {
+      aspectRatio = 16 / 9;  // tablet
+    } else {
+      aspectRatio = 16 / 10; // mobile – taller
+    }
+
     return AspectRatio(
-      aspectRatio: 16 / 8,
+      aspectRatio: aspectRatio,
       child: Stack(
         fit: StackFit.expand,
         children: [
@@ -247,6 +258,9 @@ class _HeroCarouselState extends State<HeroCarousel>
   }
 }
 
+// ---------------------------------------------------------------------------
+// Alignment helper (unchanged)
+// ---------------------------------------------------------------------------
 class _HeroAlignmentInfo {
   final Alignment boxAlignment;
   final CrossAxisAlignment crossAlign;
@@ -292,6 +306,9 @@ class _HeroAlignmentInfo {
   }
 }
 
+// ---------------------------------------------------------------------------
+// Responsive slide view
+// ---------------------------------------------------------------------------
 class _HeroSlideView extends StatelessWidget {
   final HeroSlide slide;
   final bool isHovered;
@@ -329,92 +346,133 @@ class _HeroSlideView extends StatelessWidget {
               ),
             ),
           ),
-        Positioned(
-          left: 60,
-          right: 60,
-          top: 0,
-          bottom: 0,
-          child: Align(
-            alignment: info.boxAlignment,
-            child: ConstrainedBox(
-              constraints: const BoxConstraints(maxWidth: 520),
-              child: Column(
-                crossAxisAlignment: info.crossAlign,
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Text(
-                    slide.headline,
-                    textAlign: info.textAlign,
-                    style: const TextStyle(
-                      fontSize: 36,
-                      fontWeight: FontWeight.bold,
-                      color: Colors.white,
-                      height: 1.25,
-                    ),
-                  ),
-                  const SizedBox(height: 16),
-                  Text(
-                    slide.subtext,
-                    textAlign: info.textAlign,
-                    style: TextStyle(
-                      fontSize: 18,
-                      color: Colors.white.withValues(alpha: 0.9),
-                      height: 1.5,
-                    ),
-                  ),
-                  const SizedBox(height: 35),
-                  MouseRegion(
-                    onEnter: (_) => onHoverChanged(true),
-                    onExit: (_) => onHoverChanged(false),
-                    child: AnimatedScale(
-                      scale: isHovered ? 1.005 : 1.0,
-                      duration: const Duration(milliseconds: 200),
-                      child: ElevatedButton(
-                        onPressed: () {
-                          // Add your navigation logic here
-                        },
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: isHovered
-                              ? const Color.fromRGBO(255, 181, 40, 1)
-                              : const Color.fromRGBO(245, 171, 30, 1),
-                          foregroundColor: Colors.black,
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 28,
-                            vertical: 18,
+        // Responsive text & button section
+        Positioned.fill(
+          child: LayoutBuilder(
+            builder: (context, constraints) {
+              final w = constraints.maxWidth;
+              // Scale headline size
+              final headlineSize = (w > 900)
+                  ? 36.0
+                  : (w > 600)
+                      ? 30.0
+                      : (w > 400)
+                          ? 24.0
+                          : 20.0;
+              // Scale subtext size
+              final subtextSize = (w > 900)
+                  ? 18.0
+                  : (w > 600)
+                      ? 16.0
+                      : (w > 400)
+                          ? 14.5
+                          : 13.0;
+              // Horizontal padding
+              final hPadding = (w > 900)
+                  ? 60.0
+                  : (w > 600)
+                      ? 40.0
+                      : (w > 400)
+                          ? 24.0
+                          : 16.0;
+              // Max width of the text box
+              final maxTextBoxWidth = (w > 900)
+                  ? 520.0
+                  : (w > 600)
+                      ? 420.0
+                      : double.infinity;
+              // Button dimensions
+              final btnPaddingH = (w > 600) ? 28.0 : 20.0;
+              final btnPaddingV = (w > 600) ? 18.0 : 12.0;
+              final btnFontSize = (w > 600) ? 15.0 : 13.5;
+              final iconSize = (w > 600) ? 18.0 : 16.0;
+
+              return Padding(
+                padding: EdgeInsets.symmetric(horizontal: hPadding),
+                child: Align(
+                  alignment: info.boxAlignment,
+                  child: ConstrainedBox(
+                    constraints: BoxConstraints(maxWidth: maxTextBoxWidth),
+                    child: Column(
+                      crossAxisAlignment: info.crossAlign,
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Text(
+                          slide.headline,
+                          textAlign: info.textAlign,
+                          style: TextStyle(
+                            fontSize: headlineSize,
+                            fontWeight: FontWeight.bold,
+                            color: Colors.white,
+                            height: 1.25,
                           ),
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(6),
-                          ),
-                          elevation: isHovered ? 8 : 2,
                         ),
-                        child: Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            const Text(
-                              "Explore Collection",
-                              style: TextStyle(
-                                fontSize: 15,
-                                fontWeight: FontWeight.w600,
+                        SizedBox(height: headlineSize * 0.4),
+                        Text(
+                          slide.subtext,
+                          textAlign: info.textAlign,
+                          style: TextStyle(
+                            fontSize: subtextSize,
+                            color: Colors.white.withValues(alpha: 0.9),
+                            height: 1.5,
+                          ),
+                        ),
+                        SizedBox(height: subtextSize * 1.8),
+                        MouseRegion(
+                          onEnter: (_) => onHoverChanged(true),
+                          onExit: (_) => onHoverChanged(false),
+                          child: AnimatedScale(
+                            scale: isHovered ? 1.005 : 1.0,
+                            duration: const Duration(milliseconds: 200),
+                            child: ElevatedButton(
+                              onPressed: () {
+                                // Add your navigation logic here
+                              },
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: isHovered
+                                    ? const Color.fromRGBO(255, 181, 40, 1)
+                                    : const Color.fromRGBO(245, 171, 30, 1),
+                                foregroundColor: Colors.black,
+                                padding: EdgeInsets.symmetric(
+                                  horizontal: btnPaddingH,
+                                  vertical: btnPaddingV,
+                                ),
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(6),
+                                ),
+                                elevation: isHovered ? 8 : 2,
+                              ),
+                              child: Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  Text(
+                                    "Explore Collection",
+                                    style: TextStyle(
+                                      fontSize: btnFontSize,
+                                      fontWeight: FontWeight.w600,
+                                    ),
+                                  ),
+                                  SizedBox(width: btnFontSize * 0.6),
+                                  AnimatedRotation(
+                                    duration: const Duration(milliseconds: 300),
+                                    turns: isHovered ? 0.125 : 0.0,
+                                    child: Icon(
+                                      Icons.arrow_forward,
+                                      size: iconSize,
+                                      color: Colors.black,
+                                    ),
+                                  ),
+                                ],
                               ),
                             ),
-                            const SizedBox(width: 10),
-                            AnimatedRotation(
-                              duration: const Duration(milliseconds: 300),
-                              turns: isHovered ? 0.125 : 0.0,
-                              child: const Icon(
-                                Icons.arrow_forward,
-                                size: 18,
-                                color: Colors.black,
-                              ),
-                            ),
-                          ],
+                          ),
                         ),
-                      ),
+                      ],
                     ),
                   ),
-                ],
-              ),
-            ),
+                ),
+              );
+            },
           ),
         ),
       ],
