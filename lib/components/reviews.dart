@@ -66,42 +66,36 @@ class _ReviewsSectionState extends State<ReviewsSection> {
     ),
   ];
 
-  // Unbounded page counter — always increases, so auto-rotation only
-  // ever moves in one direction (same technique as the hero carousel).
   static const int _initialPage = 10000;
-  late final PageController _pageController;
+
+  late PageController _pageController;
   int _pageCounter = _initialPage;
   Timer? _autoScrollTimer;
 
-  // How many cards are visible at once — 4 on desktop, fewer on
-  // narrower screens. viewportFraction is fixed per PageController,
-  // so we pick this once based on screen width.
-  int _visibleCount = 4;
+  // The breakpoint category the PageController was actually built for.
+  // A PageController's viewportFraction is fixed at construction time, so
+  // when the number of visible cards needs to change (screen resized,
+  // window rotated, etc) the controller itself has to be rebuilt — it's
+  // not something you can just react to with a plain rebuild.
+  int _controllerVisibleCount = 1;
+  bool _pendingRebuild = false;
 
   @override
   void initState() {
     super.initState();
-    final width = WidgetsBinding.instance.platformDispatcher.views.first
-            .physicalSize.width /
-        WidgetsBinding.instance.platformDispatcher.views.first
-            .devicePixelRatio;
-
-    if (width < 700) {
-      _visibleCount = 1;
-    } else if (width < 1000) {
-      _visibleCount = 2;
-    } else {
-      _visibleCount = 4;
-    }
-
+    // Start with a safe default; the real value is computed from actual
+    // layout width in build() via LayoutBuilder; this differs from
+    // reading platformDispatcher's physical size once in initState, which
+    // never updates again if the window is resized or rotated.
     _pageController = PageController(
       initialPage: _initialPage,
-      viewportFraction: 1 / _visibleCount,
+      viewportFraction: 1,
     );
     _startAutoScroll();
   }
 
   void _startAutoScroll() {
+    _autoScrollTimer?.cancel();
     _autoScrollTimer = Timer.periodic(const Duration(seconds: 4), (timer) {
       _goToPage(_pageCounter + 1);
     });
@@ -128,6 +122,27 @@ class _ReviewsSectionState extends State<ReviewsSection> {
     _startAutoScroll();
   }
 
+  // Rebuilds the PageController with a new viewportFraction, preserving
+  // roughly the same scroll position, and only ever runs after the
+  // current frame so it never calls setState mid-build.
+  void _rebuildControllerFor(int visibleCount) {
+    if (_pendingRebuild || visibleCount == _controllerVisibleCount) return;
+    _pendingRebuild = true;
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      final oldController = _pageController;
+      setState(() {
+        _controllerVisibleCount = visibleCount;
+        _pageController = PageController(
+          initialPage: _pageCounter,
+          viewportFraction: 1 / visibleCount,
+        );
+      });
+      oldController.dispose();
+      _pendingRebuild = false;
+    });
+  }
+
   @override
   void dispose() {
     _autoScrollTimer?.cancel();
@@ -137,98 +152,222 @@ class _ReviewsSectionState extends State<ReviewsSection> {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      width: double.infinity,
-      color: Colors.black,
-      padding: const EdgeInsets.symmetric(horizontal: 30, vertical: 80),
-      child: Center(
-        child: ConstrainedBox(
-          constraints: const BoxConstraints(maxWidth: 1300),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.center,
-            children: [
-              // Section Title
-              const Text(
-                "What Our Customers Say",
-                style: TextStyle(
-                  fontSize: 30,
-                  fontWeight: FontWeight.bold,
-                  color: Colors.white,
-                  letterSpacing: 1.1,
-                ),
-              ),
-              const SizedBox(height: 10),
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final r = _ReviewsResponsive.of(constraints.maxWidth);
 
-            Container(
-          width: 60,
-          height: 3,
-          decoration: BoxDecoration(
-            gradient: LinearGradient(
-              colors: [
-                const Color.fromRGBO(245, 171, 30, 0.5),
-                const Color.fromRGBO(245, 171, 30, 1),
-                const Color.fromRGBO(245, 171, 30, 0.5),
-              ],
-            ),
-            borderRadius: BorderRadius.circular(2),
+        // Schedule a controller rebuild if the breakpoint changed since
+        // the last build (e.g. window resized). Safe to call every
+        // build — it no-ops once the counts already match.
+        _rebuildControllerFor(r.visibleCount);
+
+        return Container(
+          width: double.infinity,
+          color: Colors.black,
+          padding: EdgeInsets.symmetric(
+            horizontal: r.sectionHPadding,
+            vertical: r.sectionVPadding,
           ),
-        ),
-              const SizedBox(height: 12),
-
-              Text(
-                "Real feedback from people who trust our hardware",
-                textAlign: TextAlign.center,
-                style: TextStyle(
-                  fontSize: 14,
-                  color: Colors.white.withValues(alpha: 0.6),
-                  letterSpacing: 0.3,
-                ),
-              ),
-              const SizedBox(height: 60),
-
-              // Carousel row: left arrow — 4 review cards — right arrow
-              Row(
+          child: Center(
+            child: ConstrainedBox(
+              constraints: const BoxConstraints(maxWidth: 1300),
+              child: Column(
                 crossAxisAlignment: CrossAxisAlignment.center,
                 children: [
-                  _NavArrowButton(
-                    icon: Icons.keyboard_double_arrow_left,
-                    onTap: _handlePrevious,
-                  ),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: SizedBox(
-                      height: 300,
-                      child: PageView.builder(
-                        controller: _pageController,
-                        padEnds: false,
-                        onPageChanged: (index) {
-                          setState(() {
-                            _pageCounter = index;
-                          });
-                        },
-                        itemBuilder: (context, index) {
-                          final review = _reviews[index % _reviews.length];
-                          return Padding(
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: 15,
-                            ),
-                            child: _ReviewCard(review: review),
-                          );
-                        },
-                      ),
+                  // Section Title
+                  Text(
+                    "What Our Customers Say",
+                    style: TextStyle(
+                      fontSize: r.headingSize,
+                      fontWeight: FontWeight.bold,
+                      color: Colors.white,
+                      letterSpacing: 1.1,
                     ),
                   ),
-                  const SizedBox(width: 12),
-                  _NavArrowButton(
-                    icon: Icons.keyboard_double_arrow_right,
-                    onTap: _handleNext,
+                  const SizedBox(height: 10),
+
+                  Container(
+                    width: 60,
+                    height: 3,
+                    decoration: BoxDecoration(
+                      gradient: LinearGradient(
+                        colors: [
+                          const Color.fromRGBO(245, 171, 30, 0.5),
+                          const Color.fromRGBO(245, 171, 30, 1),
+                          const Color.fromRGBO(245, 171, 30, 0.5),
+                        ],
+                      ),
+                      borderRadius: BorderRadius.circular(2),
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+
+                  Text(
+                    "Real feedback from people who trust our hardware",
+                    textAlign: TextAlign.center,
+                    style: TextStyle(
+                      fontSize: r.subtitleSize,
+                      color: Colors.white.withValues(alpha: 0.6),
+                      letterSpacing: 0.3,
+                    ),
+                  ),
+                  SizedBox(height: r.headerGap),
+
+                  // Carousel row: left arrow — review cards — right arrow
+                  Row(
+                    crossAxisAlignment: CrossAxisAlignment.center,
+                    children: [
+                      if (r.showArrows) ...[
+                        _NavArrowButton(
+                          icon: Icons.keyboard_double_arrow_left,
+                          onTap: _handlePrevious,
+                        ),
+                        const SizedBox(width: 12),
+                      ],
+                      Expanded(
+                        child: SizedBox(
+                          height: r.cardHeight,
+                          // Only build the PageView once the controller
+                          // actually matches the current breakpoint —
+                          // otherwise viewportFraction and the card count
+                          // on screen would briefly mismatch during a
+                          // resize.
+                          child: _controllerVisibleCount == r.visibleCount
+                              ? PageView.builder(
+                                  controller: _pageController,
+                                  padEnds: false,
+                                  onPageChanged: (index) {
+                                    setState(() {
+                                      _pageCounter = index;
+                                    });
+                                  },
+                                  itemBuilder: (context, index) {
+                                    final review =
+                                        _reviews[index % _reviews.length];
+                                    return Padding(
+                                      padding: EdgeInsets.symmetric(
+                                        horizontal: r.cardHGap,
+                                      ),
+                                      child: _ReviewCard(review: review, r: r),
+                                    );
+                                  },
+                                )
+                              : const SizedBox.shrink(),
+                        ),
+                      ),
+                      if (r.showArrows) ...[
+                        const SizedBox(width: 12),
+                        _NavArrowButton(
+                          icon: Icons.keyboard_double_arrow_right,
+                          onTap: _handleNext,
+                        ),
+                      ],
+                    ],
                   ),
                 ],
               ),
-            ],
+            ),
           ),
-        ),
-      ),
+        );
+      },
+    );
+  }
+}
+
+/// Centralizes every breakpoint-dependent value for this section. The
+/// most important one is `visibleCount`, which used to be computed once
+/// in `initState` from the device's physical screen size and then never
+/// updated — meaning it ignored actual layout width (e.g. this section
+/// rendered in a side panel or split view) and never adjusted on resize
+/// or rotation. Here it's derived from the real available width on every
+/// build via LayoutBuilder instead.
+class _ReviewsResponsive {
+  final int visibleCount;
+  final double cardHeight;
+  final double cardHGap;
+  final double sectionHPadding;
+  final double sectionVPadding;
+  final double headingSize;
+  final double subtitleSize;
+  final double headerGap;
+  final double cardPadding;
+  final double cardMessageFont;
+  final bool showArrows;
+
+  const _ReviewsResponsive({
+    required this.visibleCount,
+    required this.cardHeight,
+    required this.cardHGap,
+    required this.sectionHPadding,
+    required this.sectionVPadding,
+    required this.headingSize,
+    required this.subtitleSize,
+    required this.headerGap,
+    required this.cardPadding,
+    required this.cardMessageFont,
+    required this.showArrows,
+  });
+
+  factory _ReviewsResponsive.of(double w) {
+    if (w > 1000) {
+      return const _ReviewsResponsive(
+        visibleCount: 4,
+        cardHeight: 300,
+        cardHGap: 15,
+        sectionHPadding: 30,
+        sectionVPadding: 80,
+        headingSize: 30,
+        subtitleSize: 14,
+        headerGap: 60,
+        cardPadding: 20,
+        cardMessageFont: 13.5,
+        showArrows: true,
+      );
+    }
+    if (w > 700) {
+      return const _ReviewsResponsive(
+        visibleCount: 2,
+        cardHeight: 280,
+        cardHGap: 12,
+        sectionHPadding: 24,
+        sectionVPadding: 60,
+        headingSize: 26,
+        subtitleSize: 13.5,
+        headerGap: 44,
+        cardPadding: 18,
+        cardMessageFont: 13,
+        showArrows: true,
+      );
+    }
+    if (w > 420) {
+      return const _ReviewsResponsive(
+        visibleCount: 1,
+        cardHeight: 260,
+        cardHGap: 8,
+        sectionHPadding: 18,
+        sectionVPadding: 48,
+        headingSize: 22,
+        subtitleSize: 13,
+        headerGap: 32,
+        cardPadding: 16,
+        cardMessageFont: 13,
+        showArrows: true,
+      );
+    }
+    return const _ReviewsResponsive(
+      visibleCount: 1,
+      cardHeight: 280,
+      cardHGap: 4,
+      sectionHPadding: 12,
+      sectionVPadding: 36,
+      headingSize: 19,
+      subtitleSize: 12,
+      headerGap: 24,
+      cardPadding: 14,
+      cardMessageFont: 12.5,
+      // Arrows plus a single narrow card leaves almost no room; swiping
+      // and autoplay still work without them.
+      showArrows: false,
     );
   }
 }
@@ -279,11 +418,11 @@ class _NavArrowButtonState extends State<_NavArrowButton> {
   }
 }
 
-// Unchanged from the original design
 class _ReviewCard extends StatefulWidget {
   final _Review review;
+  final _ReviewsResponsive r;
 
-  const _ReviewCard({required this.review});
+  const _ReviewCard({required this.review, required this.r});
 
   @override
   State<_ReviewCard> createState() => _ReviewCardState();
@@ -294,6 +433,7 @@ class _ReviewCardState extends State<_ReviewCard> {
 
   @override
   Widget build(BuildContext context) {
+    final r = widget.r;
     final initial = widget.review.name.isNotEmpty
         ? widget.review.name[0].toUpperCase()
         : "?";
@@ -304,7 +444,7 @@ class _ReviewCardState extends State<_ReviewCard> {
       child: AnimatedContainer(
         duration: const Duration(milliseconds: 200),
         curve: Curves.easeOut,
-        padding: const EdgeInsets.all(20),
+        padding: EdgeInsets.all(r.cardPadding),
         decoration: BoxDecoration(
           color: Colors.white.withValues(alpha: 0.12),
           borderRadius: BorderRadius.circular(12),
@@ -337,8 +477,8 @@ class _ReviewCardState extends State<_ReviewCard> {
             Expanded(
               child: Text(
                 widget.review.message,
-                style: const TextStyle(
-                  fontSize: 13.5,
+                style: TextStyle(
+                  fontSize: r.cardMessageFont,
                   color: Colors.white,
                   height: 1.5,
                 ),

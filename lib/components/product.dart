@@ -26,7 +26,6 @@ class _TopProductsSectionState extends State<TopProductsSection> {
   ];
 
   static const int _perPage = 8;
-  static const double _gridPadding = 16.0;
 
   late final PageController _pageController;
   int _currentPage = 0;
@@ -84,159 +83,168 @@ class _TopProductsSectionState extends State<TopProductsSection> {
     return VisibilityDetector(
       key: const Key('top-products-section-visibility'),
       onVisibilityChanged: _handleVisibility,
-      child: Container(
-        width: double.infinity,
-        padding: const EdgeInsets.symmetric(horizontal: 30, vertical: 60),
-        decoration: BoxDecoration(
-          gradient: LinearGradient(
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-            colors: [Colors.black.withValues(alpha: 0.9), Colors.black.withValues(alpha: 0.7)],
-          ),
-        ),
-        child: Center(
-          child: SizedBox(
+      child: LayoutBuilder(
+        builder: (context, outerConstraints) {
+          final r = _ProductsResponsive.of(outerConstraints.maxWidth);
+
+          return Container(
             width: double.infinity,
-            child: Stack(
-              children: [
-                Center(
-                  child: ConstrainedBox(
-                    constraints: const BoxConstraints(maxWidth: 1200),
-                    child: Column(
-                      children: [
-                        _buildSectionHeader(),
-                        const SizedBox(height: 40),
-                        _RevealOnVisible(
-                          visible: _visible,
-                          delay: const Duration(milliseconds: 400),
-                          child: LayoutBuilder(
-                            builder: (context, constraints) {
-                              final crossAxisCount = constraints.maxWidth > 900
-                                  ? 4
-                                  : constraints.maxWidth > 600
-                                      ? 3
-                                      : constraints.maxWidth > 400
-                                          ? 2
-                                          : 1;
-
-                              final rows = (_perPage / crossAxisCount).ceil();
-                              final estimatedHeight =
-                                  rows * 380.0 + (rows - 1) * 20.0 + (_gridPadding * 2);
-
-                              return SizedBox(
-                                height: estimatedHeight,
-                                child: PageView.builder(
-                                  controller: _pageController,
-                                  physics: const NeverScrollableScrollPhysics(),
-                                  itemCount: pages.length,
-                                  allowImplicitScrolling: true,
-                                  onPageChanged: (index) =>
-                                      setState(() => _currentPage = index),
-                                  itemBuilder: (context, pageIndex) {
-                                    final pageProducts = pages[pageIndex];
-                                    return RepaintBoundary(
-                                      child: Padding(
-                                        padding: const EdgeInsets.all(_gridPadding),
-                                        child: GridView.builder(
-                                          clipBehavior: Clip.none,
-                                          physics: const NeverScrollableScrollPhysics(),
-                                          itemCount: pageProducts.length,
-                                          gridDelegate:
-                                              SliverGridDelegateWithFixedCrossAxisCount(
-                                            crossAxisCount: crossAxisCount,
-                                            crossAxisSpacing: 20,
-                                            mainAxisSpacing: 20,
-                                            childAspectRatio: 0.75,
-                                          ),
-                                          itemBuilder: (context, index) {
-                                            return _PremiumProductCard(
-                                              product: pageProducts[index],
-                                            );
-                                          },
-                                        ),
-                                      ),
-                                    );
-                                  },
-                                ),
-                              );
-                            },
-                          ),
-                        ),
-                        const SizedBox(height: 24),
-                        _RevealOnVisible(
-                          visible: _visible,
-                          delay: const Duration(milliseconds: 500),
-                          child: Row(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children: List.generate(pages.length, (i) {
-                              final isActive = i == _currentPage;
-                              return AnimatedContainer(
-                                duration: const Duration(milliseconds: 300),
-                                margin: const EdgeInsets.symmetric(horizontal: 4),
-                                width: isActive ? 20 : 8,
-                                height: 8,
-                                decoration: BoxDecoration(
-                                  color: isActive
-                                      ? const Color.fromRGBO(245, 171, 30, 1)
-                                      : Colors.white.withValues(alpha: 0.3),
-                                  borderRadius: BorderRadius.circular(4),
-                                ),
-                              );
-                            }),
-                          ),
-                        ),
-                        const SizedBox(height: 24),
-                        _RevealOnVisible(
-                          visible: _visible,
-                          delay: const Duration(milliseconds: 600),
-                          child: const _ViewAllProductsButton(),
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
-                Positioned(
-                  left: 0,
-                  top: 0,
-                  bottom: 0,
-                  child: Center(
-                    child: _NavArrow(
-                      icon: Icons.keyboard_double_arrow_left,
-                      enabled: _currentPage != 0,
-                      onTap: _goToPrevious,
-                    ),
-                  ),
-                ),
-                Positioned(
-                  right: 0,
-                  top: 0,
-                  bottom: 0,
-                  child: Center(
-                    child: _NavArrow(
-                      icon: Icons.keyboard_double_arrow_right,
-                      enabled: _currentPage != pages.length - 1,
-                      onTap: _goToNext,
-                    ),
-                  ),
-                ),
-              ],
+            padding: EdgeInsets.symmetric(horizontal: r.sectionHPadding, vertical: r.sectionVPadding),
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+                colors: [Colors.black.withValues(alpha: 0.9), Colors.black.withValues(alpha: 0.7)],
+              ),
             ),
-          ),
-        ),
+            child: Center(
+              child: SizedBox(
+                width: double.infinity,
+                child: Stack(
+                  children: [
+                    Center(
+                      child: ConstrainedBox(
+                        constraints: const BoxConstraints(maxWidth: 1200),
+                        child: Column(
+                          children: [
+                            _buildSectionHeader(r),
+                            SizedBox(height: r.headerGap),
+                            _RevealOnVisible(
+                              visible: _visible,
+                              delay: const Duration(milliseconds: 400),
+                              child: LayoutBuilder(
+                                builder: (context, constraints) {
+                                  final availableWidth =
+                                      constraints.maxWidth - (r.gridPadding * 2);
+                                  final cardWidth = (availableWidth -
+                                          (r.crossAxisCount - 1) * r.gridSpacing) /
+                                      r.crossAxisCount;
+                                  final cardHeight = cardWidth / r.childAspectRatio;
+
+                                  final rows = (_perPage / r.crossAxisCount).ceil();
+                                  final estimatedHeight = rows * cardHeight +
+                                      (rows - 1) * r.gridSpacing +
+                                      (r.gridPadding * 2);
+
+                                  return SizedBox(
+                                    height: estimatedHeight,
+                                    child: PageView.builder(
+                                      controller: _pageController,
+                                      physics: const NeverScrollableScrollPhysics(),
+                                      itemCount: pages.length,
+                                      allowImplicitScrolling: true,
+                                      onPageChanged: (index) =>
+                                          setState(() => _currentPage = index),
+                                      itemBuilder: (context, pageIndex) {
+                                        final pageProducts = pages[pageIndex];
+                                        return RepaintBoundary(
+                                          child: Padding(
+                                            padding: EdgeInsets.all(r.gridPadding),
+                                            child: GridView.builder(
+                                              clipBehavior: Clip.none,
+                                              physics: const NeverScrollableScrollPhysics(),
+                                              itemCount: pageProducts.length,
+                                              gridDelegate:
+                                                  SliverGridDelegateWithFixedCrossAxisCount(
+                                                crossAxisCount: r.crossAxisCount,
+                                                crossAxisSpacing: r.gridSpacing,
+                                                mainAxisSpacing: r.gridSpacing,
+                                                childAspectRatio: r.childAspectRatio,
+                                              ),
+                                              itemBuilder: (context, index) {
+                                                return _PremiumProductCard(
+                                                  product: pageProducts[index],
+                                                  r: r,
+                                                );
+                                              },
+                                            ),
+                                          ),
+                                        );
+                                      },
+                                    ),
+                                  );
+                                },
+                              ),
+                            ),
+                            SizedBox(height: r.headerGap * 0.6),
+                            _RevealOnVisible(
+                              visible: _visible,
+                              delay: const Duration(milliseconds: 500),
+                              child: Row(
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                children: List.generate(pages.length, (i) {
+                                  final isActive = i == _currentPage;
+                                  return AnimatedContainer(
+                                    duration: const Duration(milliseconds: 300),
+                                    margin: const EdgeInsets.symmetric(horizontal: 4),
+                                    width: isActive ? 20 : 8,
+                                    height: 8,
+                                    decoration: BoxDecoration(
+                                      color: isActive
+                                          ? const Color.fromRGBO(245, 171, 30, 1)
+                                          : Colors.white.withValues(alpha: 0.3),
+                                      borderRadius: BorderRadius.circular(4),
+                                    ),
+                                  );
+                                }),
+                              ),
+                            ),
+                            SizedBox(height: r.headerGap * 0.6),
+                            _RevealOnVisible(
+                              visible: _visible,
+                              delay: const Duration(milliseconds: 600),
+                              child: const _ViewAllProductsButton(),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                    if (r.showNavArrows) ...[
+                      Positioned(
+                        left: 0,
+                        top: 0,
+                        bottom: 0,
+                        child: Center(
+                          child: _NavArrow(
+                            icon: Icons.keyboard_double_arrow_left,
+                            enabled: _currentPage != 0,
+                            onTap: _goToPrevious,
+                          ),
+                        ),
+                      ),
+                      Positioned(
+                        right: 0,
+                        top: 0,
+                        bottom: 0,
+                        child: Center(
+                          child: _NavArrow(
+                            icon: Icons.keyboard_double_arrow_right,
+                            enabled: _currentPage != pages.length - 1,
+                            onTap: _goToNext,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ],
+                ),
+              ),
+            ),
+          );
+        },
       ),
     );
   }
 
-  Widget _buildSectionHeader() {
+  Widget _buildSectionHeader(_ProductsResponsive r) {
     return Column(
       children: [
         _RevealOnVisible(
           visible: _visible,
           delay: const Duration(milliseconds: 0),
-          child: const Text(
+          child: Text(
             "Top Products",
             style: TextStyle(
-              fontSize: 34,
+              fontSize: r.headingSize,
               fontWeight: FontWeight.bold,
               color: Colors.white,
               letterSpacing: 1.5,
@@ -269,13 +277,18 @@ class _TopProductsSectionState extends State<TopProductsSection> {
           child: Text(
             "Our best-selling hardware, loved by customers",
             textAlign: TextAlign.center,
-            style: TextStyle(fontSize: 16, color: Colors.white.withValues(alpha: 0.7), letterSpacing: 0.5),
+            style: TextStyle(
+              fontSize: r.subtitleSize,
+              color: Colors.white.withValues(alpha: 0.7),
+              letterSpacing: 0.5,
+            ),
           ),
         ),
       ],
     );
   }
 }
+
 class _RevealOnVisible extends StatefulWidget {
   final bool visible;
   final Duration delay;
@@ -368,11 +381,113 @@ class _Product {
 
   const _Product({required this.name, required this.price, required this.image});
 }
+class _ProductsResponsive {
+  final int crossAxisCount;
+  final double childAspectRatio;
+  final double gridPadding;
+  final double gridSpacing;
+  final double sectionHPadding;
+  final double sectionVPadding;
+  final double headingSize;
+  final double subtitleSize;
+  final double headerGap;
+  final double cardContentHeight;
+  final double cardTitleFont;
+  final double cardPriceFont;
+  final bool showNavArrows;
+
+  const _ProductsResponsive({
+    required this.crossAxisCount,
+    required this.childAspectRatio,
+    required this.gridPadding,
+    required this.gridSpacing,
+    required this.sectionHPadding,
+    required this.sectionVPadding,
+    required this.headingSize,
+    required this.subtitleSize,
+    required this.headerGap,
+    required this.cardContentHeight,
+    required this.cardTitleFont,
+    required this.cardPriceFont,
+    required this.showNavArrows,
+  });
+
+  factory _ProductsResponsive.of(double w) {
+    if (w > 900) {
+      return const _ProductsResponsive(
+        crossAxisCount: 4,
+        childAspectRatio: 0.75,
+        gridPadding: 16,
+        gridSpacing: 20,
+        sectionHPadding: 30,
+        sectionVPadding: 60,
+        headingSize: 34,
+        subtitleSize: 16,
+        headerGap: 40,
+        cardContentHeight: 100,
+        cardTitleFont: 14,
+        cardPriceFont: 16,
+        showNavArrows: true,
+      );
+    }
+    if (w > 600) {
+      return const _ProductsResponsive(
+        crossAxisCount: 3,
+        childAspectRatio: 0.72,
+        gridPadding: 14,
+        gridSpacing: 16,
+        sectionHPadding: 24,
+        sectionVPadding: 48,
+        headingSize: 28,
+        subtitleSize: 15,
+        headerGap: 32,
+        cardContentHeight: 100,
+        cardTitleFont: 10.5,
+        cardPriceFont: 12,
+        showNavArrows: true,
+      );
+    }
+    if (w > 400) {
+      return const _ProductsResponsive(
+        crossAxisCount: 2,
+        childAspectRatio: 0.68,
+        gridPadding: 10,
+        gridSpacing: 12,
+        sectionHPadding: 16,
+        sectionVPadding: 40,
+        headingSize: 24,
+        subtitleSize: 14,
+        headerGap: 24,
+        cardContentHeight: 100,
+        cardTitleFont: 13,
+        cardPriceFont: 14.5,
+      
+        showNavArrows: false,
+      );
+    }
+    return const _ProductsResponsive(
+      crossAxisCount: 1,
+      childAspectRatio: 1.15,
+      gridPadding: 8,
+      gridSpacing: 12,
+      sectionHPadding: 14,
+      sectionVPadding: 32,
+      headingSize: 20,
+      subtitleSize: 13,
+      headerGap: 20,
+      cardContentHeight: 88,
+      cardTitleFont: 13,
+      cardPriceFont: 14,
+      showNavArrows: false,
+    );
+  }
+}
 
 class _PremiumProductCard extends StatefulWidget {
   final _Product product;
+  final _ProductsResponsive r;
 
-  const _PremiumProductCard({required this.product});
+  const _PremiumProductCard({required this.product, required this.r});
 
   @override
   State<_PremiumProductCard> createState() => _PremiumProductCardState();
@@ -412,13 +527,12 @@ class _PremiumProductCardState extends State<_PremiumProductCard>
 
   @override
   Widget build(BuildContext context) {
+    final r = widget.r;
+
     return MouseRegion(
       cursor: SystemMouseCursors.click,
       onEnter: (_) => _setHovered(true),
       onExit: (_) => _setHovered(false),
-      // Isolates the card's own hover animation into its own raster
-      // layer so scaling/shadow changes don't force neighboring cards
-      // (or the page behind them) to repaint.
       child: RepaintBoundary(
         child: ScaleTransition(
           scale: _scaleAnimation,
@@ -445,82 +559,79 @@ class _PremiumProductCardState extends State<_PremiumProductCard>
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                ClipRRect(
-                  borderRadius: const BorderRadius.only(
-                    topLeft: Radius.circular(_cardRadius),
-                    topRight: Radius.circular(_cardRadius),
-                  ),
-                  child: Container(
-                    height: 260,
-                    width: double.infinity,
-                    color: Colors.grey.shade50,
-                    child: Stack(
-                      fit: StackFit.expand,
-                      children: [
-                        Image.asset(
-                          widget.product.image,
-                          fit: BoxFit.cover,
-                          // Downsamples the decoded image to roughly the
-                          // display size instead of decoding it at full
-                          // resolution every time — a common hidden cause
-                          // of jank with Image.asset in grids.
-                          cacheWidth: 400,
-                          errorBuilder: (context, error, stackTrace) => Center(
-                            child: Icon(
-                              Icons.image_not_supported_outlined,
-                              color: Colors.grey.shade400,
-                              size: 40,
-                            ),
-                          ),
-                        ),
-                        AnimatedOpacity(
-                          duration: const Duration(milliseconds: 200),
-                          opacity: _isHovered ? 0.3 : 0.0,
-                          child: Container(
-                            decoration: BoxDecoration(
-                              gradient: LinearGradient(
-                                begin: Alignment.topCenter,
-                                end: Alignment.bottomCenter,
-                                colors: [Colors.transparent, Colors.black.withValues(alpha: 0.7)],
+                Expanded(
+                  child: ClipRRect(
+                    borderRadius: const BorderRadius.only(
+                      topLeft: Radius.circular(_cardRadius),
+                      topRight: Radius.circular(_cardRadius),
+                    ),
+                    child: Container(
+                      width: double.infinity,
+                      color: Colors.grey.shade50,
+                      child: Stack(
+                        fit: StackFit.expand,
+                        children: [
+                          Image.asset(
+                            widget.product.image,
+                            fit: BoxFit.cover,
+                            cacheWidth: 400,
+                            errorBuilder: (context, error, stackTrace) => Center(
+                              child: Icon(
+                                Icons.image_not_supported_outlined,
+                                color: Colors.grey.shade400,
+                                size: 40,
                               ),
                             ),
                           ),
-                        ),
-                        Positioned(
-                          top: 10,
-                          right: 10,
-                          child: AnimatedOpacity(
+                          AnimatedOpacity(
                             duration: const Duration(milliseconds: 200),
-                            opacity: _isHovered ? 1.0 : 0.0,
-                            child: _buildQuickActionButton(Icons.favorite_border, Colors.white),
-                          ),
-                        ),
-                        Positioned(
-                          top: 10,
-                          left: 10,
-                          child: Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                            decoration: BoxDecoration(
-                              color: const Color.fromRGBO(245, 171, 30, 1),
-                              borderRadius: BorderRadius.circular(20),
-                            ),
-                            child: const Text(
-                              "BEST SELLER",
-                              style: TextStyle(
-                                fontSize: 9,
-                                fontWeight: FontWeight.w700,
-                                color: Colors.black,
-                                letterSpacing: 0.5,
+                            opacity: _isHovered ? 0.3 : 0.0,
+                            child: Container(
+                              decoration: BoxDecoration(
+                                gradient: LinearGradient(
+                                  begin: Alignment.topCenter,
+                                  end: Alignment.bottomCenter,
+                                  colors: [Colors.transparent, Colors.black.withValues(alpha: 0.7)],
+                                ),
                               ),
                             ),
                           ),
-                        ),
-                      ],
+                          Positioned(
+                            top: 10,
+                            right: 10,
+                            child: AnimatedOpacity(
+                              duration: const Duration(milliseconds: 200),
+                              opacity: _isHovered ? 1.0 : 0.0,
+                              child: _buildQuickActionButton(Icons.favorite_border, Colors.white),
+                            ),
+                          ),
+                          Positioned(
+                            top: 10,
+                            left: 10,
+                            child: Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                              decoration: BoxDecoration(
+                                color: const Color.fromRGBO(245, 171, 30, 1),
+                                borderRadius: BorderRadius.circular(20),
+                              ),
+                              child: const Text(
+                                "BEST SELLER",
+                                style: TextStyle(
+                                  fontSize: 9,
+                                  fontWeight: FontWeight.w700,
+                                  color: Colors.black,
+                                  letterSpacing: 0.5,
+                                ),
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
                     ),
                   ),
                 ),
                 Container(
-                  height: 100,
+                  height: r.cardContentHeight,
                   padding: const EdgeInsets.all(14),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
@@ -533,8 +644,8 @@ class _PremiumProductCardState extends State<_PremiumProductCard>
                             widget.product.name,
                             maxLines: 2,
                             overflow: TextOverflow.ellipsis,
-                            style: const TextStyle(
-                              fontSize: 14,
+                            style: TextStyle(
+                              fontSize: r.cardTitleFont,
                               fontWeight: FontWeight.w600,
                               color: Colors.white,
                               height: 1.3,
@@ -564,10 +675,10 @@ class _PremiumProductCardState extends State<_PremiumProductCard>
                         children: [
                           Text(
                             widget.product.price,
-                            style: const TextStyle(
-                              fontSize: 16,
+                            style: TextStyle(
+                              fontSize: r.cardPriceFont,
                               fontWeight: FontWeight.bold,
-                              color: Color.fromRGBO(245, 171, 30, 1),
+                              color: const Color.fromRGBO(245, 171, 30, 1),
                             ),
                           ),
                           AnimatedOpacity(
