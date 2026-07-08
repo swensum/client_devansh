@@ -210,7 +210,7 @@ class _HeaderState extends State<Header> {
                   ],
                 ),
 
-              SizedBox(width: isTight ? 10: 20),
+              SizedBox(width: isTight ? 10: 60),
               SizedBox(
                 width: isTight ? 170 : (isCompact ? 170 : 250),
                 height: 38,
@@ -241,7 +241,7 @@ class _HeaderState extends State<Header> {
                 ),
               ),
 
-              const Spacer(flex: 1),
+                SizedBox(width: isTight ? 10 : 40),
 
               // Account Section
               SizedBox(
@@ -432,10 +432,6 @@ class _HeaderState extends State<Header> {
     );
   }
 }
-
-// ---------------------------------------------------------------------------
-// Desktop dropdown (unchanged)
-// ---------------------------------------------------------------------------
 class _DropdownList extends StatefulWidget {
   final List<String> items;
   final void Function(String item) onSelect;

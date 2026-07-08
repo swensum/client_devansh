@@ -1,4 +1,5 @@
 import 'package:devansh/screen/homescreen.dart';
+import 'package:devansh/screen/productscreen.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
@@ -25,7 +26,7 @@ class MyApp extends StatelessWidget {
         // tested with just a hot reload.
         colorScheme: .fromSeed(seedColor: Colors.deepPurple),
       ),
-     home: const HomePage(),
+     home: const ProductsPage(),
     );
   }
 }
