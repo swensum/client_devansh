@@ -23,146 +23,184 @@ class _AboutSectionState extends State<AboutSection> {
     return VisibilityDetector(
       key: const Key('about-section-visibility'),
       onVisibilityChanged: _handleVisibility,
-      child: Container(
-        width: double.infinity,
-        padding: const EdgeInsets.symmetric(horizontal: 30, vertical: 80),
-        decoration: BoxDecoration(
-          gradient: LinearGradient(
-            begin: Alignment.centerLeft,
-            end: Alignment.centerRight,
-            colors: [
-              Colors.black.withValues(alpha: 0.85),
-              Colors.black.withValues(alpha: 0.6),
-            ],
-            stops: const [0.0, 0.65],
-          ),
-        ),
-        child: Center(
-          child: ConstrainedBox(
-            constraints: const BoxConstraints(maxWidth: 1200),
-            child: Row(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                // Left side — Who Are We
-                Expanded(
-                  flex: 1,
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      _RevealOnVisible(
-                        visible: _visible,
-                        delay: const Duration(milliseconds: 0),
-                        child: const Text(
-                          "Who Are We?",
-                          style: TextStyle(
-                            fontSize: 34,
-                            fontWeight: FontWeight.bold,
-                            color: Colors.white,
-                          ),
-                        ),
-                      ),
-                      const SizedBox(height: 12),
-                      _RevealOnVisible(
-                        visible: _visible,
-                        delay: const Duration(milliseconds: 100),
-                        child: Container(
-                          width: 80,
-                          height: 4,
-                          color: const Color.fromRGBO(245, 171, 30, 1),
-                        ),
-                      ),
-                      const SizedBox(height: 28),
-                      _RevealOnVisible(
-                        visible: _visible,
-                        delay: const Duration(milliseconds: 200),
-                        child: Image.asset(
-                          'assets/logo.png',
-                          height: 100,
-                          fit: BoxFit.contain,
-                          alignment: Alignment.centerLeft,
-                        ),
-                      ),
-                      const SizedBox(height: 28),
-                      _RevealOnVisible(
-                        visible: _visible,
-                        delay: const Duration(milliseconds: 300),
-                        child: Text(
-                          "For years, we've been delivering premium cabinet handles, door fittings, "
-                          "mortice locks, aldrops, and architectural hardware that blend exceptional "
-                          "durability with timeless design. Every product is crafted with precision "
-                          "using high-quality materials to ensure lasting performance, reliability, "
-                          "and elegance. Whether for modern homes, commercial spaces, or custom "
-                          "interiors, our hardware is designed to enhance every detail while providing "
-                          "strength, security, and a flawless finish that stands the test of time.",
-                          style: TextStyle(
-                            fontSize: 18,
-                            height: 1.6,
-                            color: Colors.white.withValues(alpha: 0.9),
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
+      child: LayoutBuilder(
+        builder: (context, constraints) {
+          final r = _AboutResponsive.of(constraints.maxWidth);
 
-                const SizedBox(width: 120),
-
-                // Right side — Why Choose Us
-                Expanded(
-                  flex: 1,
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      _RevealOnVisible(
-                        visible: _visible,
-                        delay: const Duration(milliseconds: 100),
-                        child: const Text(
-                          "Why Choose Us",
-                          style: TextStyle(
-                            fontSize: 34,
-                            fontWeight: FontWeight.bold,
-                            color: Colors.white,
+          return Container(
+            width: double.infinity,
+            padding: EdgeInsets.symmetric(
+              horizontal: r.hPadding,
+              vertical: r.vPadding,
+            ),
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
+                begin: Alignment.centerLeft,
+                end: Alignment.centerRight,
+                colors: [
+                  Colors.black.withValues(alpha: 0.85),
+                  Colors.black.withValues(alpha: 0.6),
+                ],
+                stops: const [0.0, 0.65],
+              ),
+            ),
+            child: Center(
+              child: ConstrainedBox(
+                constraints: const BoxConstraints(maxWidth: 1200),
+                child: r.stacked
+                    ? Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          _WhoAreWe(visible: _visible, r: r),
+                          SizedBox(height: r.columnGap),
+                          _WhyChooseUs(visible: _visible, r: r),
+                        ],
+                      )
+                    : Row(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Expanded(
+                            flex: 1,
+                            child: _WhoAreWe(visible: _visible, r: r),
                           ),
-                        ),
+                          SizedBox(width: r.columnGap),
+                          Expanded(
+                            flex: 1,
+                            child: _WhyChooseUs(visible: _visible, r: r),
+                          ),
+                        ],
                       ),
-                      const SizedBox(height: 12),
-                      _RevealOnVisible(
-                        visible: _visible,
-                        delay: const Duration(milliseconds: 200),
-                        child: Container(
-                          width: 80,
-                          height: 4,
-                          color: const Color.fromRGBO(245, 171, 30, 1),
-                        ),
-                      ),
-                      const SizedBox(height: 28),
-                      _RevealOnVisible(
-                        visible: _visible,
-                        delay: const Duration(milliseconds: 300),
-                        child: const _FeatureBox(title: "Premium Quality"),
-                      ),
-                      const SizedBox(height: 16),
-                      _RevealOnVisible(
-                        visible: _visible,
-                        delay: const Duration(milliseconds: 400),
-                        child: const _FeatureBox(title: "Durable & Long-Lasting"),
-                      ),
-                      const SizedBox(height: 16),
-                      _RevealOnVisible(
-                        visible: _visible,
-                        delay: const Duration(milliseconds: 500),
-                        child: const _FeatureBox(title: "Elegant Designs"),
-                      ),
-                    ],
-                  ),
-                ),
-              ],
+              ),
+            ),
+          );
+        },
+      ),
+    );
+  }
+}
+
+class _WhoAreWe extends StatelessWidget {
+  final bool visible;
+  final _AboutResponsive r;
+
+  const _WhoAreWe({required this.visible, required this.r});
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        _RevealOnVisible(
+          visible: visible,
+          delay: const Duration(milliseconds: 0),
+          child: Text(
+            "Who Are We?",
+            style: TextStyle(
+              fontSize: r.headingSize,
+              fontWeight: FontWeight.bold,
+              color: Colors.white,
             ),
           ),
         ),
-      ),
+        SizedBox(height: r.underlineGap),
+        _RevealOnVisible(
+          visible: visible,
+          delay: const Duration(milliseconds: 100),
+          child: Container(
+            width: 80,
+            height: 4,
+            color: const Color.fromRGBO(245, 171, 30, 1),
+          ),
+        ),
+        SizedBox(height: r.blockGap),
+        _RevealOnVisible(
+          visible: visible,
+          delay: const Duration(milliseconds: 200),
+          child: Image.asset(
+            'assets/logo.png',
+            height: r.logoHeight,
+            fit: BoxFit.contain,
+            alignment: Alignment.centerLeft,
+          ),
+        ),
+        SizedBox(height: r.blockGap),
+        _RevealOnVisible(
+          visible: visible,
+          delay: const Duration(milliseconds: 300),
+          child: Text(
+            "For years, we've been delivering premium cabinet handles, door fittings, "
+            "mortice locks, aldrops, and architectural hardware that blend exceptional "
+            "durability with timeless design. Every product is crafted with precision "
+            "using high-quality materials to ensure lasting performance, reliability, "
+            "and elegance. Whether for modern homes, commercial spaces, or custom "
+            "interiors, our hardware is designed to enhance every detail while providing "
+            "strength, security, and a flawless finish that stands the test of time.",
+            style: TextStyle(
+              fontSize: r.bodySize,
+              height: 1.6,
+              color: Colors.white.withValues(alpha: 0.9),
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+class _WhyChooseUs extends StatelessWidget {
+  final bool visible;
+  final _AboutResponsive r;
+
+  const _WhyChooseUs({required this.visible, required this.r});
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        _RevealOnVisible(
+          visible: visible,
+          delay: const Duration(milliseconds: 100),
+          child: Text(
+            "Why Choose Us",
+            style: TextStyle(
+              fontSize: r.headingSize,
+              fontWeight: FontWeight.bold,
+              color: Colors.white,
+            ),
+          ),
+        ),
+        SizedBox(height: r.underlineGap),
+        _RevealOnVisible(
+          visible: visible,
+          delay: const Duration(milliseconds: 200),
+          child: Container(
+            width: 80,
+            height: 4,
+            color: const Color.fromRGBO(245, 171, 30, 1),
+          ),
+        ),
+        SizedBox(height: r.blockGap),
+        _RevealOnVisible(
+          visible: visible,
+          delay: const Duration(milliseconds: 300),
+          child: _FeatureBox(title: "Premium Quality", r: r),
+        ),
+        SizedBox(height: r.featureGap),
+        _RevealOnVisible(
+          visible: visible,
+          delay: const Duration(milliseconds: 400),
+          child: _FeatureBox(title: "Durable & Long-Lasting", r: r),
+        ),
+        SizedBox(height: r.featureGap),
+        _RevealOnVisible(
+          visible: visible,
+          delay: const Duration(milliseconds: 500),
+          child: _FeatureBox(title: "Elegant Designs", r: r),
+        ),
+      ],
     );
   }
 }
@@ -232,14 +270,15 @@ class _RevealOnVisibleState extends State<_RevealOnVisible> {
 
 class _FeatureBox extends StatelessWidget {
   final String title;
+  final _AboutResponsive r;
 
-  const _FeatureBox({required this.title});
+  const _FeatureBox({required this.title, required this.r});
 
   @override
   Widget build(BuildContext context) {
     return Container(
-      height: 120,
-      padding: const EdgeInsets.symmetric(horizontal: 20),
+      height: r.featureBoxHeight,
+      padding: EdgeInsets.symmetric(horizontal: r.featureBoxHPadding),
       decoration: BoxDecoration(
         color: Colors.black,
         borderRadius: BorderRadius.circular(8),
@@ -252,13 +291,120 @@ class _FeatureBox extends StatelessWidget {
         alignment: Alignment.centerLeft,
         child: Text(
           title,
-          style: const TextStyle(
-            fontSize: 16,
+          style: TextStyle(
+            fontSize: r.featureFontSize,
             fontWeight: FontWeight.w600,
             color: Colors.white,
           ),
         ),
       ),
+    );
+  }
+}
+
+/// Centralizes every breakpoint-dependent value for this section in one
+/// place, instead of scattering separate if/else chains through each
+/// widget. `stacked` controls whether the two columns lay out
+/// side-by-side (Row) or on top of each other (Column) — below 900px the
+/// two-column layout gets too cramped for the body text to read well, so
+/// it switches to a single stacked column.
+class _AboutResponsive {
+  final bool stacked;
+  final double hPadding;
+  final double vPadding;
+  final double columnGap;
+  final double headingSize;
+  final double bodySize;
+  final double underlineGap;
+  final double blockGap;
+  final double featureGap;
+  final double logoHeight;
+  final double featureBoxHeight;
+  final double featureBoxHPadding;
+  final double featureFontSize;
+
+  const _AboutResponsive({
+    required this.stacked,
+    required this.hPadding,
+    required this.vPadding,
+    required this.columnGap,
+    required this.headingSize,
+    required this.bodySize,
+    required this.underlineGap,
+    required this.blockGap,
+    required this.featureGap,
+    required this.logoHeight,
+    required this.featureBoxHeight,
+    required this.featureBoxHPadding,
+    required this.featureFontSize,
+  });
+
+  factory _AboutResponsive.of(double w) {
+    if (w > 900) {
+      return const _AboutResponsive(
+        stacked: false,
+        hPadding: 30,
+        vPadding: 80,
+        columnGap: 120,
+        headingSize: 34,
+        bodySize: 18,
+        underlineGap: 12,
+        blockGap: 28,
+        featureGap: 16,
+        logoHeight: 100,
+        featureBoxHeight: 120,
+        featureBoxHPadding: 20,
+        featureFontSize: 16,
+      );
+    }
+    if (w > 600) {
+      return const _AboutResponsive(
+        stacked: false,
+        hPadding: 24,
+        vPadding: 60,
+        columnGap: 40,
+        headingSize: 28,
+        bodySize: 16,
+        underlineGap: 10,
+        blockGap: 22,
+        featureGap: 14,
+        logoHeight: 80,
+        featureBoxHeight: 100,
+        featureBoxHPadding: 18,
+        featureFontSize: 15,
+      );
+    }
+    if (w > 400) {
+      return const _AboutResponsive(
+        stacked: true,
+        hPadding: 20,
+        vPadding: 48,
+        columnGap: 36,
+        headingSize: 24,
+        bodySize: 15,
+        underlineGap: 8,
+        blockGap: 18,
+        featureGap: 12,
+        logoHeight: 64,
+        featureBoxHeight: 90,
+        featureBoxHPadding: 16,
+        featureFontSize: 14,
+      );
+    }
+    return const _AboutResponsive(
+      stacked: true,
+      hPadding: 16,
+      vPadding: 40,
+      columnGap: 32,
+      headingSize: 20,
+      bodySize: 13.5,
+      underlineGap: 8,
+      blockGap: 16,
+      featureGap: 10,
+      logoHeight: 56,
+      featureBoxHeight: 80,
+      featureBoxHPadding: 14,
+      featureFontSize: 13,
     );
   }
 }

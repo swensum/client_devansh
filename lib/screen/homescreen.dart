@@ -131,9 +131,6 @@ const List<HeroSlide> _kSlides = [
   ),
 ];
 
-// ---------------------------------------------------------------------------
-// Responsive Hero Carousel
-// ---------------------------------------------------------------------------
 class HeroCarousel extends StatefulWidget {
   const HeroCarousel({super.key});
 
@@ -149,7 +146,7 @@ class _HeroCarouselState extends State<HeroCarousel>
   int _currentIndex = 0;
   int _pageCounter = _initialPage;
   Timer? _autoScrollTimer;
-  bool _isHovered = false;
+  bool _imagesPrecached = false;
 
   @override
   void initState() {
@@ -157,6 +154,17 @@ class _HeroCarouselState extends State<HeroCarousel>
     WidgetsBinding.instance.addObserver(this);
     _pageController = PageController(initialPage: _initialPage);
     _startAutoScroll();
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    if (!_imagesPrecached) {
+      _imagesPrecached = true;
+      for (final slide in _kSlides) {
+        precacheImage(AssetImage(slide.image), context);
+      }
+    }
   }
 
   @override
@@ -197,13 +205,12 @@ class _HeroCarouselState extends State<HeroCarousel>
 
   @override
   Widget build(BuildContext context) {
-    // Choose a responsive aspect ratio based on screen width
-    final screenWidth = MediaQuery.of(context).size.width;
+    final screenWidth = MediaQuery.sizeOf(context).width;
     double aspectRatio;
     if (screenWidth > 900) {
-      aspectRatio = 16 / 8;  // desktop – wider
+      aspectRatio = 16 / 8; // desktop – wider
     } else if (screenWidth > 600) {
-      aspectRatio = 16 / 9;  // tablet
+      aspectRatio = 16 / 9; // tablet
     } else {
       aspectRatio = 16 / 10; // mobile – taller
     }
@@ -218,11 +225,7 @@ class _HeroCarouselState extends State<HeroCarousel>
             physics: const NeverScrollableScrollPhysics(),
             itemBuilder: (context, index) {
               final slide = _kSlides[index % _kSlides.length];
-              return _HeroSlideView(
-                slide: slide,
-                isHovered: _isHovered,
-                onHoverChanged: (v) => setState(() => _isHovered = v),
-              );
+              return _HeroSlideView(slide: slide);
             },
             onPageChanged: (index) {
               setState(() {
@@ -258,9 +261,6 @@ class _HeroCarouselState extends State<HeroCarousel>
   }
 }
 
-// ---------------------------------------------------------------------------
-// Alignment helper (unchanged)
-// ---------------------------------------------------------------------------
 class _HeroAlignmentInfo {
   final Alignment boxAlignment;
   final CrossAxisAlignment crossAlign;
@@ -305,30 +305,105 @@ class _HeroAlignmentInfo {
     }
   }
 }
+class _HeroResponsive {
+  final double headlineSize;
+  final double subtextSize;
+  final double hPadding;
+  final double maxTextBoxWidth;
+  final double btnPaddingH;
+  final double btnPaddingV;
+  final double btnFontSize;
+  final double iconSize;
 
-// ---------------------------------------------------------------------------
-// Responsive slide view
-// ---------------------------------------------------------------------------
-class _HeroSlideView extends StatelessWidget {
-  final HeroSlide slide;
-  final bool isHovered;
-  final ValueChanged<bool> onHoverChanged;
-
-  const _HeroSlideView({
-    required this.slide,
-    required this.isHovered,
-    required this.onHoverChanged,
+  const _HeroResponsive({
+    required this.headlineSize,
+    required this.subtextSize,
+    required this.hPadding,
+    required this.maxTextBoxWidth,
+    required this.btnPaddingH,
+    required this.btnPaddingV,
+    required this.btnFontSize,
+    required this.iconSize,
   });
+
+  factory _HeroResponsive.of(double w) {
+    if (w > 900) {
+      return const _HeroResponsive(
+        headlineSize: 36,
+        subtextSize: 18,
+        hPadding: 60,
+        maxTextBoxWidth: 520,
+        btnPaddingH: 28,
+        btnPaddingV: 18,
+        btnFontSize: 15,
+        iconSize: 18,
+      );
+    }
+    if (w > 600) {
+      return const _HeroResponsive(
+        headlineSize: 30,
+        subtextSize: 16,
+        hPadding: 40,
+        maxTextBoxWidth: 420,
+        btnPaddingH: 28,
+        btnPaddingV: 18,
+        btnFontSize: 15,
+        iconSize: 18,
+      );
+    }
+    if (w > 400) {
+      return const _HeroResponsive(
+        headlineSize: 24,
+        subtextSize: 14.5,
+        hPadding: 24,
+        maxTextBoxWidth: double.infinity,
+        btnPaddingH: 20,
+        btnPaddingV: 12,
+        btnFontSize: 13.5,
+        iconSize: 16,
+      );
+    }
+    return const _HeroResponsive(
+      headlineSize: 20,
+      subtextSize: 13,
+      hPadding: 16,
+      maxTextBoxWidth: double.infinity,
+      btnPaddingH: 20,
+      btnPaddingV: 12,
+      btnFontSize: 13.5,
+      iconSize: 16,
+    );
+  }
+}
+
+class _HeroSlideView extends StatefulWidget {
+  final HeroSlide slide;
+
+  const _HeroSlideView({required this.slide});
+
+  @override
+  State<_HeroSlideView> createState() => _HeroSlideViewState();
+}
+
+class _HeroSlideViewState extends State<_HeroSlideView> {
+  bool _isHovered = false;
 
   @override
   Widget build(BuildContext context) {
+    final slide = widget.slide;
     final info = _HeroAlignmentInfo.from(slide.align);
 
     return Stack(
       fit: StackFit.expand,
       children: [
         RepaintBoundary(
-          child: Image.asset(slide.image, fit: BoxFit.cover),
+          child: Image.asset(
+            slide.image,
+            fit: BoxFit.cover,
+            // Avoids a blank/flash frame when switching between already
+            // precached images.
+            gaplessPlayback: true,
+          ),
         ),
         if (slide.align == HeroTextAlign.center)
           Container(color: Colors.black.withValues(alpha: 0.4))
@@ -350,49 +425,14 @@ class _HeroSlideView extends StatelessWidget {
         Positioned.fill(
           child: LayoutBuilder(
             builder: (context, constraints) {
-              final w = constraints.maxWidth;
-              // Scale headline size
-              final headlineSize = (w > 900)
-                  ? 36.0
-                  : (w > 600)
-                      ? 30.0
-                      : (w > 400)
-                          ? 24.0
-                          : 20.0;
-              // Scale subtext size
-              final subtextSize = (w > 900)
-                  ? 18.0
-                  : (w > 600)
-                      ? 16.0
-                      : (w > 400)
-                          ? 14.5
-                          : 13.0;
-              // Horizontal padding
-              final hPadding = (w > 900)
-                  ? 60.0
-                  : (w > 600)
-                      ? 40.0
-                      : (w > 400)
-                          ? 24.0
-                          : 16.0;
-              // Max width of the text box
-              final maxTextBoxWidth = (w > 900)
-                  ? 520.0
-                  : (w > 600)
-                      ? 420.0
-                      : double.infinity;
-              // Button dimensions
-              final btnPaddingH = (w > 600) ? 28.0 : 20.0;
-              final btnPaddingV = (w > 600) ? 18.0 : 12.0;
-              final btnFontSize = (w > 600) ? 15.0 : 13.5;
-              final iconSize = (w > 600) ? 18.0 : 16.0;
+              final r = _HeroResponsive.of(constraints.maxWidth);
 
               return Padding(
-                padding: EdgeInsets.symmetric(horizontal: hPadding),
+                padding: EdgeInsets.symmetric(horizontal: r.hPadding),
                 child: Align(
                   alignment: info.boxAlignment,
                   child: ConstrainedBox(
-                    constraints: BoxConstraints(maxWidth: maxTextBoxWidth),
+                    constraints: BoxConstraints(maxWidth: r.maxTextBoxWidth),
                     child: Column(
                       crossAxisAlignment: info.crossAlign,
                       mainAxisSize: MainAxisSize.min,
@@ -401,46 +441,46 @@ class _HeroSlideView extends StatelessWidget {
                           slide.headline,
                           textAlign: info.textAlign,
                           style: TextStyle(
-                            fontSize: headlineSize,
+                            fontSize: r.headlineSize,
                             fontWeight: FontWeight.bold,
                             color: Colors.white,
                             height: 1.25,
                           ),
                         ),
-                        SizedBox(height: headlineSize * 0.4),
+                        SizedBox(height: r.headlineSize * 0.4),
                         Text(
                           slide.subtext,
                           textAlign: info.textAlign,
                           style: TextStyle(
-                            fontSize: subtextSize,
+                            fontSize: r.subtextSize,
                             color: Colors.white.withValues(alpha: 0.9),
                             height: 1.5,
                           ),
                         ),
-                        SizedBox(height: subtextSize * 1.8),
+                        SizedBox(height: r.subtextSize * 1.8),
                         MouseRegion(
-                          onEnter: (_) => onHoverChanged(true),
-                          onExit: (_) => onHoverChanged(false),
+                          onEnter: (_) => setState(() => _isHovered = true),
+                          onExit: (_) => setState(() => _isHovered = false),
                           child: AnimatedScale(
-                            scale: isHovered ? 1.005 : 1.0,
+                            scale: _isHovered ? 1.005 : 1.0,
                             duration: const Duration(milliseconds: 200),
                             child: ElevatedButton(
                               onPressed: () {
                                 // Add your navigation logic here
                               },
                               style: ElevatedButton.styleFrom(
-                                backgroundColor: isHovered
+                                backgroundColor: _isHovered
                                     ? const Color.fromRGBO(255, 181, 40, 1)
                                     : const Color.fromRGBO(245, 171, 30, 1),
                                 foregroundColor: Colors.black,
                                 padding: EdgeInsets.symmetric(
-                                  horizontal: btnPaddingH,
-                                  vertical: btnPaddingV,
+                                  horizontal: r.btnPaddingH,
+                                  vertical: r.btnPaddingV,
                                 ),
                                 shape: RoundedRectangleBorder(
                                   borderRadius: BorderRadius.circular(6),
                                 ),
-                                elevation: isHovered ? 8 : 2,
+                                elevation: _isHovered ? 8 : 2,
                               ),
                               child: Row(
                                 mainAxisSize: MainAxisSize.min,
@@ -448,17 +488,17 @@ class _HeroSlideView extends StatelessWidget {
                                   Text(
                                     "Explore Collection",
                                     style: TextStyle(
-                                      fontSize: btnFontSize,
+                                      fontSize: r.btnFontSize,
                                       fontWeight: FontWeight.w600,
                                     ),
                                   ),
-                                  SizedBox(width: btnFontSize * 0.6),
+                                  SizedBox(width: r.btnFontSize * 0.6),
                                   AnimatedRotation(
                                     duration: const Duration(milliseconds: 300),
-                                    turns: isHovered ? 0.125 : 0.0,
+                                    turns: _isHovered ? 0.125 : 0.0,
                                     child: Icon(
                                       Icons.arrow_forward,
-                                      size: iconSize,
+                                      size: r.iconSize,
                                       color: Colors.black,
                                     ),
                                   ),
