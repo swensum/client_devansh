@@ -14,8 +14,12 @@ library;
 class Category {
   final String id;
   final String name;
+  // Used as the small banner image at the top of the products page for
+  // this category. Optional — falls back to the first matching
+  // product's image if left null (see Catalog.bannerFor).
+  final String? bannerAsset;
 
-  const Category({required this.id, required this.name});
+  const Category({required this.id, required this.name, this.bannerAsset});
 }
 
 /// A manufacturer/brand. Not every product has one — `Product.companyId`
@@ -53,12 +57,12 @@ class Product {
 // ---------------------------------------------------------------------
 
 const List<Category> kCategories = [
-  Category(id: 'handles', name: 'Cabinet Handles'),
-  Category(id: 'hinges', name: 'Hinges'),
-  Category(id: 'aldrops', name: 'Aldrops'),
-  Category(id: 'locks', name: 'Locks'),
-  Category(id: 'chimneys', name: 'Chimneys'),
-  Category(id: 'baskets', name: 'Baskets'),
+  Category(id: 'handles', name: 'Cabinet Handles', bannerAsset: 'assets/port.jpg'),
+  Category(id: 'hinges', name: 'Hinges', bannerAsset: 'assets/port3.png'),
+  Category(id: 'aldrops', name: 'Aldrops', bannerAsset: 'assets/port2.png'),
+  Category(id: 'locks', name: 'Locks', bannerAsset: 'assets/port.jpg'),
+  Category(id: 'chimneys', name: 'Chimneys', bannerAsset: 'assets/port2.png'),
+  Category(id: 'baskets', name: 'Baskets', bannerAsset: 'assets/port3.png'),
 ];
 
 const List<Company> kCompanies = [
@@ -176,6 +180,17 @@ class Catalog {
       if (c.id == product.companyId) return c;
     }
     return null;
+  }
+
+  /// The banner image for a category — its own `bannerAsset` if set,
+  /// otherwise the first product image found in that category, so the
+  /// products page always has something to show even before banners are
+  /// set up in the admin panel.
+  static String? bannerFor(String categoryId) {
+    final category = kCategories.firstWhere((c) => c.id == categoryId);
+    if (category.bannerAsset != null) return category.bannerAsset;
+    final products = byCategory(categoryId);
+    return products.isNotEmpty ? products.first.imageAsset : null;
   }
 
   /// Companies that have at least one product in the given category —
