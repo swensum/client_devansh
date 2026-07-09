@@ -51,10 +51,6 @@ class Product {
   });
 }
 
-// ---------------------------------------------------------------------
-// Example data. Replace this whole block with a Firestore-backed fetch
-// later; everything below this comment is what you'll eventually delete.
-// ---------------------------------------------------------------------
 
 const List<Category> kCategories = [
   Category(id: 'handles', name: 'Cabinet Handles', bannerAsset: 'assets/port.jpg'),
@@ -275,6 +271,136 @@ const List<Product> kProducts = [
     price: 13.80,
     categoryId: 'hinges',
     companyId: 'devansh',
+  ),
+    // ---------- 16 MORE PRODUCTS (p25 – p40) ----------
+
+  Product(
+    id: 'p25',
+    name: 'Polished Chrome Handle',
+    imageAsset: 'assets/port.jpg',
+    price: 17.25,
+    categoryId: 'handles',
+    companyId: 'nova',
+  ),
+  Product(
+    id: 'p26',
+    name: 'Self-Closing Hinge',
+    imageAsset: 'assets/port2.png',
+    price: 6.99,
+    categoryId: 'hinges',
+    companyId: 'devansh',
+  ),
+  Product(
+    id: 'p27',
+    name: 'Decorative Aldrop',
+    imageAsset: 'assets/port3.png',
+    price: 28.50,
+    categoryId: 'handles',
+    companyId: 'nova',
+  ),
+  Product(
+    id: 'p28',
+    name: 'Wall Mount Chimney Hood',
+    imageAsset: 'assets/port.jpg',
+    price: 120.00,
+    categoryId: 'chimneys',
+    companyId: 'hearth_co',
+  ),
+  Product(
+    id: 'p29',
+    name: 'Under-Sink Wire Basket',
+    imageAsset: 'assets/port2.png',
+    price: 15.30,
+    categoryId: 'baskets',
+    companyId: 'basketry',
+  ),
+  Product(
+    id: 'p30',
+    name: 'Digital Door Lock',
+    imageAsset: 'assets/port3.png',
+    price: 45.00,
+    categoryId: 'handles',
+    companyId: 'nova',
+  ),
+  Product(
+    id: 'p31',
+    name: 'Antique Brass Knob',
+    imageAsset: 'assets/port.jpg',
+    price: 8.00,
+    categoryId: 'handles',
+    companyId: 'devansh',
+  ),
+  Product(
+    id: 'p32',
+    name: 'Stainless Steel Hinge',
+    imageAsset: 'assets/port2.png',
+    price: 10.20,
+    categoryId: 'hinges',
+    companyId: 'nova',
+  ),
+  Product(
+    id: 'p33',
+    name: 'Surface Aldrop Lock',
+    imageAsset: 'assets/port3.png',
+    price: 22.75,
+    categoryId: 'aldrops',
+    companyId: 'devansh',
+  ),
+  Product(
+    id: 'p34',
+    name: 'Chimney Dampener',
+    imageAsset: 'assets/port.jpg',
+    price: 55.50,
+    categoryId: 'chimneys',
+    companyId: 'hearth_co',
+  ),
+  Product(
+    id: 'p35',
+    name: 'Stackable Wire Basket',
+    imageAsset: 'assets/port2.png',
+    price: 19.90,
+    categoryId: 'baskets',
+    companyId: 'basketry',
+  ),
+  Product(
+    id: 'p36',
+    name: 'Mortise Lock Set',
+    imageAsset: 'assets/port3.png',
+    price: 32.00,
+    categoryId: 'handles',
+    companyId: 'nova',
+  ),
+  Product(
+    id: 'p37',
+    name: 'Bar Cabinet Pull',
+    imageAsset: 'assets/port.jpg',
+    price: 11.60,
+    categoryId: 'handles',
+    companyId: 'nova',
+  ),
+  Product(
+    id: 'p38',
+    name: 'Soft‑Close Cabinet Hinge',
+    imageAsset: 'assets/port2.png',
+    price: 14.40,
+    categoryId: 'hinges',
+    companyId: 'devansh',
+  ),
+  Product(
+    id: 'p39',
+    name: 'Chimney Flue Cover',
+    imageAsset: 'assets/port3.png',
+    price: 78.00,
+    categoryId: 'handles',
+    companyId: 'nova',
+  ),
+  Product(
+    id: 'p40',
+    name: 'Retractable Basket Tray',
+    imageAsset: 'assets/port.jpg',
+    price: 26.80,
+    categoryId: 'baskets',
+    companyId: 'basketry',
   ),
 ];
 
