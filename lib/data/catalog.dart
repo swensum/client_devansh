@@ -71,7 +71,6 @@ const List<Company> kCompanies = [
   Company(id: 'hearth_co', name: 'Hearth & Co.'),
   Company(id: 'basketry', name: 'Basketry Works'),
 ];
-
 const List<Product> kProducts = [
   // Devansh — sells across several categories.
   Product(
@@ -137,7 +136,7 @@ const List<Product> kProducts = [
     companyId: 'basketry',
   ),
 
-  // No company at all — still needs to work everywhere companyId is used.
+  // Generic / unaffiliated items.
   Product(
     id: 'p8',
     name: 'Generic Tower Bolt',
@@ -154,12 +153,131 @@ const List<Product> kProducts = [
     categoryId: 'handles',
     companyId: null,
   ),
+
+  // ---------- 15 NEW PRODUCTS (p10 – p24) ----------
+
+  Product(
+    id: 'p10',
+    name: 'Brass Cabinet Pull',
+    imageAsset: 'assets/port2.png',
+    price: 14.25,
+    categoryId: 'handles',
+    companyId: 'devansh',
+  ),
+  Product(
+    id: 'p11',
+    name: 'Zinc Alloy Hinge',
+    imageAsset: 'assets/port.jpg',
+    price: 7.50,
+    categoryId: 'hinges',
+    companyId: 'nova',
+  ),
+  Product(
+    id: 'p12',
+    name: 'Heavy Duty Aldrop',
+    imageAsset: 'assets/port3.png',
+    price: 31.00,
+    categoryId: 'aldrops',
+    companyId: 'devansh',
+  ),
+  Product(
+    id: 'p13',
+    name: 'Round Wire Basket',
+    imageAsset: 'assets/port.jpg',
+    price: 18.75,
+    categoryId: 'baskets',
+    companyId: 'basketry',
+  ),
+  Product(
+    id: 'p14',
+    name: 'Keyless Door Lock',
+    imageAsset: 'assets/port2.png',
+    price: 15.00,
+    categoryId: 'locks',
+    companyId: null,
+  ),
+  Product(
+    id: 'p15',
+    name: 'Satin Nickel Handle',
+    imageAsset: 'assets/port3.png',
+    price: 21.50,
+    categoryId: 'handles',
+    companyId: 'nova',
+  ),
+  Product(
+    id: 'p16',
+    name: 'Telescopic Chimney Pipe',
+    imageAsset: 'assets/port.jpg',
+    price: 45.00,
+    categoryId: 'chimneys',
+    companyId: 'hearth_co',
+  ),
+  Product(
+    id: 'p17',
+    name: 'Flush Aldrop Lock',
+    imageAsset: 'assets/port2.png',
+    price: 19.99,
+    categoryId: 'aldrops',
+    companyId: null,
+  ),
+  Product(
+    id: 'p18',
+    name: 'Drawer Basket Slide',
+    imageAsset: 'assets/port3.png',
+    price: 12.00,
+    categoryId: 'baskets',
+    companyId: 'basketry',
+  ),
+  Product(
+    id: 'p19',
+    name: 'Curved Door Handle',
+    imageAsset: 'assets/port.jpg',
+    price: 16.40,
+    categoryId: 'handles',
+    companyId: 'devansh',
+  ),
+  Product(
+    id: 'p20',
+    name: 'Spring Loaded Hinge',
+    imageAsset: 'assets/port2.png',
+    price: 8.25,
+    categoryId: 'hinges',
+    companyId: 'nova',
+  ),
+  Product(
+    id: 'p21',
+    name: 'Steel Tower Bolt',
+    imageAsset: 'assets/port3.png',
+    price: 10.50,
+    categoryId: 'locks',
+    companyId: null,
+  ),
+  Product(
+    id: 'p22',
+    name: 'Chimney Cap Cover',
+    imageAsset: 'assets/port.jpg',
+    price: 67.00,
+    categoryId: 'chimneys',
+    companyId: 'hearth_co',
+  ),
+  Product(
+    id: 'p23',
+    name: 'Glass Cabinet Knob',
+    imageAsset: 'assets/port2.png',
+    price: 5.75,
+    categoryId: 'handles',
+    companyId: null,
+  ),
+  Product(
+    id: 'p24',
+    name: 'Pivot Hinge for Doors',
+    imageAsset: 'assets/port3.png',
+    price: 13.80,
+    categoryId: 'hinges',
+    companyId: 'devansh',
+  ),
 ];
 
-/// Small helper functions for the common lookups the UI needs. Kept as
-/// plain functions over the example lists for now; if this later moves
-/// to Firestore, these are the functions that become `async` and swap
-/// their body for a query — callers don't need to change shape much.
 class Catalog {
   /// Products in a given category.
   static List<Product> byCategory(String categoryId) =>
