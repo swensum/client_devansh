@@ -4,13 +4,6 @@ import 'package:devansh/productwidgets/productsright.dart';
 import 'package:devansh/productwidgets/productview.dart';
 import 'package:flutter/material.dart';
 
-
-/// This page only holds state and selection/sort logic. All the actual
-/// UI design lives in the two widgets it composes:
-///   - CategorySidebar        (category list + nested company filter)
-///   - ProductsRightPanel     (breadcrumb, banner, toolbar, product grid/list)
-/// See products_view_types.dart for the shared enums/sizing config, and
-/// product_detail_page.dart for the page a product card navigates to.
 class ProductsPage extends StatefulWidget {
   const ProductsPage({super.key});
 
@@ -19,7 +12,6 @@ class ProductsPage extends StatefulWidget {
 }
 
 class _ProductsPageState extends State<ProductsPage> {
-  // Defaults to the first category so the grid never starts empty.
   String _selectedCategoryId = kCategories.first.id;
   String? _selectedCompanyId; // null = "All companies"
   ViewMode _viewMode = ViewMode.grid;
@@ -29,7 +21,7 @@ class _ProductsPageState extends State<ProductsPage> {
     if (id == _selectedCategoryId) return;
     setState(() {
       _selectedCategoryId = id;
-      _selectedCompanyId = null; // company filter doesn't carry across categories
+      _selectedCompanyId = null; 
     });
   }
 
@@ -66,8 +58,7 @@ class _ProductsPageState extends State<ProductsPage> {
 
     return Scaffold(
       backgroundColor: Colors.black,
-      // No AppBar here — this page is meant to sit under your site's own
-      // navbar rather than have a second one stacked on top of it.
+      
       body: LayoutBuilder(
         builder: (context, constraints) {
           final r = ProductsPageResponsive.of(constraints.maxWidth);

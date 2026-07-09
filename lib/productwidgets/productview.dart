@@ -1,6 +1,3 @@
-/// View-mode / sort-option enums and the breakpoint-driven sizing config
-/// for the products page. Deliberately contains no widgets — just data
-/// that the page and its widget files both need to agree on.
 library;
 
 enum ViewMode { grid, list }

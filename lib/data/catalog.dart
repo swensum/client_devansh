@@ -66,6 +66,8 @@ const List<Company> kCompanies = [
   Company(id: 'nova', name: 'Nova Fittings'),
   Company(id: 'hearth_co', name: 'Hearth & Co.'),
   Company(id: 'basketry', name: 'Basketry Works'),
+  Company(id: 'unknown', name: 'Unknown'),
+  Company(id: 'others', name: 'others'),
 ];
 const List<Product> kProducts = [
   // Devansh — sells across several categories.
@@ -138,8 +140,8 @@ const List<Product> kProducts = [
     name: 'Generic Tower Bolt',
     imageAsset: 'assets/port.jpg',
     price: 8.50,
-    categoryId: 'locks',
-    companyId: null,
+    categoryId: 'handles',
+    companyId: 'others',
   ),
   Product(
     id: 'p9',
@@ -147,7 +149,7 @@ const List<Product> kProducts = [
     imageAsset: 'assets/port2.png',
     price: 6.25,
     categoryId: 'handles',
-    companyId: null,
+    companyId: 'unknown',
   ),
 
   // ---------- 15 NEW PRODUCTS (p10 – p24) ----------
@@ -262,7 +264,7 @@ const List<Product> kProducts = [
     imageAsset: 'assets/port2.png',
     price: 5.75,
     categoryId: 'handles',
-    companyId: null,
+    companyId: 'unknown',
   ),
   Product(
     id: 'p24',
@@ -272,7 +274,7 @@ const List<Product> kProducts = [
     categoryId: 'hinges',
     companyId: 'devansh',
   ),
-    // ---------- 16 MORE PRODUCTS (p25 – p40) ----------
+  
 
   Product(
     id: 'p25',

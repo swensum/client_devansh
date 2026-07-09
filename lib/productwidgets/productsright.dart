@@ -7,7 +7,10 @@ import 'package:flutter/material.dart';
 
 const _kAmber = Color.fromRGBO(245, 171, 30, 1);
 
-class ProductsRightPanel extends StatelessWidget {
+/// How many products are shown per page (4 columns x 3 rows).
+const int _kItemsPerPage = 12;
+
+class ProductsRightPanel extends StatefulWidget {
   final Category category;
   final Company? company;
   final List<Product> products;
@@ -30,8 +33,50 @@ class ProductsRightPanel extends StatelessWidget {
   });
 
   @override
+  State<ProductsRightPanel> createState() => _ProductsRightPanelState();
+}
+
+class _ProductsRightPanelState extends State<ProductsRightPanel> {
+  int _currentPage = 0;
+
+  @override
+  void didUpdateWidget(covariant ProductsRightPanel oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    // Whenever the underlying product set, category, company, or view mode
+    // changes, jump back to the first page so we don't end up on an
+    // out-of-range page with nothing to show.
+    if (oldWidget.category.id != widget.category.id ||
+        oldWidget.company?.id != widget.company?.id ||
+        oldWidget.products != widget.products ||
+        oldWidget.viewMode != widget.viewMode) {
+      _currentPage = 0;
+    } else {
+      final totalPages = _totalPages(widget.products.length);
+      if (_currentPage > totalPages - 1) {
+        _currentPage = totalPages > 0 ? totalPages - 1 : 0;
+      }
+    }
+  }
+
+  int _totalPages(int productCount) {
+    if (productCount == 0) return 0;
+    return (productCount / _kItemsPerPage).ceil();
+  }
+
+  void _goToPage(int page) {
+    if (page == _currentPage) return;
+    setState(() => _currentPage = page);
+  }
+
+  @override
   Widget build(BuildContext context) {
-    final banner = Catalog.bannerFor(category.id);
+    final banner = Catalog.bannerFor(widget.category.id);
+    final products = widget.products;
+    final totalPages = _totalPages(products.length);
+
+    final start = _currentPage * _kItemsPerPage;
+    final end = (start + _kItemsPerPage).clamp(0, products.length);
+    final pageProducts = products.isEmpty ? const <Product>[] : products.sublist(start, end);
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -41,15 +86,15 @@ class ProductsRightPanel extends StatelessWidget {
           text: TextSpan(
             style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: Colors.white),
             children: [
-              TextSpan(text: category.name),
-              if (company != null) ...[
+              TextSpan(text: widget.category.name),
+              if (widget.company != null) ...[
                 const TextSpan(text: '  :  ', style: TextStyle(color: Colors.white38, fontWeight: FontWeight.w400)),
-                TextSpan(text: company!.name, style: const TextStyle(color: _kAmber)),
+                TextSpan(text: widget.company!.name, style: const TextStyle(color: _kAmber)),
               ],
             ],
           ),
         ),
-        SizedBox(height: r.sectionGap * 0.6),
+        SizedBox(height: widget.r.sectionGap * 0.6),
 
         if (banner != null) ...[
           ClipRRect(
@@ -57,23 +102,23 @@ class ProductsRightPanel extends StatelessWidget {
             child: Image.asset(
               banner,
               width: double.infinity,
-              height: r.bannerHeight,
+              height: widget.r.bannerHeight,
               fit: BoxFit.cover,
               cacheWidth: 800,
             ),
           ),
-          SizedBox(height: r.sectionGap * 0.6),
+          SizedBox(height: widget.r.sectionGap * 0.6),
         ],
 
         _ProductsToolbar(
-          viewMode: viewMode,
-          sortOption: sortOption,
-          onViewModeChanged: onViewModeChanged,
-          onSortChanged: onSortChanged,
+          viewMode: widget.viewMode,
+          sortOption: widget.sortOption,
+          onViewModeChanged: widget.onViewModeChanged,
+          onSortChanged: widget.onSortChanged,
         ),
         const SizedBox(height: 10),
         Divider(color: Colors.white.withValues(alpha: 0.15), height: 1),
-        SizedBox(height: r.sectionGap * 0.6),
+        SizedBox(height: widget.r.sectionGap * 0.6),
 
         if (products.isEmpty)
           Padding(
@@ -85,32 +130,212 @@ class ProductsRightPanel extends StatelessWidget {
               ),
             ),
           )
-        else if (viewMode == ViewMode.grid)
+        else if (widget.viewMode == ViewMode.grid)
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 6),
             child: GridView.builder(
               shrinkWrap: true,
               physics: const NeverScrollableScrollPhysics(),
-               clipBehavior: Clip.none,
-              itemCount: products.length,
+              clipBehavior: Clip.none,
+              itemCount: pageProducts.length,
               gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-                crossAxisCount: r.crossAxisCount,
-                crossAxisSpacing: r.gridSpacing,
-                mainAxisSpacing: r.gridSpacing,
-                childAspectRatio: r.childAspectRatio,
+                crossAxisCount: widget.r.crossAxisCount,
+                crossAxisSpacing: widget.r.gridSpacing,
+                mainAxisSpacing: widget.r.gridSpacing,
+                childAspectRatio: widget.r.childAspectRatio,
               ),
-              itemBuilder: (context, index) => _ProductCard(product: products[index]),
+              itemBuilder: (context, index) => _ProductCard(product: pageProducts[index]),
             ),
           )
         else
           ListView.separated(
             shrinkWrap: true,
             physics: const NeverScrollableScrollPhysics(),
-            itemCount: products.length,
-            separatorBuilder: (_, __) => SizedBox(height: r.gridSpacing),
-            itemBuilder: (context, index) => _ProductListTile(product: products[index]),
+            itemCount: pageProducts.length,
+            separatorBuilder: (_, __) => SizedBox(height: widget.r.gridSpacing),
+            itemBuilder: (context, index) => _ProductListTile(product: pageProducts[index]),
           ),
+
+        if (totalPages > 1) ...[
+          SizedBox(height: widget.r.sectionGap * 0.8),
+          _Pagination(
+            currentPage: _currentPage,
+            totalPages: totalPages,
+            onPageSelected: _goToPage,
+          ),
+        ],
       ],
+    );
+  }
+}
+
+/// Bottom pagination control: previous/next arrows + numbered pages,
+/// with a row of small dots underneath indicating the current page.
+class _Pagination extends StatelessWidget {
+  final int currentPage; // 0-based
+  final int totalPages;
+  final ValueChanged<int> onPageSelected;
+
+  const _Pagination({
+    required this.currentPage,
+    required this.totalPages,
+    required this.onPageSelected,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      children: [
+        Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            _PageArrowButton(
+              icon: Icons.chevron_left_rounded,
+              enabled: currentPage > 0,
+              onTap: () => onPageSelected(currentPage - 1),
+            ),
+            const SizedBox(width: 8),
+            for (final page in _pagesToShow())
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 4),
+                child: page == -1
+                    ? const _PageEllipsis()
+                    : _PageNumberButton(
+                        page: page,
+                        isSelected: page == currentPage,
+                        onTap: () => onPageSelected(page),
+                      ),
+              ),
+            const SizedBox(width: 8),
+            _PageArrowButton(
+              icon: Icons.chevron_right_rounded,
+              enabled: currentPage < totalPages - 1,
+              onTap: () => onPageSelected(currentPage + 1),
+            ),
+          ],
+        ),
+        const SizedBox(height: 12),
+        Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            for (int i = 0; i < totalPages; i++)
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 3),
+                child: GestureDetector(
+                  onTap: () => onPageSelected(i),
+                  child: AnimatedContainer(
+                    duration: const Duration(milliseconds: 200),
+                    width: i == currentPage ? 18 : 6,
+                    height: 6,
+                    decoration: BoxDecoration(
+                      color: i == currentPage ? _kAmber : Colors.white.withValues(alpha: 0.25),
+                      borderRadius: BorderRadius.circular(3),
+                    ),
+                  ),
+                ),
+              ),
+          ],
+        ),
+      ],
+    );
+  }
+
+  /// Builds a compact list of page indices to show as numbered buttons,
+  /// using -1 as a marker for an ellipsis when there are many pages.
+  List<int> _pagesToShow() {
+    if (totalPages <= 7) {
+      return List.generate(totalPages, (i) => i);
+    }
+
+    final pages = <int>{0, totalPages - 1, currentPage};
+    if (currentPage - 1 >= 0) pages.add(currentPage - 1);
+    if (currentPage + 1 <= totalPages - 1) pages.add(currentPage + 1);
+
+    final sorted = pages.toList()..sort();
+    final result = <int>[];
+    for (var i = 0; i < sorted.length; i++) {
+      if (i > 0 && sorted[i] - sorted[i - 1] > 1) {
+        result.add(-1);
+      }
+      result.add(sorted[i]);
+    }
+    return result;
+  }
+}
+
+class _PageArrowButton extends StatelessWidget {
+  final IconData icon;
+  final bool enabled;
+  final VoidCallback onTap;
+
+  const _PageArrowButton({required this.icon, required this.enabled, required this.onTap});
+
+  @override
+  Widget build(BuildContext context) {
+    return InkWell(
+      onTap: enabled ? onTap : null,
+      borderRadius: BorderRadius.circular(8),
+      child: Container(
+        padding: const EdgeInsets.all(6),
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(8),
+          border: Border.all(color: Colors.white.withValues(alpha: enabled ? 0.2 : 0.08)),
+        ),
+        child: Icon(
+          icon,
+          size: 20,
+          color: enabled ? Colors.white70 : Colors.white24,
+        ),
+      ),
+    );
+  }
+}
+
+class _PageNumberButton extends StatelessWidget {
+  final int page; // 0-based
+  final bool isSelected;
+  final VoidCallback onTap;
+
+  const _PageNumberButton({required this.page, required this.isSelected, required this.onTap});
+
+  @override
+  Widget build(BuildContext context) {
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(8),
+      child: Container(
+        width: 32,
+        height: 32,
+        alignment: Alignment.center,
+        decoration: BoxDecoration(
+          color: isSelected ? _kAmber.withValues(alpha: 0.18) : Colors.transparent,
+          borderRadius: BorderRadius.circular(8),
+          border: Border.all(color: isSelected ? _kAmber : Colors.white.withValues(alpha: 0.2)),
+        ),
+        child: Text(
+          '${page + 1}',
+          style: TextStyle(
+            color: isSelected ? _kAmber : Colors.white70,
+            fontWeight: isSelected ? FontWeight.bold : FontWeight.w500,
+            fontSize: 13,
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _PageEllipsis extends StatelessWidget {
+  const _PageEllipsis();
+
+  @override
+  Widget build(BuildContext context) {
+    return const SizedBox(
+      width: 20,
+      height: 32,
+      child: Center(
+        child: Text('…', style: TextStyle(color: Colors.white38, fontSize: 13)),
+      ),
     );
   }
 }
