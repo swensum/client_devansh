@@ -92,7 +92,7 @@ const List<Product> kProducts = [
   categoryId: 'handles',
   companyId: 'devansh',
   materialId: 'aluminium',
-  description: 'A sleek, minimal handle designed for modern cabinetry.',
+  description: 'A sleek, minimal handle designed for modern cabinetry A sleek, minimal handle designed for modern cabinetry A sleek, minimal handle designed for modern cabinetry A sleek, minimal handle designed for modern cabinetry.',
   thickness: '3mm',
   size: '128mm center-to-center',
   quantity: 'Pack of 2',
