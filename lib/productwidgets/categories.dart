@@ -23,6 +23,10 @@ class CategorySidebar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    
+    final materials = Catalog.materialsInCategory(selectedCategoryId);
+     final showMaterials = materials.isNotEmpty;
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       mainAxisSize: MainAxisSize.min,
@@ -41,26 +45,29 @@ class CategorySidebar extends StatelessWidget {
             onCompanyTap: onCompanyTap,
           ),
 
-        const SizedBox(height: 16),
-        Divider(color: Colors.white.withValues(alpha: 0.15), height: 1),
-        const SizedBox(height: 16),
-
-        const Text(
-          'Materials',
-          style: TextStyle(color: Colors.white, fontSize: 20, fontWeight: FontWeight.bold),
-        ),
-        const SizedBox(height: 10),
-        _CompanyRow(
-          label: 'All',
-          isSelected: selectedMaterialId == null,
-          onTap: () => onMaterialTap(null),
-        ),
-        for (final material in kMaterials)
-          _CompanyRow(
-            label: material.name,
-            isSelected: selectedMaterialId == material.id,
-            onTap: () => onMaterialTap(material.id),
+        // Materials section — only appears when the selected category
+        // actually has more than one distinct material among its products.
+        if (showMaterials) ...[
+          const SizedBox(height: 16),
+          Divider(color: Colors.white.withValues(alpha: 0.15), height: 1),
+          const SizedBox(height: 16),
+          const Text(
+            'Materials',
+            style: TextStyle(color: Colors.white, fontSize: 20, fontWeight: FontWeight.bold),
           ),
+          const SizedBox(height: 10),
+          _CompanyRow(
+            label: 'All',
+            isSelected: selectedMaterialId == null,
+            onTap: () => onMaterialTap(null),
+          ),
+          for (final material in materials)
+            _CompanyRow(
+              label: material.name,
+              isSelected: selectedMaterialId == material.id,
+              onTap: () => onMaterialTap(material.id),
+            ),
+        ],
       ],
     );
   }

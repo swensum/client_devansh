@@ -239,9 +239,6 @@ class _Pagination extends StatelessWidget {
       ],
     );
   }
-
-  /// Builds a compact list of page indices to show as numbered buttons,
-  /// using -1 as a marker for an ellipsis when there are many pages.
   List<int> _pagesToShow() {
     if (totalPages <= 7) {
       return List.generate(totalPages, (i) => i);
@@ -436,66 +433,139 @@ class _SortDropdown extends StatelessWidget {
 }
 
 /// Horizontal card used in list view: small thumbnail, details, price.
-class _ProductListTile extends StatelessWidget {
+class _ProductListTile extends StatefulWidget {
   final Product product;
 
   const _ProductListTile({required this.product});
 
   @override
+  State<_ProductListTile> createState() => _ProductListTileState();
+}
+
+class _ProductListTileState extends State<_ProductListTile> {
+  bool _isHovered = false;
+
+  @override
   Widget build(BuildContext context) {
+    final product = widget.product;
     final company = Catalog.companyFor(product);
 
-    return GestureDetector(
-      onTap: () {
-        Navigator.of(context).push(
-          MaterialPageRoute(builder: (_) => ProductDetailPage(product: product)),
-        );
-      },
-      child: Container(
-        padding: const EdgeInsets.all(10),
-        decoration: BoxDecoration(
-          color: Colors.white.withValues(alpha: 0.08),
-          borderRadius: BorderRadius.circular(10),
-          border: Border.all(color: Colors.white.withValues(alpha: 0.12)),
-        ),
-        child: Row(
-          children: [
-            ClipRRect(
-              borderRadius: BorderRadius.circular(8),
-              child: Image.asset(
-                product.imageAsset,
-                width: 70,
-                height: 70,
-                fit: BoxFit.cover,
-                cacheWidth: 200,
-              ),
+    return MouseRegion(
+      cursor: SystemMouseCursors.click,
+      onEnter: (_) => setState(() => _isHovered = true),
+      onExit: (_) => setState(() => _isHovered = false),
+      child: GestureDetector(
+        onTap: () {
+          Navigator.of(context).push(
+            MaterialPageRoute(builder: (_) => ProductDetailPage(product: product)),
+          );
+        },
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 200),
+          padding: const EdgeInsets.all(22),
+          decoration: BoxDecoration(
+            color: Colors.white.withValues(alpha: _isHovered ? 0.12 : 0.08),
+            borderRadius: BorderRadius.circular(18),
+            border: Border.all(
+              color: _isHovered ? _kAmber.withValues(alpha: 0.6) : Colors.white.withValues(alpha: 0.12),
+              width: 1.5,
             ),
-            const SizedBox(width: 14),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    product.name,
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w600, fontSize: 14),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withValues(alpha: _isHovered ? 0.2 : 0.0),
+                blurRadius: 20,
+                offset: const Offset(0, 8),
+              ),
+            ],
+          ),
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.center,
+            children: [
+              ClipRRect(
+                borderRadius: BorderRadius.circular(12),
+                child: Image.asset(
+                  product.imageAsset,
+                  width: 150,
+                  height: 150,
+                  fit: BoxFit.cover,
+                  cacheWidth: 400,
+                  errorBuilder: (context, error, stackTrace) => Container(
+                    width: 150,
+                    height: 150,
+                    color: Colors.grey.shade800,
+                    child: const Icon(Icons.image_not_supported_outlined, color: Colors.white38, size: 32),
                   ),
-                  if (company != null) ...[
-                    const SizedBox(height: 2),
+                ),
+              ),
+              const SizedBox(width: 26),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
                     Text(
-                      company.name,
-                      style: TextStyle(color: Colors.white.withValues(alpha: 0.55), fontSize: 11.5),
+                      product.name,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w700, fontSize: 21),
+                    ),
+                    if (company != null) ...[
+                      const SizedBox(height: 8),
+                      Text(
+                        company.name,
+                        style: TextStyle(color: Colors.white.withValues(alpha: 0.55), fontSize: 15),
+                      ),
+                    ],
+                    const SizedBox(height: 14),
+                    Row(
+                      children: [
+                        ...List.generate(
+                          5,
+                          (index) => Icon(
+                            Icons.star,
+                            size: 18,
+                            color: index < 4 ? _kAmber : Colors.grey.shade700,
+                          ),
+                        ),
+                        const SizedBox(width: 8),
+                        Text(
+                          '(124)',
+                          style: TextStyle(color: Colors.white.withValues(alpha: 0.5), fontSize: 14),
+                        ),
+                      ],
                     ),
                   ],
+                ),
+              ),
+              const SizedBox(width: 20),
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.end,
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Text(
+                    '\$${product.price.toStringAsFixed(2)}',
+                    style: const TextStyle(color: _kAmber, fontWeight: FontWeight.bold, fontSize: 20),
+                  ),
+                  const SizedBox(height: 12),
+                  AnimatedOpacity(
+                    duration: const Duration(milliseconds: 200),
+                    opacity: _isHovered ? 1.0 : 0.0,
+                    child: Container(
+                      padding: const EdgeInsets.all(10),
+                      decoration: BoxDecoration(
+                        color: _kAmber,
+                        shape: BoxShape.circle,
+                      ),
+                      child: const Icon(
+                        Icons.shopping_bag_outlined,
+                        size: 18,
+                        color: Colors.black,
+                      ),
+                    ),
+                  ),
                 ],
               ),
-            ),
-            Text(
-              '\$${product.price.toStringAsFixed(2)}',
-              style: const TextStyle(color: _kAmber, fontWeight: FontWeight.bold, fontSize: 14.5),
-            ),
-          ],
+            ],
+          ),
         ),
       ),
     );
