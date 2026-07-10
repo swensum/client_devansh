@@ -6,15 +6,19 @@ const _kAmber = Color.fromRGBO(245, 171, 30, 1);
 class CategorySidebar extends StatelessWidget {
   final String selectedCategoryId;
   final String? selectedCompanyId;
+  final String? selectedMaterialId;
   final ValueChanged<String> onCategoryTap;
   final ValueChanged<String?> onCompanyTap;
+  final ValueChanged<String?> onMaterialTap;
 
   const CategorySidebar({
     super.key,
     required this.selectedCategoryId,
     required this.selectedCompanyId,
+    required this.selectedMaterialId,
     required this.onCategoryTap,
     required this.onCompanyTap,
+    required this.onMaterialTap,
   });
 
   @override
@@ -25,11 +29,7 @@ class CategorySidebar extends StatelessWidget {
       children: [
         const Text(
           'Categories',
-          style: TextStyle(
-            color: Colors.white,
-            fontSize: 20,
-            fontWeight: FontWeight.bold,
-          ),
+          style: TextStyle(color: Colors.white, fontSize: 20, fontWeight: FontWeight.bold),
         ),
         const SizedBox(height: 14),
         for (final category in kCategories)
@@ -39,6 +39,27 @@ class CategorySidebar extends StatelessWidget {
             selectedCompanyId: selectedCompanyId,
             onCategoryTap: () => onCategoryTap(category.id),
             onCompanyTap: onCompanyTap,
+          ),
+
+        const SizedBox(height: 16),
+        Divider(color: Colors.white.withValues(alpha: 0.15), height: 1),
+        const SizedBox(height: 16),
+
+        const Text(
+          'Materials',
+          style: TextStyle(color: Colors.white, fontSize: 20, fontWeight: FontWeight.bold),
+        ),
+        const SizedBox(height: 10),
+        _CompanyRow(
+          label: 'All',
+          isSelected: selectedMaterialId == null,
+          onTap: () => onMaterialTap(null),
+        ),
+        for (final material in kMaterials)
+          _CompanyRow(
+            label: material.name,
+            isSelected: selectedMaterialId == material.id,
+            onTap: () => onMaterialTap(material.id),
           ),
       ],
     );
@@ -111,9 +132,7 @@ class _CategoryEntryState extends State<_CategoryEntry> {
               width: double.infinity,
               padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
               decoration: BoxDecoration(
-                color: isSelected
-                    ? _kAmber.withValues(alpha: 0.15)
-                    : Colors.transparent,
+                color: isSelected ? _kAmber.withValues(alpha: 0.15) : Colors.transparent,
                 borderRadius: BorderRadius.circular(8),
                 border: Border(
                   left: BorderSide(
@@ -129,18 +148,14 @@ class _CategoryEntryState extends State<_CategoryEntry> {
                       category.name,
                       style: TextStyle(
                         color: isSelected ? _kAmber : Colors.white,
-                        fontWeight: isSelected
-                            ? FontWeight.w700
-                            : FontWeight.w500,
+                        fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
                         fontSize: 14.5,
                       ),
                     ),
                   ),
                   if (companies.length > 1)
                     Icon(
-                      showCompanies
-                          ? Icons.keyboard_arrow_up
-                          : Icons.keyboard_arrow_down,
+                      showCompanies ? Icons.keyboard_arrow_up : Icons.keyboard_arrow_down,
                       size: 18,
                       color: isSelected ? _kAmber : Colors.white54,
                     ),
@@ -181,8 +196,7 @@ class _CategoryEntryState extends State<_CategoryEntry> {
                                     for (final company in companies)
                                       _CompanyRow(
                                         label: company.name,
-                                        isSelected:
-                                            selectedCompanyId == company.id,
+                                        isSelected: selectedCompanyId == company.id,
                                         onTap: () => onCompanyTap(company.id),
                                       ),
                                   ],
@@ -220,11 +234,7 @@ class _CompanyRow extends StatelessWidget {
   final bool isSelected;
   final VoidCallback onTap;
 
-  const _CompanyRow({
-    required this.label,
-    required this.isSelected,
-    required this.onTap,
-  });
+  const _CompanyRow({required this.label, required this.isSelected, required this.onTap});
 
   @override
   Widget build(BuildContext context) {
@@ -236,9 +246,7 @@ class _CompanyRow extends StatelessWidget {
         child: Row(
           children: [
             Icon(
-              isSelected
-                  ? Icons.radio_button_checked
-                  : Icons.radio_button_unchecked,
+              isSelected ? Icons.radio_button_checked : Icons.radio_button_unchecked,
               size: 14,
               color: isSelected ? _kAmber : Colors.white38,
             ),
@@ -246,9 +254,7 @@ class _CompanyRow extends StatelessWidget {
             Text(
               label,
               style: TextStyle(
-                color: isSelected
-                    ? _kAmber
-                    : Colors.white.withValues(alpha: 0.75),
+                color: isSelected ? _kAmber : Colors.white.withValues(alpha: 0.75),
                 fontSize: 13,
                 fontWeight: isSelected ? FontWeight.w600 : FontWeight.w400,
               ),

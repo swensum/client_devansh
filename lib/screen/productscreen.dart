@@ -13,20 +13,25 @@ class ProductsPage extends StatefulWidget {
 
 class _ProductsPageState extends State<ProductsPage> {
   String _selectedCategoryId = kCategories.first.id;
-  String? _selectedCompanyId; // null = "All companies"
+  String? _selectedCompanyId; 
   ViewMode _viewMode = ViewMode.grid;
   SortOption _sortOption = SortOption.relevance;
+  String? _selectedMaterialId; 
 
   void _selectCategory(String id) {
     if (id == _selectedCategoryId) return;
     setState(() {
       _selectedCategoryId = id;
       _selectedCompanyId = null; 
+      _selectedMaterialId = null;
     });
   }
 
   void _selectCompany(String? id) {
     setState(() => _selectedCompanyId = id);
+  }
+void _selectMaterial(String? id) {
+    setState(() => _selectedMaterialId = id);
   }
 
   List<Product> _applySort(List<Product> input) {
@@ -52,8 +57,12 @@ class _ProductsPageState extends State<ProductsPage> {
     final category = kCategories.firstWhere((c) => c.id == _selectedCategoryId);
     final company =
         _selectedCompanyId == null ? null : kCompanies.firstWhere((c) => c.id == _selectedCompanyId);
-    final products = _applySort(
-      Catalog.byCategoryAndCompany(_selectedCategoryId, _selectedCompanyId),
+   final products = _applySort(
+      Catalog.filtered(
+        categoryId: _selectedCategoryId,
+        companyId: _selectedCompanyId,
+        materialId: _selectedMaterialId,
+      ),
     );
 
     return Scaffold(
@@ -66,8 +75,10 @@ class _ProductsPageState extends State<ProductsPage> {
           final sidebar = CategorySidebar(
             selectedCategoryId: _selectedCategoryId,
             selectedCompanyId: _selectedCompanyId,
+            selectedMaterialId: _selectedMaterialId,
             onCategoryTap: _selectCategory,
             onCompanyTap: _selectCompany,
+             onMaterialTap: _selectMaterial,  
           );
 
           final panel = ProductsRightPanel(

@@ -1,36 +1,27 @@
-/// Shared data models for the catalog, plus example/placeholder data.
-///
-/// This file is the one place that knows what a Category, Company, and
-/// Product look like. When the Firebase-backed admin panel is wired up
-/// later, only this file (or a repository built on top of it) needs to
-/// change — the UI that reads from `kCategories` / `kCompanies` /
-/// `kProducts` shouldn't need to change at all, as long as whatever
-/// replaces them still returns `List<Category>`, `List<Company>`, and
-/// `List<Product>`.
 library;
 
-/// A product category — the primary way people browse (Hinges, Aldrops,
-/// Chimneys, Baskets, ...). Every product belongs to exactly one.
 class Category {
   final String id;
   final String name;
-  // Used as the small banner image at the top of the products page for
-  // this category. Optional — falls back to the first matching
-  // product's image if left null (see Catalog.bannerFor).
+ 
   final String? bannerAsset;
 
   const Category({required this.id, required this.name, this.bannerAsset});
 }
 
-/// A manufacturer/brand. Not every product has one — `Product.companyId`
-/// is nullable — and a company is never restricted to a fixed set of
-/// categories; whatever it happens to sell is whatever it sells.
 class Company {
   final String id;
   final String name;
   final String? logoAsset;
 
   const Company({required this.id, required this.name, this.logoAsset});
+}
+
+class MaterialType {
+  final String id;
+  final String name;
+
+  const MaterialType({required this.id, required this.name});
 }
 
 class Product {
@@ -40,6 +31,7 @@ class Product {
   final double price;
   final String categoryId;
   final String? companyId; // null = no associated company
+  final String materialId; // e.g. 'aluminium', 'silver', 'metal', 'ss'
 
   const Product({
     required this.id,
@@ -48,6 +40,7 @@ class Product {
     required this.price,
     required this.categoryId,
     this.companyId,
+    required this.materialId,
   });
 }
 
@@ -69,6 +62,14 @@ const List<Company> kCompanies = [
   Company(id: 'unknown', name: 'Unknown'),
   Company(id: 'others', name: 'others'),
 ];
+
+const List<MaterialType> kMaterials = [
+  MaterialType(id: 'aluminium', name: 'Aluminium'),
+  MaterialType(id: 'silver', name: 'Silver'),
+  MaterialType(id: 'metal', name: 'Metal'),
+  MaterialType(id: 'ss', name: 'Stainless Steel'),
+];
+
 const List<Product> kProducts = [
   // Devansh — sells across several categories.
   Product(
@@ -78,6 +79,7 @@ const List<Product> kProducts = [
     price: 12.99,
     categoryId: 'handles',
     companyId: 'devansh',
+    materialId: 'aluminium',
   ),
   Product(
     id: 'p2',
@@ -86,6 +88,7 @@ const List<Product> kProducts = [
     price: 9.75,
     categoryId: 'hinges',
     companyId: 'devansh',
+    materialId: 'ss',
   ),
   Product(
     id: 'p3',
@@ -94,6 +97,7 @@ const List<Product> kProducts = [
     price: 24.00,
     categoryId: 'aldrops',
     companyId: 'devansh',
+    materialId: 'metal',
   ),
 
   // Nova — hinges + handles only.
@@ -104,6 +108,7 @@ const List<Product> kProducts = [
     price: 11.00,
     categoryId: 'hinges',
     companyId: 'nova',
+    materialId: 'ss',
   ),
   Product(
     id: 'p5',
@@ -112,6 +117,7 @@ const List<Product> kProducts = [
     price: 18.50,
     categoryId: 'handles',
     companyId: 'nova',
+    materialId: 'ss',
   ),
 
   // Hearth & Co. — chimneys only.
@@ -122,6 +128,7 @@ const List<Product> kProducts = [
     price: 89.00,
     categoryId: 'chimneys',
     companyId: 'hearth_co',
+    materialId: 'ss',
   ),
 
   // Basketry Works — baskets only.
@@ -132,6 +139,7 @@ const List<Product> kProducts = [
     price: 22.50,
     categoryId: 'baskets',
     companyId: 'basketry',
+    materialId: 'metal',
   ),
 
   // Generic / unaffiliated items.
@@ -142,6 +150,7 @@ const List<Product> kProducts = [
     price: 8.50,
     categoryId: 'handles',
     companyId: 'others',
+    materialId: 'metal',
   ),
   Product(
     id: 'p9',
@@ -150,6 +159,7 @@ const List<Product> kProducts = [
     price: 6.25,
     categoryId: 'handles',
     companyId: 'unknown',
+    materialId: 'aluminium',
   ),
 
   // ---------- 15 NEW PRODUCTS (p10 – p24) ----------
@@ -161,6 +171,7 @@ const List<Product> kProducts = [
     price: 14.25,
     categoryId: 'handles',
     companyId: 'devansh',
+    materialId: 'metal',
   ),
   Product(
     id: 'p11',
@@ -169,6 +180,7 @@ const List<Product> kProducts = [
     price: 7.50,
     categoryId: 'hinges',
     companyId: 'nova',
+    materialId: 'metal',
   ),
   Product(
     id: 'p12',
@@ -177,6 +189,7 @@ const List<Product> kProducts = [
     price: 31.00,
     categoryId: 'aldrops',
     companyId: 'devansh',
+    materialId: 'ss',
   ),
   Product(
     id: 'p13',
@@ -185,6 +198,7 @@ const List<Product> kProducts = [
     price: 18.75,
     categoryId: 'baskets',
     companyId: 'basketry',
+    materialId: 'ss',
   ),
   Product(
     id: 'p14',
@@ -193,6 +207,7 @@ const List<Product> kProducts = [
     price: 15.00,
     categoryId: 'locks',
     companyId: null,
+    materialId: 'metal',
   ),
   Product(
     id: 'p15',
@@ -201,6 +216,7 @@ const List<Product> kProducts = [
     price: 21.50,
     categoryId: 'handles',
     companyId: 'nova',
+    materialId: 'silver',
   ),
   Product(
     id: 'p16',
@@ -209,6 +225,7 @@ const List<Product> kProducts = [
     price: 45.00,
     categoryId: 'chimneys',
     companyId: 'hearth_co',
+    materialId: 'aluminium',
   ),
   Product(
     id: 'p17',
@@ -217,6 +234,7 @@ const List<Product> kProducts = [
     price: 19.99,
     categoryId: 'aldrops',
     companyId: null,
+    materialId: 'ss',
   ),
   Product(
     id: 'p18',
@@ -225,6 +243,7 @@ const List<Product> kProducts = [
     price: 12.00,
     categoryId: 'baskets',
     companyId: 'basketry',
+    materialId: 'metal',
   ),
   Product(
     id: 'p19',
@@ -233,6 +252,7 @@ const List<Product> kProducts = [
     price: 16.40,
     categoryId: 'handles',
     companyId: 'devansh',
+    materialId: 'aluminium',
   ),
   Product(
     id: 'p20',
@@ -241,6 +261,7 @@ const List<Product> kProducts = [
     price: 8.25,
     categoryId: 'hinges',
     companyId: 'nova',
+    materialId: 'metal',
   ),
   Product(
     id: 'p21',
@@ -249,6 +270,7 @@ const List<Product> kProducts = [
     price: 10.50,
     categoryId: 'locks',
     companyId: null,
+    materialId: 'ss',
   ),
   Product(
     id: 'p22',
@@ -257,6 +279,7 @@ const List<Product> kProducts = [
     price: 67.00,
     categoryId: 'chimneys',
     companyId: 'hearth_co',
+    materialId: 'aluminium',
   ),
   Product(
     id: 'p23',
@@ -265,6 +288,7 @@ const List<Product> kProducts = [
     price: 5.75,
     categoryId: 'handles',
     companyId: 'unknown',
+    materialId: 'silver',
   ),
   Product(
     id: 'p24',
@@ -273,8 +297,8 @@ const List<Product> kProducts = [
     price: 13.80,
     categoryId: 'hinges',
     companyId: 'devansh',
+    materialId: 'ss',
   ),
-  
 
   Product(
     id: 'p25',
@@ -283,6 +307,7 @@ const List<Product> kProducts = [
     price: 17.25,
     categoryId: 'handles',
     companyId: 'nova',
+    materialId: 'silver',
   ),
   Product(
     id: 'p26',
@@ -291,6 +316,7 @@ const List<Product> kProducts = [
     price: 6.99,
     categoryId: 'hinges',
     companyId: 'devansh',
+    materialId: 'metal',
   ),
   Product(
     id: 'p27',
@@ -299,6 +325,7 @@ const List<Product> kProducts = [
     price: 28.50,
     categoryId: 'handles',
     companyId: 'nova',
+    materialId: 'ss',
   ),
   Product(
     id: 'p28',
@@ -307,6 +334,7 @@ const List<Product> kProducts = [
     price: 120.00,
     categoryId: 'chimneys',
     companyId: 'hearth_co',
+    materialId: 'ss',
   ),
   Product(
     id: 'p29',
@@ -315,6 +343,7 @@ const List<Product> kProducts = [
     price: 15.30,
     categoryId: 'baskets',
     companyId: 'basketry',
+    materialId: 'aluminium',
   ),
   Product(
     id: 'p30',
@@ -323,6 +352,7 @@ const List<Product> kProducts = [
     price: 45.00,
     categoryId: 'handles',
     companyId: 'nova',
+    materialId: 'metal',
   ),
   Product(
     id: 'p31',
@@ -331,6 +361,7 @@ const List<Product> kProducts = [
     price: 8.00,
     categoryId: 'handles',
     companyId: 'devansh',
+    materialId: 'metal',
   ),
   Product(
     id: 'p32',
@@ -339,6 +370,7 @@ const List<Product> kProducts = [
     price: 10.20,
     categoryId: 'hinges',
     companyId: 'nova',
+    materialId: 'ss',
   ),
   Product(
     id: 'p33',
@@ -347,6 +379,7 @@ const List<Product> kProducts = [
     price: 22.75,
     categoryId: 'aldrops',
     companyId: 'devansh',
+    materialId: 'ss',
   ),
   Product(
     id: 'p34',
@@ -355,6 +388,7 @@ const List<Product> kProducts = [
     price: 55.50,
     categoryId: 'chimneys',
     companyId: 'hearth_co',
+    materialId: 'metal',
   ),
   Product(
     id: 'p35',
@@ -363,6 +397,7 @@ const List<Product> kProducts = [
     price: 19.90,
     categoryId: 'baskets',
     companyId: 'basketry',
+    materialId: 'aluminium',
   ),
   Product(
     id: 'p36',
@@ -371,6 +406,7 @@ const List<Product> kProducts = [
     price: 32.00,
     categoryId: 'handles',
     companyId: 'nova',
+    materialId: 'ss',
   ),
   Product(
     id: 'p37',
@@ -379,6 +415,7 @@ const List<Product> kProducts = [
     price: 11.60,
     categoryId: 'handles',
     companyId: 'nova',
+    materialId: 'aluminium',
   ),
   Product(
     id: 'p38',
@@ -387,6 +424,7 @@ const List<Product> kProducts = [
     price: 14.40,
     categoryId: 'hinges',
     companyId: 'devansh',
+    materialId: 'metal',
   ),
   Product(
     id: 'p39',
@@ -395,6 +433,7 @@ const List<Product> kProducts = [
     price: 78.00,
     categoryId: 'handles',
     companyId: 'nova',
+    materialId: 'ss',
   ),
   Product(
     id: 'p40',
@@ -403,6 +442,7 @@ const List<Product> kProducts = [
     price: 26.80,
     categoryId: 'baskets',
     companyId: 'basketry',
+    materialId: 'silver',
   ),
 ];
 
@@ -411,12 +451,25 @@ class Catalog {
   static List<Product> byCategory(String categoryId) =>
       kProducts.where((p) => p.categoryId == categoryId).toList();
 
-  /// Products in a given category, further filtered to one company.
-  /// Pass `companyId: null` to mean "no filter", not "no company".
   static List<Product> byCategoryAndCompany(String categoryId, String? companyId) {
     final inCategory = byCategory(categoryId);
     if (companyId == null) return inCategory;
     return inCategory.where((p) => p.companyId == companyId).toList();
+  }
+
+  static List<Product> filtered({
+    required String categoryId,
+    String? companyId,
+    String? materialId,
+  }) {
+    var result = byCategory(categoryId);
+    if (companyId != null) {
+      result = result.where((p) => p.companyId == companyId).toList();
+    }
+    if (materialId != null) {
+      result = result.where((p) => p.materialId == materialId).toList();
+    }
+    return result;
   }
 
   /// The company for a product, or null if it doesn't have one.
@@ -428,10 +481,14 @@ class Catalog {
     return null;
   }
 
-  /// The banner image for a category — its own `bannerAsset` if set,
-  /// otherwise the first product image found in that category, so the
-  /// products page always has something to show even before banners are
-  /// set up in the admin panel.
+  /// The material for a product.
+  static MaterialType? materialFor(Product product) {
+    for (final m in kMaterials) {
+      if (m.id == product.materialId) return m;
+    }
+    return null;
+  }
+
   static String? bannerFor(String categoryId) {
     final category = kCategories.firstWhere((c) => c.id == categoryId);
     if (category.bannerAsset != null) return category.bannerAsset;
@@ -439,9 +496,6 @@ class Catalog {
     return products.isNotEmpty ? products.first.imageAsset : null;
   }
 
-  /// Companies that have at least one product in the given category —
-  /// computed on the fly, never stored, so a company's category list is
-  /// always exactly whatever it actually sells.
   static List<Company> companiesInCategory(String categoryId) {
     final companyIds = byCategory(categoryId)
         .map((p) => p.companyId)
