@@ -627,7 +627,7 @@ class _ProductCardState extends State<_ProductCard> with SingleTickerProviderSta
                 color: Colors.white.withValues(alpha: 0.12),
                 borderRadius: BorderRadius.circular(_cardRadius),
                 border: Border.all(
-                  color: _isHovered ? _kAmber.withValues(alpha: 0.6) : Colors.grey.shade200,
+                  color: _isHovered ? _kAmber.withValues(alpha: 0.6) :  Colors.white.withValues(alpha: 0.12),
                   width: 1.5,
                 ),
                 boxShadow: [

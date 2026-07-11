@@ -543,7 +543,7 @@ class _PremiumProductCardState extends State<_PremiumProductCard>
               border: Border.all(
                 color: _isHovered
                     ? const Color.fromRGBO(245, 171, 30, 0.6)
-                    : Colors.grey.shade200,
+                    :  Colors.white.withValues(alpha: 0.12),
                 width: 1.5,
               ),
               boxShadow: [

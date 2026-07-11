@@ -401,7 +401,6 @@ class _RelatedProductsSectionState extends State<_RelatedProductsSection> {
   }
 }
 
-/// Compact card used in the horizontal "Related Products" row.
 class _RelatedProductCard extends StatefulWidget {
   final Product product;
 
@@ -453,9 +452,6 @@ class _RelatedProductCardState extends State<_RelatedProductCard> with SingleTic
       onExit: (_) => _setHovered(false),
       child: GestureDetector(
         onTap: () {
-          // push (not pushReplacement): keeps back-navigation history intact
-          // and avoids the header re-slide-in animation replaying every time
-          // a related product is tapped.
           Navigator.of(context).push(
             MaterialPageRoute(builder: (_) => ProductDetailPage(product: product)),
           );
@@ -467,7 +463,10 @@ class _RelatedProductCardState extends State<_RelatedProductCard> with SingleTic
               decoration: BoxDecoration(
                 color: Colors.white.withValues(alpha: 0.08),
                 borderRadius: BorderRadius.circular(_cardRadius),
-                border: Border.all(color: Colors.white.withValues(alpha: 0.12)),
+                 border: Border.all(
+    color: _isHovered ? _kAmber.withValues(alpha: 0.6) : Colors.white.withValues(alpha: 0.12),
+    width: 1.5,
+  ),
                 boxShadow: [
                   BoxShadow(
                     color: Colors.black.withValues(alpha: _isHovered ? 0.15 : 0.06),
