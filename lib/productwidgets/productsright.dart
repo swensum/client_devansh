@@ -7,7 +7,6 @@ import 'package:flutter/material.dart';
 
 const _kAmber = Color.fromRGBO(245, 171, 30, 1);
 
-/// How many products are shown per page (4 columns x 3 rows).
 const int _kItemsPerPage = 12;
 
 class ProductsRightPanel extends StatefulWidget {
@@ -42,9 +41,6 @@ class _ProductsRightPanelState extends State<ProductsRightPanel> {
   @override
   void didUpdateWidget(covariant ProductsRightPanel oldWidget) {
     super.didUpdateWidget(oldWidget);
-    // Whenever the underlying product set, category, company, or view mode
-    // changes, jump back to the first page so we don't end up on an
-    // out-of-range page with nothing to show.
     if (oldWidget.category.id != widget.category.id ||
         oldWidget.company?.id != widget.company?.id ||
         oldWidget.products != widget.products ||
@@ -168,9 +164,6 @@ class _ProductsRightPanelState extends State<ProductsRightPanel> {
     );
   }
 }
-
-/// Bottom pagination control: previous/next arrows + numbered pages,
-/// with a row of small dots underneath indicating the current page.
 class _Pagination extends StatelessWidget {
   final int currentPage; // 0-based
   final int totalPages;

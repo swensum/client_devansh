@@ -10,8 +10,8 @@ const _kGreen = Color(0xFF4CAF50);
 
 const double _kImageHeight = 420;
 const double _kHeaderHeight = 100;
+const double _kBannerHeight = 100;
 
-// How many related product cards are visible on screen at once (per page).
 const int _kRelatedItemsPerPage = 4;
 
 class ProductDetailPage extends StatefulWidget {
@@ -29,7 +29,6 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
   @override
   void initState() {
     super.initState();
-    // Slide the header in shortly after first paint, same as HomePage/ProductsPage.
     WidgetsBinding.instance.addPostFrameCallback((_) {
       Future.delayed(const Duration(milliseconds: 150), () {
         if (mounted) setState(() => _headerRevealed = true);
@@ -66,12 +65,14 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
-                const SizedBox(height: _kHeaderHeight), // reserve space
+                const SizedBox(height: _kHeaderHeight),
+                const _DetailBanner(),
+                const SizedBox(height: 40),
                 Center(
                   child: ConstrainedBox(
                     constraints: const BoxConstraints(maxWidth: 1200),
                     child: Padding(
-                      padding: const EdgeInsets.all(16),
+                      padding: const EdgeInsets.fromLTRB(16,50,16,16),
                       child: Row(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
@@ -187,26 +188,37 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
               child: const Header(),
             ),
           ),
-          // Floating back button since the Header replaces the AppBar's back arrow.
-          Positioned(
-            top: 16,
-            left: 16,
-            child: SafeArea(
-              child: Material(
-                color: Colors.black45,
-                shape: const CircleBorder(),
-                child: IconButton(
-                  icon: const Icon(Icons.arrow_back, color: Colors.white),
-                  onPressed: () => Navigator.of(context).maybePop(),
-                ),
-              ),
-            ),
-          ),
         ],
       ),
     );
   }
 }
+
+class _DetailBanner extends StatelessWidget {
+  const _DetailBanner();
+
+   @override
+  Widget build(BuildContext context) {
+    return SizedBox(
+      width: double.infinity,
+      height: _kBannerHeight,
+      child: Stack(
+        fit: StackFit.expand,
+        children: [
+          Image.asset(
+            'assets/port3.png', 
+            fit: BoxFit.cover,
+            errorBuilder: (context, error, stackTrace) => Container(
+              color: Colors.grey.shade900,
+            ),
+          ),
+          
+        ],
+      ),
+    );
+  }
+}
+
 
 /// Same divider style as used on HomePage/ProductsPage.
 class _Divider extends StatelessWidget {
@@ -232,7 +244,6 @@ class _RelatedProductsSection extends StatefulWidget {
 }
 
 class _RelatedProductsSectionState extends State<_RelatedProductsSection> {
-  
   static const int _kLoopMultiplier = 1000;
 
   static const double _kCardGap = 18;
@@ -296,7 +307,7 @@ class _RelatedProductsSectionState extends State<_RelatedProductsSection> {
       duration: const Duration(milliseconds: 500),
       curve: Curves.easeInOut,
     );
-   
+
     _startAutoSlide();
   }
 
@@ -325,7 +336,6 @@ class _RelatedProductsSectionState extends State<_RelatedProductsSection> {
                   height: 290,
                   child: LayoutBuilder(
                     builder: (context, constraints) {
-                    
                       final slotWidth = constraints.maxWidth / _kRelatedItemsPerPage;
                       final cardWidth = slotWidth - _kCardGap;
 
@@ -443,7 +453,10 @@ class _RelatedProductCardState extends State<_RelatedProductCard> with SingleTic
       onExit: (_) => _setHovered(false),
       child: GestureDetector(
         onTap: () {
-          Navigator.of(context).pushReplacement(
+          // push (not pushReplacement): keeps back-navigation history intact
+          // and avoids the header re-slide-in animation replaying every time
+          // a related product is tapped.
+          Navigator.of(context).push(
             MaterialPageRoute(builder: (_) => ProductDetailPage(product: product)),
           );
         },

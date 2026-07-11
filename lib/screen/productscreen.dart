@@ -177,7 +177,6 @@ class _ProductsPageState extends State<ProductsPage> {
   }
 }
 
-/// Slim full-width banner separating the navbar from the products content.
 class _ProductsBanner extends StatelessWidget {
   const _ProductsBanner();
 
@@ -190,7 +189,7 @@ class _ProductsBanner extends StatelessWidget {
         fit: StackFit.expand,
         children: [
           Image.asset(
-            'assets/port.png', 
+            'assets/image1.png', 
             fit: BoxFit.cover,
             errorBuilder: (context, error, stackTrace) => Container(
               color: Colors.grey.shade900,
