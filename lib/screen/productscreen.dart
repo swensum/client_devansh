@@ -1,8 +1,12 @@
+import 'package:devansh/components/footer.dart';
+import 'package:devansh/components/header.dart';
 import 'package:devansh/data/catalog.dart';
 import 'package:devansh/productwidgets/categories.dart';
 import 'package:devansh/productwidgets/productsright.dart';
 import 'package:devansh/productwidgets/productview.dart';
 import 'package:flutter/material.dart';
+
+const double _kHeaderHeight = 100;
 
 class ProductsPage extends StatefulWidget {
   const ProductsPage({super.key});
@@ -17,6 +21,18 @@ class _ProductsPageState extends State<ProductsPage> {
   ViewMode _viewMode = ViewMode.grid;
   SortOption _sortOption = SortOption.relevance;
   String? _selectedMaterialId; 
+  bool _headerRevealed = false;
+
+  @override
+  void initState() {
+    super.initState();
+    // Slide the header in shortly after first paint, regardless of scroll.
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      Future.delayed(const Duration(milliseconds: 150), () {
+        if (mounted) setState(() => _headerRevealed = true);
+      });
+    });
+  }
 
   void _selectCategory(String id) {
     if (id == _selectedCategoryId) return;
@@ -30,7 +46,8 @@ class _ProductsPageState extends State<ProductsPage> {
   void _selectCompany(String? id) {
     setState(() => _selectedCompanyId = id);
   }
-void _selectMaterial(String? id) {
+
+  void _selectMaterial(String? id) {
     setState(() => _selectedMaterialId = id);
   }
 
@@ -57,7 +74,7 @@ void _selectMaterial(String? id) {
     final category = kCategories.firstWhere((c) => c.id == _selectedCategoryId);
     final company =
         _selectedCompanyId == null ? null : kCompanies.firstWhere((c) => c.id == _selectedCompanyId);
-   final products = _applySort(
+    final products = _applySort(
       Catalog.filtered(
         categoryId: _selectedCategoryId,
         companyId: _selectedCompanyId,
@@ -67,56 +84,87 @@ void _selectMaterial(String? id) {
 
     return Scaffold(
       backgroundColor: Colors.black,
-      
-      body: LayoutBuilder(
-        builder: (context, constraints) {
-          final r = ProductsPageResponsive.of(constraints.maxWidth);
+      body: Stack(
+        children: [
+          LayoutBuilder(
+            builder: (context, constraints) {
+              final r = ProductsPageResponsive.of(constraints.maxWidth);
 
-          final sidebar = CategorySidebar(
-            selectedCategoryId: _selectedCategoryId,
-            selectedCompanyId: _selectedCompanyId,
-            selectedMaterialId: _selectedMaterialId,
-            onCategoryTap: _selectCategory,
-            onCompanyTap: _selectCompany,
-             onMaterialTap: _selectMaterial,  
-          );
+              final sidebar = CategorySidebar(
+                selectedCategoryId: _selectedCategoryId,
+                selectedCompanyId: _selectedCompanyId,
+                selectedMaterialId: _selectedMaterialId,
+                onCategoryTap: _selectCategory,
+                onCompanyTap: _selectCompany,
+                onMaterialTap: _selectMaterial,  
+              );
 
-          final panel = ProductsRightPanel(
-            category: category,
-            company: company,
-            products: products,
-            viewMode: _viewMode,
-            sortOption: _sortOption,
-            onViewModeChanged: (mode) => setState(() => _viewMode = mode),
-            onSortChanged: (option) => setState(() => _sortOption = option),
-            r: r,
-          );
-          if (r.sidebarOnLeft) {
-            return Padding(
-              padding: EdgeInsets.all(r.hPadding),
-              child: Row(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  SizedBox(width: r.sidebarWidth, child: SingleChildScrollView(child: sidebar)),
-                  SizedBox(width: r.sectionGap),
-                  Expanded(child: SingleChildScrollView(child: panel)),
-                ],
-              ),
-            );
-          }
+              final panel = ProductsRightPanel(
+                category: category,
+                company: company,
+                products: products,
+                viewMode: _viewMode,
+                sortOption: _sortOption,
+                onViewModeChanged: (mode) => setState(() => _viewMode = mode),
+                onSortChanged: (option) => setState(() => _sortOption = option),
+                r: r,
+              );
 
-          return SingleChildScrollView(
-            padding: EdgeInsets.all(r.hPadding),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                sidebar,
-                SizedBox(height: r.sectionGap),
-                panel,
-              ],
+              if (r.sidebarOnLeft) {
+                return SingleChildScrollView(
+                  child: Column(
+                    children: [
+                      const SizedBox(height: _kHeaderHeight), // reserve space for floating header
+                      Padding(
+                        padding: EdgeInsets.all(r.hPadding),
+                        child: Row(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            SizedBox(width: r.sidebarWidth, child: sidebar),
+                            SizedBox(width: r.sectionGap),
+                            Expanded(child: panel),
+                          ],
+                        ),
+                      ),
+                      const Footer(),
+                    ],
+                  ),
+                );
+              }
+
+              return SingleChildScrollView(
+                child: Column(
+                  children: [
+                    const SizedBox(height: _kHeaderHeight), // reserve space for floating header
+                    Padding(
+                      padding: EdgeInsets.all(r.hPadding),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          sidebar,
+                          SizedBox(height: r.sectionGap),
+                          panel,
+                        ],
+                      ),
+                    ),
+                    const Footer(),
+                  ],
+                ),
+              );
+            },
+          ),
+          Positioned(
+            top: 0,
+            left: 0,
+            right: 0,
+            child: AnimatedSlide(
+              duration: const Duration(milliseconds: 500),
+              curve: Curves.easeOutCubic,
+              offset: _headerRevealed ? Offset.zero : const Offset(0, -1),
+              child: const Header(),
             ),
-          );
-        },
+          ),
+        ],
       ),
     );
   }

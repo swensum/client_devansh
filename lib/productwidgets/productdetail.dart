@@ -145,9 +145,9 @@ class ProductDetailPage extends StatelessWidget {
               ),
             ),
 
-            // ---- Related Products: full-width section with its own background ----
+           
             if (relatedProducts.isNotEmpty) ...[
-              const SizedBox(height: 56),
+              const SizedBox(height: 86),
               _RelatedProductsSection(products: relatedProducts),
             ],
           ],
@@ -156,10 +156,6 @@ class ProductDetailPage extends StatelessWidget {
     );
   }
 }
-
-/// Full-width "Related Products" section shown at the bottom of the page,
-/// with its own background, showing a fixed number of items per page and
-/// auto-sliding one item at a time (1234 -> 2345 -> 3451 -> ...).
 class _RelatedProductsSection extends StatefulWidget {
   final List<Product> products;
 
@@ -170,15 +166,10 @@ class _RelatedProductsSection extends StatefulWidget {
 }
 
 class _RelatedProductsSectionState extends State<_RelatedProductsSection> {
-  // A large multiple of the real list length lets us scroll "infinitely"
-  // in one direction — we jump back to the middle range instead of ever
-  // animating backwards to index 0.
+  
   static const int _kLoopMultiplier = 1000;
 
-  // Horizontal gap between cards. This is baked into the card width
-  // calculation below (not applied as extra padding on top of the slot
-  // width), so cards never get squeezed/cropped by double-counted spacing.
-  static const double _kCardGap = 14;
+  static const double _kCardGap = 18; // was 14 — slightly bigger gap for bigger cards
 
   late final PageController _pageController;
   Timer? _autoSlideTimer;
@@ -239,8 +230,7 @@ class _RelatedProductsSectionState extends State<_RelatedProductsSection> {
       duration: const Duration(milliseconds: 500),
       curve: Curves.easeInOut,
     );
-    // Restart the auto-slide timer so a manual interaction doesn't get
-    // immediately overridden by the next scheduled tick.
+   
     _startAutoSlide();
   }
 
@@ -250,31 +240,26 @@ class _RelatedProductsSectionState extends State<_RelatedProductsSection> {
 
     return Container(
       width: double.infinity,
-      // Distinct background so the section reads as separate from the
-      // product details above it.
       color: const Color(0xFF141414),
-      padding: const EdgeInsets.symmetric(vertical: 48),
+      padding: const EdgeInsets.symmetric(vertical: 58),
       child: Center(
         child: ConstrainedBox(
-          constraints: const BoxConstraints(maxWidth: 1200),
+          constraints: const BoxConstraints(maxWidth: 1300),
           child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 16),
+            padding: const EdgeInsets.symmetric(horizontal: 24), // was 14 — extra buffer for hover scale on edges
             child: Column(
               children: [
                 const Text(
                   'Related Products',
                   textAlign: TextAlign.center,
-                  style: TextStyle(color: Colors.white, fontSize: 22, fontWeight: FontWeight.bold),
+                  style: TextStyle(color: Colors.white, fontSize: 28, fontWeight: FontWeight.bold),
                 ),
-                const SizedBox(height: 32),
+                const SizedBox(height: 52),
                 SizedBox(
-                  height: 240,
+                  height: 290, // was 258 — bigger cards + hover room
                   child: LayoutBuilder(
                     builder: (context, constraints) {
-                      // Compute the exact pixel width for one card so that
-                      // 4 cards + the gaps between them fill the row with
-                      // zero leftover/rounding — this is what was causing
-                      // the outer cards to render partially cropped.
+                    
                       final slotWidth = constraints.maxWidth / _kRelatedItemsPerPage;
                       final cardWidth = slotWidth - _kCardGap;
 
@@ -298,7 +283,8 @@ class _RelatedProductsSectionState extends State<_RelatedProductsSection> {
                               child: SizedBox(
                                 width: cardWidth,
                                 child: Padding(
-                                  padding: const EdgeInsets.only(right: _kCardGap),
+                                  // Gap split evenly left/right so the first card also has slack to scale into.
+                                  padding: EdgeInsets.fromLTRB(_kCardGap / 2, 8, _kCardGap / 2, 8),
                                   child: _RelatedProductCard(product: product),
                                 ),
                               ),
@@ -341,69 +327,198 @@ class _RelatedProductsSectionState extends State<_RelatedProductsSection> {
 }
 
 /// Compact card used in the horizontal "Related Products" row.
-class _RelatedProductCard extends StatelessWidget {
+class _RelatedProductCard extends StatefulWidget {
   final Product product;
 
   const _RelatedProductCard({required this.product});
 
   @override
+  State<_RelatedProductCard> createState() => _RelatedProductCardState();
+}
+
+class _RelatedProductCardState extends State<_RelatedProductCard> with SingleTickerProviderStateMixin {
+  bool _isHovered = false;
+  late final AnimationController _scaleController;
+  late final Animation<double> _scaleAnimation;
+
+  static const double _cardRadius = 12;
+
+  @override
+  void initState() {
+    super.initState();
+    _scaleController = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 200),
+    );
+    _scaleAnimation = Tween<double>(begin: 1.0, end: 1.03).animate(
+      CurvedAnimation(parent: _scaleController, curve: Curves.easeOut),
+    );
+  }
+
+  @override
+  void dispose() {
+    _scaleController.dispose();
+    super.dispose();
+  }
+
+  void _setHovered(bool value) {
+    if (_isHovered == value) return;
+    setState(() => _isHovered = value);
+    value ? _scaleController.forward() : _scaleController.reverse();
+  }
+
+  @override
   Widget build(BuildContext context) {
-    return GestureDetector(
-      onTap: () {
-        Navigator.of(context).pushReplacement(
-          MaterialPageRoute(builder: (_) => ProductDetailPage(product: product)),
-        );
-      },
-      child: Container(
-        decoration: BoxDecoration(
-          color: Colors.white.withValues(alpha: 0.08),
-          borderRadius: BorderRadius.circular(12),
-          border: Border.all(color: Colors.white.withValues(alpha: 0.12)),
-        ),
-        clipBehavior: Clip.antiAlias,
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Expanded(
-              child: Image.asset(
-                product.imageAsset,
-                width: double.infinity,
-                fit: BoxFit.cover,
-                cacheWidth: 300,
-                errorBuilder: (context, error, stackTrace) => Container(
-                  color: Colors.grey.shade800,
-                  child: const Center(
-                    child: Icon(Icons.image_not_supported_outlined, color: Colors.white38),
+    final product = widget.product;
+    final company = Catalog.companyFor(product);
+
+    return MouseRegion(
+      cursor: SystemMouseCursors.click,
+      onEnter: (_) => _setHovered(true),
+      onExit: (_) => _setHovered(false),
+      child: GestureDetector(
+        onTap: () {
+          Navigator.of(context).pushReplacement(
+            MaterialPageRoute(builder: (_) => ProductDetailPage(product: product)),
+          );
+        },
+        child: RepaintBoundary(
+          child: ScaleTransition(
+            scale: _scaleAnimation,
+            child: Container(
+              decoration: BoxDecoration(
+                color: Colors.white.withValues(alpha: 0.08),
+                borderRadius: BorderRadius.circular(_cardRadius),
+                border: Border.all(color: Colors.white.withValues(alpha: 0.12)),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withValues(alpha: _isHovered ? 0.15 : 0.06),
+                    blurRadius: _isHovered ? 20 : 8,
+                    offset: Offset(0, _isHovered ? 8 : 4),
+                    spreadRadius: _isHovered ? 2 : 0,
                   ),
-                ),
+                ],
               ),
-            ),
-            Padding(
-              padding: const EdgeInsets.all(10),
+              clipBehavior: Clip.antiAlias,
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(
-                    product.name,
-                    maxLines: 2,
-                    overflow: TextOverflow.ellipsis,
-                    style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w600, fontSize: 12.5),
+                  Expanded(
+                    child: ClipRRect(
+                      borderRadius: const BorderRadius.only(
+                        topLeft: Radius.circular(_cardRadius),
+                        topRight: Radius.circular(_cardRadius),
+                      ),
+                      child: Container(
+                        width: double.infinity,
+                        color: Colors.grey.shade900,
+                        child: Stack(
+                          fit: StackFit.expand,
+                          children: [
+                            Image.asset(
+                              product.imageAsset,
+                              fit: BoxFit.cover,
+                              cacheWidth: 300,
+                              errorBuilder: (context, error, stackTrace) => Container(
+                                color: Colors.grey.shade800,
+                                child: const Center(
+                                  child: Icon(Icons.image_not_supported_outlined, color: Colors.white38),
+                                ),
+                              ),
+                            ),
+                            AnimatedOpacity(
+                              duration: const Duration(milliseconds: 200),
+                              opacity: _isHovered ? 0.3 : 0.0,
+                              child: Container(
+                                decoration: BoxDecoration(
+                                  gradient: LinearGradient(
+                                    begin: Alignment.topCenter,
+                                    end: Alignment.bottomCenter,
+                                    colors: [Colors.transparent, Colors.black.withValues(alpha: 0.7)],
+                                  ),
+                                ),
+                              ),
+                            ),
+                            Positioned(
+                              top: 10,
+                              right: 10,
+                              child: AnimatedOpacity(
+                                duration: const Duration(milliseconds: 200),
+                                opacity: _isHovered ? 1.0 : 0.0,
+                                child: _buildQuickActionButton(Icons.favorite_border, Colors.white),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
                   ),
-                  const SizedBox(height: 4),
-                  Text(
-                    '\$${product.price.toStringAsFixed(2)}',
-                    style: const TextStyle(color: _kAmber, fontWeight: FontWeight.bold, fontSize: 13.5),
+                  Padding(
+                    padding: const EdgeInsets.all(10),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          product.name,
+                          maxLines: 2,
+                          overflow: TextOverflow.ellipsis,
+                          style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w600, fontSize: 12.5),
+                        ),
+                        const SizedBox(height: 4),
+                        if (company != null)
+                          Text(
+                            company.name,
+                            style: TextStyle(color: Colors.white.withValues(alpha: 0.55), fontSize: 11),
+                          ),
+                        const SizedBox(height: 6),
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            Text(
+                              '\$${product.price.toStringAsFixed(2)}',
+                              style: const TextStyle(color: _kAmber, fontWeight: FontWeight.bold, fontSize: 13.5),
+                            ),
+                            AnimatedOpacity(
+                              duration: const Duration(milliseconds: 200),
+                              opacity: _isHovered ? 1.0 : 0.0,
+                              child: _buildQuickActionButton(
+                                Icons.shopping_bag_outlined,
+                                Colors.black,
+                                backgroundColor: _kAmber,
+                                borderColor: Colors.transparent,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ],
+                    ),
                   ),
                 ],
               ),
             ),
-          ],
+          ),
         ),
       ),
     );
   }
-}
 
+  Widget _buildQuickActionButton(
+    IconData icon,
+    Color iconColor, {
+    Color backgroundColor = Colors.black54,
+    Color borderColor = Colors.white24,
+  }) {
+    return Container(
+      padding: const EdgeInsets.all(6),
+      decoration: BoxDecoration(
+        color: backgroundColor,
+        shape: BoxShape.circle,
+        border: Border.all(color: borderColor, width: 1),
+      ),
+      child: Icon(icon, size: 14, color: iconColor),
+    );
+  }
+}
 class _DetailEntry {
   final String label;
   final String value;
