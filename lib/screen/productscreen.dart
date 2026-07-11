@@ -7,6 +7,7 @@ import 'package:devansh/productwidgets/productview.dart';
 import 'package:flutter/material.dart';
 
 const double _kHeaderHeight = 100;
+const double _kBannerHeight = 100; // slim full-width banner below navbar
 
 class ProductsPage extends StatefulWidget {
   const ProductsPage({super.key});
@@ -17,16 +18,16 @@ class ProductsPage extends StatefulWidget {
 
 class _ProductsPageState extends State<ProductsPage> {
   String _selectedCategoryId = kCategories.first.id;
-  String? _selectedCompanyId; 
+  String? _selectedCompanyId;
   ViewMode _viewMode = ViewMode.grid;
   SortOption _sortOption = SortOption.relevance;
-  String? _selectedMaterialId; 
+  String? _selectedMaterialId;
   bool _headerRevealed = false;
 
   @override
   void initState() {
     super.initState();
-    // Slide the header in shortly after first paint, regardless of scroll.
+    // Slide the header in shortly after first paint, same as HomePage.
     WidgetsBinding.instance.addPostFrameCallback((_) {
       Future.delayed(const Duration(milliseconds: 150), () {
         if (mounted) setState(() => _headerRevealed = true);
@@ -38,7 +39,7 @@ class _ProductsPageState extends State<ProductsPage> {
     if (id == _selectedCategoryId) return;
     setState(() {
       _selectedCategoryId = id;
-      _selectedCompanyId = null; 
+      _selectedCompanyId = null;
       _selectedMaterialId = null;
     });
   }
@@ -96,7 +97,7 @@ class _ProductsPageState extends State<ProductsPage> {
                 selectedMaterialId: _selectedMaterialId,
                 onCategoryTap: _selectCategory,
                 onCompanyTap: _selectCompany,
-                onMaterialTap: _selectMaterial,  
+                onMaterialTap: _selectMaterial,
               );
 
               final panel = ProductsRightPanel(
@@ -113,8 +114,10 @@ class _ProductsPageState extends State<ProductsPage> {
               if (r.sidebarOnLeft) {
                 return SingleChildScrollView(
                   child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      const SizedBox(height: _kHeaderHeight), // reserve space for floating header
+                      const SizedBox(height: _kHeaderHeight), // reserve space
+                      const _ProductsBanner(),
                       Padding(
                         padding: EdgeInsets.all(r.hPadding),
                         child: Row(
@@ -126,6 +129,7 @@ class _ProductsPageState extends State<ProductsPage> {
                           ],
                         ),
                       ),
+                      const _Divider(),
                       const Footer(),
                     ],
                   ),
@@ -134,8 +138,10 @@ class _ProductsPageState extends State<ProductsPage> {
 
               return SingleChildScrollView(
                 child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    const SizedBox(height: _kHeaderHeight), // reserve space for floating header
+                    const SizedBox(height: _kHeaderHeight), // reserve space
+                    const _ProductsBanner(),
                     Padding(
                       padding: EdgeInsets.all(r.hPadding),
                       child: Column(
@@ -147,6 +153,7 @@ class _ProductsPageState extends State<ProductsPage> {
                         ],
                       ),
                     ),
+                    const _Divider(),
                     const Footer(),
                   ],
                 ),
@@ -166,6 +173,46 @@ class _ProductsPageState extends State<ProductsPage> {
           ),
         ],
       ),
+    );
+  }
+}
+
+/// Slim full-width banner separating the navbar from the products content.
+class _ProductsBanner extends StatelessWidget {
+  const _ProductsBanner();
+
+  @override
+  Widget build(BuildContext context) {
+    return SizedBox(
+      width: double.infinity,
+      height: _kBannerHeight,
+      child: Stack(
+        fit: StackFit.expand,
+        children: [
+          Image.asset(
+            'assets/port.png', 
+            fit: BoxFit.cover,
+            errorBuilder: (context, error, stackTrace) => Container(
+              color: Colors.grey.shade900,
+            ),
+          ),
+          
+        ],
+      ),
+    );
+  }
+}
+
+
+class _Divider extends StatelessWidget {
+  const _Divider();
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: double.infinity,
+      height: 2,
+      color: const Color.fromRGBO(245, 171, 30, 1),
     );
   }
 }
