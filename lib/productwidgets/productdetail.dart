@@ -1,24 +1,45 @@
 import 'dart:async';
 
+import 'package:devansh/components/footer.dart';
+import 'package:devansh/components/header.dart';
 import 'package:devansh/data/catalog.dart';
-import 'package:devansh/productwidgets/productview.dart';
 import 'package:flutter/material.dart';
 
 const _kAmber = Color.fromRGBO(245, 171, 30, 1);
 const _kGreen = Color(0xFF4CAF50);
 
 const double _kImageHeight = 420;
+const double _kHeaderHeight = 100;
 
 // How many related product cards are visible on screen at once (per page).
 const int _kRelatedItemsPerPage = 4;
 
-class ProductDetailPage extends StatelessWidget {
+class ProductDetailPage extends StatefulWidget {
   final Product product;
 
   const ProductDetailPage({super.key, required this.product});
 
   @override
+  State<ProductDetailPage> createState() => _ProductDetailPageState();
+}
+
+class _ProductDetailPageState extends State<ProductDetailPage> {
+  bool _headerRevealed = false;
+
+  @override
+  void initState() {
+    super.initState();
+    // Slide the header in shortly after first paint, same as HomePage/ProductsPage.
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      Future.delayed(const Duration(milliseconds: 150), () {
+        if (mounted) setState(() => _headerRevealed = true);
+      });
+    });
+  }
+
+  @override
   Widget build(BuildContext context) {
+    final product = widget.product;
     final company = Catalog.companyFor(product);
     final material = Catalog.materialFor(product);
     final category = kCategories.firstWhere((c) => c.id == product.categoryId);
@@ -39,123 +60,168 @@ class ProductDetailPage extends StatelessWidget {
 
     return Scaffold(
       backgroundColor: Colors.black,
-      appBar: AppBar(
-        backgroundColor: Colors.black,
-        elevation: 0,
-        iconTheme: const IconThemeData(color: Colors.white),
-      ),
-      body: SingleChildScrollView(
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            Center(
-              child: ConstrainedBox(
-                constraints: const BoxConstraints(maxWidth: 1200),
-                child: Padding(
-                  padding: const EdgeInsets.all(16),
-                  child: Row(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Expanded(
-                        child: SizedBox(
-                          height: _kImageHeight,
-                          child: ClipRRect(
-                            borderRadius: BorderRadius.circular(12),
-                            child: Image.asset(
-                              product.imageAsset,
-                              fit: BoxFit.cover,
-                              cacheWidth: 700,
-                              errorBuilder: (context, error, stackTrace) => Container(
-                                color: Colors.grey.shade800,
-                                child: const Icon(Icons.image_not_supported_outlined,
-                                    color: Colors.white38, size: 32),
+      body: Stack(
+        children: [
+          SingleChildScrollView(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                const SizedBox(height: _kHeaderHeight), // reserve space
+                Center(
+                  child: ConstrainedBox(
+                    constraints: const BoxConstraints(maxWidth: 1200),
+                    child: Padding(
+                      padding: const EdgeInsets.all(16),
+                      child: Row(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Expanded(
+                            child: SizedBox(
+                              height: _kImageHeight,
+                              child: ClipRRect(
+                                borderRadius: BorderRadius.circular(12),
+                                child: Image.asset(
+                                  product.imageAsset,
+                                  fit: BoxFit.cover,
+                                  cacheWidth: 700,
+                                  errorBuilder: (context, error, stackTrace) => Container(
+                                    color: Colors.grey.shade800,
+                                    child: const Icon(Icons.image_not_supported_outlined,
+                                        color: Colors.white38, size: 32),
+                                  ),
+                                ),
                               ),
                             ),
                           ),
-                        ),
-                      ),
-                      const SizedBox(width: 24),
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              product.name,
-                              style: const TextStyle(
-                                  color: Colors.white, fontSize: 28, fontWeight: FontWeight.bold),
-                            ),
-                            const SizedBox(height: 8),
-                            Text(
-                              category.name,
-                              style: TextStyle(color: _kAmber, fontSize: 16, fontWeight: FontWeight.w600),
-                            ),
-                            if (product.description != null && product.description!.trim().isNotEmpty) ...[
-                              const SizedBox(height: 15),
-                              Text(
-                                product.description!,
-                                style: TextStyle(
-                                    color: Colors.white.withValues(alpha: 0.75), fontSize: 16, height: 1.5),
-                              ),
-                            ],
-                            const SizedBox(height: 20),
-                            Container(
-                              width: double.infinity,
-                              padding: const EdgeInsets.all(18),
-                              decoration: BoxDecoration(
-                                color: Colors.white.withValues(alpha: 0.08),
-                                borderRadius: BorderRadius.circular(12),
-                                border: Border.all(color: Colors.white.withValues(alpha: 0.15)),
-                              ),
-                              child: _DetailGrid(
-                                entries: [
-                                  _DetailEntry(
-                                    label: 'Price',
-                                    value: '\$${product.price.toStringAsFixed(2)}',
-                                    valueColor: _kAmber,
-                                  ),
-                                  for (final entry in specs.entries)
-                                    _DetailEntry(
-                                      label: entry.key,
-                                      value: entry.value!,
-                                      isAvailability: entry.key == 'Availability',
-                                    ),
-                                ],
-                              ),
-                            ),
-                            const SizedBox(height: 30),
-                            SizedBox(
-                              width: double.infinity,
-                              child: ElevatedButton(
-                                onPressed: () {},
-                                style: ElevatedButton.styleFrom(
-                                  backgroundColor: _kAmber,
-                                  foregroundColor: Colors.black,
-                                  minimumSize: const Size(double.infinity, 46),
-                                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                          const SizedBox(width: 24),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  product.name,
+                                  style: const TextStyle(
+                                      color: Colors.white, fontSize: 28, fontWeight: FontWeight.bold),
                                 ),
-                                child: const Text('Place Order', style: TextStyle(fontWeight: FontWeight.w600)),
-                              ),
+                                const SizedBox(height: 8),
+                                Text(
+                                  category.name,
+                                  style: TextStyle(color: _kAmber, fontSize: 16, fontWeight: FontWeight.w600),
+                                ),
+                                if (product.description != null &&
+                                    product.description!.trim().isNotEmpty) ...[
+                                  const SizedBox(height: 15),
+                                  Text(
+                                    product.description!,
+                                    style: TextStyle(
+                                        color: Colors.white.withValues(alpha: 0.75),
+                                        fontSize: 16,
+                                        height: 1.5),
+                                  ),
+                                ],
+                                const SizedBox(height: 20),
+                                Container(
+                                  width: double.infinity,
+                                  padding: const EdgeInsets.all(18),
+                                  decoration: BoxDecoration(
+                                    color: Colors.white.withValues(alpha: 0.08),
+                                    borderRadius: BorderRadius.circular(12),
+                                    border: Border.all(color: Colors.white.withValues(alpha: 0.15)),
+                                  ),
+                                  child: _DetailGrid(
+                                    entries: [
+                                      _DetailEntry(
+                                        label: 'Price',
+                                        value: '\$${product.price.toStringAsFixed(2)}',
+                                        valueColor: _kAmber,
+                                      ),
+                                      for (final entry in specs.entries)
+                                        _DetailEntry(
+                                          label: entry.key,
+                                          value: entry.value!,
+                                          isAvailability: entry.key == 'Availability',
+                                        ),
+                                    ],
+                                  ),
+                                ),
+                                const SizedBox(height: 30),
+                                SizedBox(
+                                  width: double.infinity,
+                                  child: ElevatedButton(
+                                    onPressed: () {},
+                                    style: ElevatedButton.styleFrom(
+                                      backgroundColor: _kAmber,
+                                      foregroundColor: Colors.black,
+                                      minimumSize: const Size(double.infinity, 46),
+                                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                                    ),
+                                    child: const Text('Place Order',
+                                        style: TextStyle(fontWeight: FontWeight.w600)),
+                                  ),
+                                ),
+                              ],
                             ),
-                          ],
-                        ),
+                          ),
+                        ],
                       ),
-                    ],
+                    ),
                   ),
+                ),
+                if (relatedProducts.isNotEmpty) ...[
+                  const SizedBox(height: 86),
+                  _RelatedProductsSection(products: relatedProducts),
+                ],
+                const _Divider(),
+                const Footer(),
+              ],
+            ),
+          ),
+          Positioned(
+            top: 0,
+            left: 0,
+            right: 0,
+            child: AnimatedSlide(
+              duration: const Duration(milliseconds: 500),
+              curve: Curves.easeOutCubic,
+              offset: _headerRevealed ? Offset.zero : const Offset(0, -1),
+              child: const Header(),
+            ),
+          ),
+          // Floating back button since the Header replaces the AppBar's back arrow.
+          Positioned(
+            top: 16,
+            left: 16,
+            child: SafeArea(
+              child: Material(
+                color: Colors.black45,
+                shape: const CircleBorder(),
+                child: IconButton(
+                  icon: const Icon(Icons.arrow_back, color: Colors.white),
+                  onPressed: () => Navigator.of(context).maybePop(),
                 ),
               ),
             ),
-
-           
-            if (relatedProducts.isNotEmpty) ...[
-              const SizedBox(height: 86),
-              _RelatedProductsSection(products: relatedProducts),
-            ],
-          ],
-        ),
+          ),
+        ],
       ),
     );
   }
 }
+
+/// Same divider style as used on HomePage/ProductsPage.
+class _Divider extends StatelessWidget {
+  const _Divider();
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: double.infinity,
+      height: 2,
+      color: const Color.fromRGBO(245, 171, 30, 1),
+    );
+  }
+}
+
 class _RelatedProductsSection extends StatefulWidget {
   final List<Product> products;
 
@@ -169,12 +235,12 @@ class _RelatedProductsSectionState extends State<_RelatedProductsSection> {
   
   static const int _kLoopMultiplier = 1000;
 
-  static const double _kCardGap = 18; // was 14 — slightly bigger gap for bigger cards
+  static const double _kCardGap = 18;
 
   late final PageController _pageController;
   Timer? _autoSlideTimer;
-  int _currentIndex = 0; // Real index (0..products.length - 1) for dots.
-  int _virtualIndex = 0; // Raw index into the looped PageView.
+  int _currentIndex = 0;
+  int _virtualIndex = 0;
 
   int get _itemCount => widget.products.length;
 
@@ -246,7 +312,7 @@ class _RelatedProductsSectionState extends State<_RelatedProductsSection> {
         child: ConstrainedBox(
           constraints: const BoxConstraints(maxWidth: 1300),
           child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 24), // was 14 — extra buffer for hover scale on edges
+            padding: const EdgeInsets.symmetric(horizontal: 24),
             child: Column(
               children: [
                 const Text(
@@ -256,7 +322,7 @@ class _RelatedProductsSectionState extends State<_RelatedProductsSection> {
                 ),
                 const SizedBox(height: 52),
                 SizedBox(
-                  height: 290, // was 258 — bigger cards + hover room
+                  height: 290,
                   child: LayoutBuilder(
                     builder: (context, constraints) {
                     
@@ -283,7 +349,6 @@ class _RelatedProductsSectionState extends State<_RelatedProductsSection> {
                               child: SizedBox(
                                 width: cardWidth,
                                 child: Padding(
-                                  // Gap split evenly left/right so the first card also has slack to scale into.
                                   padding: EdgeInsets.fromLTRB(_kCardGap / 2, 8, _kCardGap / 2, 8),
                                   child: _RelatedProductCard(product: product),
                                 ),
@@ -519,6 +584,7 @@ class _RelatedProductCardState extends State<_RelatedProductCard> with SingleTic
     );
   }
 }
+
 class _DetailEntry {
   final String label;
   final String value;
