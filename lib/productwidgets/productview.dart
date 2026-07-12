@@ -19,10 +19,6 @@ extension SortOptionLabel on SortOption {
   }
 }
 
-/// Breakpoint-driven sizing for the products page. `sidebarOnLeft` is the
-/// key layout switch: below 700px a fixed-width side column would eat
-/// too much of the screen, so the sidebar stacks above the grid instead
-/// of sitting beside it.
 class ProductsPageResponsive {
   final bool sidebarOnLeft;
   final double sidebarWidth;
