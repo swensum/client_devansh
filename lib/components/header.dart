@@ -12,7 +12,7 @@ class _HeaderState extends State<Header> {
   static const double _navBreakpoint = 1120;
   static const double _compactBreakpoint = 820;
   static const double _tightBreakpoint = 620;
-
+bool _isDisposed = false; 
   int _hoveredIndex = -1;
   bool _hoveredAccount = false;
   bool _hoveredRegister = false;
@@ -55,7 +55,7 @@ class _HeaderState extends State<Header> {
   }
 
   void _showDropdown(int index) {
-    _cancelClose(); // stop any pending close from a previous hover
+    _cancelClose(); 
     if (_overlayEntry != null && _openIndex == index) return; // already open
     _removeOverlay();
     _openIndex = index;
@@ -119,9 +119,9 @@ class _HeaderState extends State<Header> {
   }
 
   void _closeDropdown() {
-    _removeOverlay();
-    if (mounted) setState(() => _hoveredIndex = -1);
-  }
+  _removeOverlay();
+  if (!_isDisposed) setState(() => _hoveredIndex = -1);
+}
 
   void _removeOverlay() {
     _overlayEntry?.remove();
@@ -158,19 +158,21 @@ class _HeaderState extends State<Header> {
   }
 
   void _removeMobileOverlay() {
-    _mobileMenuOverlay?.remove();
-    _mobileMenuOverlay = null;
-    if (mounted) setState(() {});
+  _mobileMenuOverlay?.remove();
+  _mobileMenuOverlay = null;
+  if (!_isDisposed) {
+    setState(() {});
   }
+}
 
-  @override
-  void dispose() {
-    _closeTimer?.cancel();
-    _removeOverlay();
-    _removeMobileOverlay();
-    super.dispose();
-  }
-
+@override
+void dispose() {
+  _isDisposed = true;
+  _closeTimer?.cancel();
+  _removeOverlay();
+  _removeMobileOverlay();
+  super.dispose();
+}
   @override
   Widget build(BuildContext context) {
     return LayoutBuilder(

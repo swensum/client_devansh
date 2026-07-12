@@ -117,7 +117,7 @@ const List<Product> kProducts = [
   isTopProduct: true,
 ),
   Product(
-  id: 'p6',
+  id: 'p2',
   name: 'Stainless Chimney Hood',
   imageAsset: 'assets/port2.png',
   price: 89.00,

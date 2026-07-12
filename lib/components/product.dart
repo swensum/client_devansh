@@ -19,14 +19,15 @@ class _TopProductsSectionState extends State<TopProductsSection> {
   int _currentPage = 0;
 
   bool _visible = false;
+late final List<Product> _products = Catalog.topProducts;
+  late final List<List<Product>> _pages = _pagesFor(_products);
 
   void _handleVisibility(VisibilityInfo info) {
     if (!_visible && info.visibleFraction > 0.2) {
       setState(() => _visible = true);
     }
   }
-
-  List<List<Product>> _pagesFor(List<Product> products) {
+List<List<Product>> _pagesFor(List<Product> products) {
     final pages = <List<Product>>[];
     for (var i = 0; i < products.length; i += _perPage) {
       final end = (i + _perPage > products.length) ? products.length : i + _perPage;
@@ -34,6 +35,7 @@ class _TopProductsSectionState extends State<TopProductsSection> {
     }
     return pages;
   }
+ 
 
   @override
   void initState() {
@@ -65,8 +67,8 @@ class _TopProductsSectionState extends State<TopProductsSection> {
 
   @override
   Widget build(BuildContext context) {
-    final products = Catalog.topProducts;
-    final pages = _pagesFor(products);
+    final products = _products;
+     final pages = _pages;  
 
     if (products.isEmpty) return const SizedBox.shrink();
 

@@ -1,10 +1,16 @@
+
+
 import 'package:devansh/Router/router.dart';
 
+
 import 'package:flutter/material.dart';
+
 import 'package:flutter/services.dart';
 
 void main() {
   WidgetsFlutterBinding.ensureInitialized();
+   
+  
    SystemChrome.setSystemUIOverlayStyle(
     const SystemUiOverlayStyle(
       statusBarColor: Color(0xFF0A1929),
