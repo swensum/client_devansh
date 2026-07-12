@@ -10,6 +10,8 @@ import 'package:devansh/components/stat.dart';
 import 'package:flutter/material.dart';
 import 'dart:async';
 
+import 'package:go_router/go_router.dart';
+
 const double _kHeaderHeight = 100;
 
 class HomePage extends StatefulWidget {
@@ -400,8 +402,7 @@ class _HeroSlideViewState extends State<_HeroSlideView> {
           child: Image.asset(
             slide.image,
             fit: BoxFit.cover,
-            // Avoids a blank/flash frame when switching between already
-            // precached images.
+           
             gaplessPlayback: true,
           ),
         ),
@@ -466,7 +467,9 @@ class _HeroSlideViewState extends State<_HeroSlideView> {
                             duration: const Duration(milliseconds: 200),
                             child: ElevatedButton(
                               onPressed: () {
-                                // Add your navigation logic here
+                                 
+          context.push('/products');
+        
                               },
                               style: ElevatedButton.styleFrom(
                                 backgroundColor: _isHovered

@@ -1,7 +1,8 @@
 import 'package:devansh/data/catalog.dart';
-import 'package:devansh/productwidgets/productdetail.dart';
-import 'package:devansh/screen/productscreen.dart';
+
+
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 import 'package:visibility_detector/visibility_detector.dart';
 
 class TopProductsSection extends StatefulWidget {
@@ -517,9 +518,7 @@ class _PremiumProductCardState extends State<_PremiumProductCard>
       onExit: (_) => _setHovered(false),
       child: GestureDetector(
         onTap: () {
-          Navigator.of(context).push(
-            MaterialPageRoute(builder: (_) => ProductDetailPage(product: product)),
-          );
+          context.push('/product/${product.id}', extra: product);
         },
         child: RepaintBoundary(
           child: ScaleTransition(
@@ -729,9 +728,7 @@ class _ViewAllProductsButtonState extends State<_ViewAllProductsButton> {
       onExit: (_) => setState(() => _isHovered = false),
       child: GestureDetector(
         onTap: () {
-          Navigator.of(context).push(
-            MaterialPageRoute(builder: (_) => const ProductsPage()), 
-          );
+          context.push('/products');
         },
         child: AnimatedContainer(
           duration: const Duration(milliseconds: 200),

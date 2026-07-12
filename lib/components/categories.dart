@@ -1,5 +1,6 @@
-import 'package:devansh/screen/productscreen.dart';
+import 'package:devansh/data/catalog.dart';
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 import 'package:visibility_detector/visibility_detector.dart';
 
 class CategoriesSection extends StatefulWidget {
@@ -10,16 +11,6 @@ class CategoriesSection extends StatefulWidget {
 }
 
 class _CategoriesSectionState extends State<CategoriesSection> {
-  
-  static const List<_Company> _companies = [
-  _Company(id: 'devansh', name: "Devansh Hardware", logo: "assets/logo.png"),
-  _Company(id: 'nova', name: "Nova Fittings", logo: "assets/logo.png"),
-  _Company(id: 'hearth_co', name: "Hearth & Co.", logo: "assets/logo.png"),
-  _Company(id: 'basketry', name: "Basketry Works", logo: "assets/logo.png"),
-  
-];
-
-  // Once true, stays true — one-shot reveal, doesn't replay on re-scroll.
   bool _visible = false;
 
   void _handleVisibility(VisibilityInfo info) {
@@ -30,6 +21,8 @@ class _CategoriesSectionState extends State<CategoriesSection> {
 
   @override
   Widget build(BuildContext context) {
+    final companies = kCompanies;
+
     return VisibilityDetector(
       key: const Key('categories-section-visibility'),
       onVisibilityChanged: _handleVisibility,
@@ -100,7 +93,7 @@ class _CategoriesSectionState extends State<CategoriesSection> {
                   alignment: WrapAlignment.center,
                   spacing: 24,
                   runSpacing: 24,
-                  children: _companies.asMap().entries.map((entry) {
+                  children: companies.asMap().entries.map((entry) {
                     final i = entry.key;
                     final company = entry.value;
                     return _RevealOnVisible(
@@ -117,7 +110,7 @@ class _CategoriesSectionState extends State<CategoriesSection> {
                 _RevealOnVisible(
                   visible: _visible,
                   delay: Duration(
-                    milliseconds: 300 + (_companies.length * 80) + 100,
+                    milliseconds: 300 + (companies.length * 80) + 100,
                   ),
                   child: const _ViewAllButton(),
                 ),
@@ -129,6 +122,7 @@ class _CategoriesSectionState extends State<CategoriesSection> {
     );
   }
 }
+
 class _RevealOnVisible extends StatefulWidget {
   final bool visible;
   final Duration delay;
@@ -145,8 +139,8 @@ class _RevealOnVisible extends StatefulWidget {
 }
 
 class _RevealOnVisibleState extends State<_RevealOnVisible> {
-  bool _scheduled = false; 
-  bool _started = false; 
+  bool _scheduled = false;
+  bool _started = false;
 
   @override
   void initState() {
@@ -185,17 +179,8 @@ class _RevealOnVisibleState extends State<_RevealOnVisible> {
   }
 }
 
-class _Company {
-  final String id;
-  final String name;
-  final String logo;
-
-  
-  const _Company({required this.id, required this.name, required this.logo});
-}
-
 class _CompanyLogoBox extends StatefulWidget {
-  final _Company company;
+  final Company company; // now the real catalog.dart Company
 
   const _CompanyLogoBox({required this.company});
 
@@ -208,17 +193,15 @@ class _CompanyLogoBoxState extends State<_CompanyLogoBox> {
 
   @override
   Widget build(BuildContext context) {
+    final logoAsset = widget.company.logoAsset; // nullable in catalog.dart
+
     return MouseRegion(
       cursor: SystemMouseCursors.click,
       onEnter: (_) => setState(() => _isHovered = true),
       onExit: (_) => setState(() => _isHovered = false),
-     child: GestureDetector( // NEW
+      child: GestureDetector(
         onTap: () {
-          Navigator.of(context).push(
-            MaterialPageRoute(
-              builder: (_) => ProductsPage(initialCompanyId: widget.company.id),
-            ),
-          );
+          context.push('/products?company=${widget.company.id}');
         },
         child: Transform.scale(
           scale: _isHovered ? 1.04 : 1.0,
@@ -246,19 +229,29 @@ class _CompanyLogoBoxState extends State<_CompanyLogoBox> {
               ],
             ),
             child: Center(
-              child: Image.asset(
-                widget.company.logo,
-                fit: BoxFit.contain,
-                errorBuilder: (context, error, stackTrace) => Text(
-                  widget.company.name,
-                  textAlign: TextAlign.center,
-                  style: const TextStyle(
-                    fontSize: 14,
-                    fontWeight: FontWeight.w600,
-                    color: Colors.white,
-                  ),
-                ),
-              ),
+              child: logoAsset == null
+                  ? Text(
+                      widget.company.name,
+                      textAlign: TextAlign.center,
+                      style: const TextStyle(
+                        fontSize: 14,
+                        fontWeight: FontWeight.w600,
+                        color: Colors.white,
+                      ),
+                    )
+                  : Image.asset(
+                      logoAsset,
+                      fit: BoxFit.contain,
+                      errorBuilder: (context, error, stackTrace) => Text(
+                        widget.company.name,
+                        textAlign: TextAlign.center,
+                        style: const TextStyle(
+                          fontSize: 14,
+                          fontWeight: FontWeight.w600,
+                          color: Colors.white,
+                        ),
+                      ),
+                    ),
             ),
           ),
         ),
@@ -283,11 +276,9 @@ class _ViewAllButtonState extends State<_ViewAllButton> {
       cursor: SystemMouseCursors.click,
       onEnter: (_) => setState(() => _isHovered = true),
       onExit: (_) => setState(() => _isHovered = false),
-      child: GestureDetector( // NEW
+      child: GestureDetector(
         onTap: () {
-          Navigator.of(context).push(
-            MaterialPageRoute(builder: (_) => const ProductsPage()), // no filters → All Products
-          );
+          context.push('/products');
         },
         child: AnimatedContainer(
           duration: const Duration(milliseconds: 200),

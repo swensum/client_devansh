@@ -1,4 +1,5 @@
-import 'package:devansh/screen/homescreen.dart';
+import 'package:devansh/Router/router.dart';
+
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
@@ -18,14 +19,11 @@ class MyApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(
+    return MaterialApp.router(
       title: 'Flutter Demo',
       debugShowCheckedModeBanner: false,
-      theme: ThemeData(
-        
-        colorScheme: .fromSeed(seedColor: Colors.deepPurple),
-      ),
-     home: const HomePage(),
+         routerConfig: appRouter,
+     
     );
   }
 }
