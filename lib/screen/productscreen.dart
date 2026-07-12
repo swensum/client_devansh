@@ -11,7 +11,8 @@ const double _kBannerHeight = 100; // slim full-width banner below navbar
 
 class ProductsPage extends StatefulWidget {
    final String? initialCategoryId; 
-  const ProductsPage({super.key, this.initialCategoryId});
+     final String? initialCompanyId; 
+   const ProductsPage({super.key, this.initialCategoryId, this.initialCompanyId});
 
   @override
   State<ProductsPage> createState() => _ProductsPageState();
@@ -23,12 +24,14 @@ class _ProductsPageState extends State<ProductsPage> {
   ViewMode _viewMode = ViewMode.grid;
   SortOption _sortOption = SortOption.relevance;
   String? _selectedMaterialId;
+   String? _selectedTypeId; 
   bool _headerRevealed = false;
 
   @override
   void initState() {
     super.initState();
  _selectedCategoryId = widget.initialCategoryId; 
+ _selectedCompanyId = widget.initialCompanyId; 
     WidgetsBinding.instance.addPostFrameCallback((_) {
       Future.delayed(const Duration(milliseconds: 150), () {
         if (mounted) setState(() => _headerRevealed = true);
@@ -42,6 +45,7 @@ class _ProductsPageState extends State<ProductsPage> {
     _selectedCategoryId = id;
     _selectedCompanyId = null;
     _selectedMaterialId = null;
+    _selectedTypeId = null; 
   });
 }
   void _selectCompany(String? id) {
@@ -51,7 +55,9 @@ class _ProductsPageState extends State<ProductsPage> {
   void _selectMaterial(String? id) {
     setState(() => _selectedMaterialId = id);
   }
-
+ void _selectType(String? id) { // NEW
+    setState(() => _selectedTypeId = id);
+  }
   List<Product> _applySort(List<Product> input) {
     final sorted = [...input];
     switch (_sortOption) {
@@ -78,9 +84,10 @@ Widget build(BuildContext context) {
       _selectedCompanyId == null ? null : kCompanies.firstWhere((c) => c.id == _selectedCompanyId);
   final products = _applySort(
     Catalog.filtered(
-      categoryId: _selectedCategoryId, // now nullable — Catalog.filtered needs to treat null as "no filter"
+      categoryId: _selectedCategoryId,
       companyId: _selectedCompanyId,
       materialId: _selectedMaterialId,
+      typeId: _selectedTypeId,
     ),
   );
 
@@ -96,9 +103,11 @@ Widget build(BuildContext context) {
                 selectedCategoryId: _selectedCategoryId,
                 selectedCompanyId: _selectedCompanyId,
                 selectedMaterialId: _selectedMaterialId,
+                selectedTypeId: _selectedTypeId,
                 onCategoryTap: _selectCategory,
                 onCompanyTap: _selectCompany,
                 onMaterialTap: _selectMaterial,
+                onTypeTap: _selectType,
               );
 
               final panel = ProductsRightPanel(

@@ -23,6 +23,12 @@ class MaterialType {
 
   const MaterialType({required this.id, required this.name});
 }
+class ProductType {
+  final String id;
+  final String name;
+
+  const ProductType({required this.id, required this.name});
+}
 
 class Product {
   final String id;
@@ -32,12 +38,14 @@ class Product {
   final String categoryId;
   final String? companyId; 
   final String materialId; 
+   final String? typeId; 
 final String? description;
   final String? thickness;
   final String? size;
   final String? quantity;
   final String? finish;
   final String? availability;
+   final bool isTopProduct; 
 
   const Product({
     required this.id,
@@ -47,12 +55,14 @@ final String? description;
     required this.categoryId,
     this.companyId,
     required this.materialId,
+     this.typeId,
     this.description,
     this.thickness,
     this.size,
     this.quantity,
     this.finish,
     this.availability,
+    this.isTopProduct = false,
   });
 }
 
@@ -81,6 +91,12 @@ const List<MaterialType> kMaterials = [
   MaterialType(id: 'metal', name: 'Metal'),
   MaterialType(id: 'ss', name: 'Stainless Steel'),
 ];
+const List<ProductType> kProductTypes = [
+  ProductType(id: 'mortice', name: 'Mortice Lock'),
+  ProductType(id: 'multipurpose', name: 'Multipurpose Lock'),
+  ProductType(id: 'cupboard', name: 'Cupboard Lock'),
+  ProductType(id: 'main_door', name: 'Main Door Lock'),
+];
 
 const List<Product> kProducts = [
   // Devansh — sells across several categories.
@@ -98,6 +114,7 @@ const List<Product> kProducts = [
   quantity: 'Pack of 2',
   finish: 'Matte Black',
   availability: 'In Stock',
+  isTopProduct: true,
 ),
   Product(
   id: 'p6',
@@ -110,6 +127,7 @@ const List<Product> kProducts = [
   description: 'High-suction chimney hood built for daily kitchen use.',
   // no thickness/size/quantity/finish set — those rows just won't appear
   availability: 'Made to Order',
+  isTopProduct: true,
 ),
   Product(
     id: 'p3',
@@ -119,6 +137,7 @@ const List<Product> kProducts = [
     categoryId: 'aldrops',
     companyId: 'devansh',
     materialId: 'metal',
+    isTopProduct: true,
   ),
 
   // Nova — hinges + handles only.
@@ -130,6 +149,7 @@ const List<Product> kProducts = [
     categoryId: 'hinges',
     companyId: 'nova',
     materialId: 'metal',
+    isTopProduct: true,
   ),
   Product(
     id: 'p5',
@@ -139,6 +159,7 @@ const List<Product> kProducts = [
     categoryId: 'handles',
     companyId: 'nova',
     materialId: 'ss',
+    isTopProduct: true,
   ),
 
   // Hearth & Co. — chimneys only.
@@ -150,6 +171,7 @@ const List<Product> kProducts = [
     categoryId: 'chimneys',
     companyId: 'hearth_co',
     materialId: 'ss',
+    isTopProduct: true,
   ),
 
   // Basketry Works — baskets only.
@@ -161,6 +183,7 @@ const List<Product> kProducts = [
     categoryId: 'baskets',
     companyId: 'basketry',
     materialId: 'metal',
+    isTopProduct: true,
   ),
 
   // Generic / unaffiliated items.
@@ -172,6 +195,7 @@ const List<Product> kProducts = [
     categoryId: 'handles',
     companyId: 'others',
     materialId: 'metal',
+    isTopProduct: true,
   ),
   Product(
     id: 'p9',
@@ -181,9 +205,8 @@ const List<Product> kProducts = [
     categoryId: 'handles',
     companyId: 'unknown',
     materialId: 'aluminium',
+    isTopProduct: true,
   ),
-
-  // ---------- 15 NEW PRODUCTS (p10 – p24) ----------
 
   Product(
     id: 'p10',
@@ -193,6 +216,7 @@ const List<Product> kProducts = [
     categoryId: 'handles',
     companyId: 'devansh',
     materialId: 'metal',
+    isTopProduct: true,
   ),
   Product(
     id: 'p11',
@@ -202,6 +226,7 @@ const List<Product> kProducts = [
     categoryId: 'hinges',
     companyId: 'nova',
     materialId: 'aluminium',
+    isTopProduct: true,
   ),
   Product(
     id: 'p12',
@@ -211,6 +236,7 @@ const List<Product> kProducts = [
     categoryId: 'aldrops',
     companyId: 'devansh',
     materialId: 'ss',
+    isTopProduct: true,
   ),
   Product(
     id: 'p13',
@@ -220,6 +246,7 @@ const List<Product> kProducts = [
     categoryId: 'baskets',
     companyId: 'basketry',
     materialId: 'ss',
+    isTopProduct: true,
   ),
   Product(
     id: 'p14',
@@ -227,8 +254,10 @@ const List<Product> kProducts = [
     imageAsset: 'assets/port2.png',
     price: 15.00,
     categoryId: 'locks',
-    companyId: null,
+    companyId: 'nova',
     materialId: 'metal',
+     typeId: 'main_door',
+     isTopProduct: true,
   ),
   Product(
     id: 'p15',
@@ -238,6 +267,18 @@ const List<Product> kProducts = [
     categoryId: 'handles',
     companyId: 'nova',
     materialId: 'silver',
+    isTopProduct: true,
+  ),
+   Product(
+    id: 'p16',
+    name: 'Keyless Door Lock',
+    imageAsset: 'assets/port2.png',
+    price: 15.00,
+    categoryId: 'locks',
+    companyId: 'devansh',
+    materialId: 'metal',
+    typeId: 'mortice',
+    isTopProduct: true,
   ),
 ];
 
@@ -252,15 +293,22 @@ class Catalog {
     return inCategory.where((p) => p.companyId == companyId).toList();
   }
 
-  static List<Product> filtered({String? categoryId, String? companyId, String? materialId}) {
+  static List<Product> filtered({String? categoryId, String? companyId, String? materialId,  String? typeId,}) {
   return kProducts.where((p) {
     if (categoryId != null && p.categoryId != categoryId) return false;
     if (companyId != null && p.companyId != companyId) return false;
     if (materialId != null && p.materialId != materialId) return false;
+    if (typeId != null && p.typeId != typeId) return false;
     return true;
   }).toList();
 }
-
+static List<ProductType> typesInCategory(String categoryId) {
+  final typeIds = byCategory(categoryId)
+      .map((p) => p.typeId)
+      .whereType<String>() // drops nulls
+      .toSet();
+  return kProductTypes.where((t) => typeIds.contains(t.id)).toList();
+}
   /// The company for a product, or null if it doesn't have one.
   static Company? companyFor(Product product) {
     if (product.companyId == null) return null;
@@ -277,7 +325,7 @@ class Catalog {
     }
     return null;
   }
-
+static List<Product> get topProducts => kProducts.where((p) => p.isTopProduct).toList();
   static String? bannerFor(String categoryId) {
     final category = kCategories.firstWhere((c) => c.id == categoryId);
     if (category.bannerAsset != null) return category.bannerAsset;

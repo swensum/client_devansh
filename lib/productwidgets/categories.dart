@@ -7,18 +7,22 @@ class CategorySidebar extends StatelessWidget {
   final String? selectedCategoryId; // now nullable
   final String? selectedCompanyId;
   final String? selectedMaterialId;
-  final ValueChanged<String?> onCategoryTap; // now accepts null
+  final String? selectedTypeId;
+  final ValueChanged<String?> onCategoryTap; 
   final ValueChanged<String?> onCompanyTap;
   final ValueChanged<String?> onMaterialTap;
+  final ValueChanged<String?> onTypeTap;
 
   const CategorySidebar({
     super.key,
     required this.selectedCategoryId,
     required this.selectedCompanyId,
     required this.selectedMaterialId,
+    required this.selectedTypeId,
     required this.onCategoryTap,
     required this.onCompanyTap,
     required this.onMaterialTap,
+    required this.onTypeTap,
   });
 
   @override
@@ -26,6 +30,9 @@ class CategorySidebar extends StatelessWidget {
     final materials =
         selectedCategoryId == null ? <dynamic>[] : Catalog.materialsInCategory(selectedCategoryId!);
     final showMaterials = materials.isNotEmpty;
+final types = // NEW
+        selectedCategoryId == null ? <dynamic>[] : Catalog.typesInCategory(selectedCategoryId!);
+    final showTypes = types.isNotEmpty; // NEW
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -48,6 +55,27 @@ class CategorySidebar extends StatelessWidget {
             onCategoryTap: () => onCategoryTap(category.id),
             onCompanyTap: onCompanyTap,
           ),
+           if (showTypes) ...[
+          const SizedBox(height: 16),
+          Divider(color: Colors.white.withValues(alpha: 0.15), height: 1),
+          const SizedBox(height: 16),
+          const Text(
+            'Type',
+            style: TextStyle(color: Colors.white, fontSize: 20, fontWeight: FontWeight.bold),
+          ),
+          const SizedBox(height: 10),
+          _CompanyRow(
+            label: 'All',
+            isSelected: selectedTypeId == null,
+            onTap: () => onTypeTap(null),
+          ),
+          for (final type in types)
+            _CompanyRow(
+              label: type.name,
+              isSelected: selectedTypeId == type.id,
+              onTap: () => onTypeTap(type.id),
+            ),
+        ],
         if (showMaterials) ...[
           const SizedBox(height: 16),
           Divider(color: Colors.white.withValues(alpha: 0.15), height: 1),
