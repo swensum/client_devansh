@@ -30,8 +30,8 @@ class Product {
   final String imageAsset;
   final double price;
   final String categoryId;
-  final String? companyId; // null = no associated company
-  final String materialId; // e.g. 'aluminium', 'silver', 'metal', 'ss'
+  final String? companyId; 
+  final String materialId; 
 final String? description;
   final String? thickness;
   final String? size;
@@ -252,20 +252,14 @@ class Catalog {
     return inCategory.where((p) => p.companyId == companyId).toList();
   }
 
-  static List<Product> filtered({
-    required String categoryId,
-    String? companyId,
-    String? materialId,
-  }) {
-    var result = byCategory(categoryId);
-    if (companyId != null) {
-      result = result.where((p) => p.companyId == companyId).toList();
-    }
-    if (materialId != null) {
-      result = result.where((p) => p.materialId == materialId).toList();
-    }
-    return result;
-  }
+  static List<Product> filtered({String? categoryId, String? companyId, String? materialId}) {
+  return kProducts.where((p) {
+    if (categoryId != null && p.categoryId != categoryId) return false;
+    if (companyId != null && p.companyId != companyId) return false;
+    if (materialId != null && p.materialId != materialId) return false;
+    return true;
+  }).toList();
+}
 
   /// The company for a product, or null if it doesn't have one.
   static Company? companyFor(Product product) {

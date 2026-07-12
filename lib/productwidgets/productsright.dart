@@ -10,7 +10,7 @@ const _kAmber = Color.fromRGBO(245, 171, 30, 1);
 const int _kItemsPerPage = 12;
 
 class ProductsRightPanel extends StatefulWidget {
-  final Category category;
+  final Category? category;
   final Company? company;
   final List<Product> products;
   final ViewMode viewMode;
@@ -41,7 +41,7 @@ class _ProductsRightPanelState extends State<ProductsRightPanel> {
   @override
   void didUpdateWidget(covariant ProductsRightPanel oldWidget) {
     super.didUpdateWidget(oldWidget);
-    if (oldWidget.category.id != widget.category.id ||
+    if (oldWidget.category?.id != widget.category?.id ||
         oldWidget.company?.id != widget.company?.id ||
         oldWidget.products != widget.products ||
         oldWidget.viewMode != widget.viewMode) {
@@ -66,7 +66,7 @@ class _ProductsRightPanelState extends State<ProductsRightPanel> {
 
   @override
   Widget build(BuildContext context) {
-    final banner = Catalog.bannerFor(widget.category.id);
+    final banner = widget.category != null ? Catalog.bannerFor(widget.category!.id) : null;
     final products = widget.products;
     final totalPages = _totalPages(products.length);
 
@@ -82,7 +82,7 @@ class _ProductsRightPanelState extends State<ProductsRightPanel> {
           text: TextSpan(
             style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: Colors.white),
             children: [
-              TextSpan(text: widget.category.name),
+              TextSpan(text: widget.category?.name ?? 'All Products'),
               if (widget.company != null) ...[
                 const TextSpan(text: '  :  ', style: TextStyle(color: Colors.white38, fontWeight: FontWeight.w400)),
                 TextSpan(text: widget.company!.name, style: const TextStyle(color: _kAmber)),

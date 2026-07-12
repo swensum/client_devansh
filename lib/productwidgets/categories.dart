@@ -4,10 +4,10 @@ import 'package:flutter/material.dart';
 const _kAmber = Color.fromRGBO(245, 171, 30, 1);
 
 class CategorySidebar extends StatelessWidget {
-  final String selectedCategoryId;
+  final String? selectedCategoryId; // now nullable
   final String? selectedCompanyId;
   final String? selectedMaterialId;
-  final ValueChanged<String> onCategoryTap;
+  final ValueChanged<String?> onCategoryTap; // now accepts null
   final ValueChanged<String?> onCompanyTap;
   final ValueChanged<String?> onMaterialTap;
 
@@ -23,9 +23,9 @@ class CategorySidebar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    
-    final materials = Catalog.materialsInCategory(selectedCategoryId);
-     final showMaterials = materials.isNotEmpty;
+    final materials =
+        selectedCategoryId == null ? <dynamic>[] : Catalog.materialsInCategory(selectedCategoryId!);
+    final showMaterials = materials.isNotEmpty;
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -36,6 +36,10 @@ class CategorySidebar extends StatelessWidget {
           style: TextStyle(color: Colors.white, fontSize: 20, fontWeight: FontWeight.bold),
         ),
         const SizedBox(height: 14),
+         _AllCategoriesEntry(
+          isSelected: selectedCategoryId == null,
+          onTap: () => onCategoryTap(null),
+        ),
         for (final category in kCategories)
           _CategoryEntry(
             category: category,
@@ -44,9 +48,6 @@ class CategorySidebar extends StatelessWidget {
             onCategoryTap: () => onCategoryTap(category.id),
             onCompanyTap: onCompanyTap,
           ),
-
-        // Materials section — only appears when the selected category
-        // actually has more than one distinct material among its products.
         if (showMaterials) ...[
           const SizedBox(height: 16),
           Divider(color: Colors.white.withValues(alpha: 0.15), height: 1),
@@ -72,7 +73,45 @@ class CategorySidebar extends StatelessWidget {
     );
   }
 }
+class _AllCategoriesEntry extends StatelessWidget {
+  final bool isSelected;
+  final VoidCallback onTap;
 
+  const _AllCategoriesEntry({required this.isSelected, required this.onTap});
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 4),
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(8),
+        child: Container(
+          width: double.infinity,
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+          decoration: BoxDecoration(
+            color: isSelected ? _kAmber.withValues(alpha: 0.15) : Colors.transparent,
+            borderRadius: BorderRadius.circular(8),
+            border: Border(
+              left: BorderSide(
+                color: isSelected ? _kAmber : Colors.transparent,
+                width: 3,
+              ),
+            ),
+          ),
+          child: Text(
+            'All Products',
+            style: TextStyle(
+              color: isSelected ? _kAmber : Colors.white,
+              fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
+              fontSize: 14.5,
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
 class _CategoryEntry extends StatefulWidget {
   final Category category;
   final bool isSelected;

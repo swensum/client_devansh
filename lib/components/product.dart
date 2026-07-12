@@ -1,3 +1,4 @@
+import 'package:devansh/screen/productscreen.dart';
 import 'package:flutter/material.dart';
 import 'package:visibility_detector/visibility_detector.dart';
 
@@ -30,7 +31,6 @@ class _TopProductsSectionState extends State<TopProductsSection> {
   late final PageController _pageController;
   int _currentPage = 0;
 
-  // Once true, stays true — one-shot reveal, doesn't replay on re-scroll.
   bool _visible = false;
 
   void _handleVisibility(VisibilityInfo info) {
@@ -738,28 +738,35 @@ class _ViewAllProductsButtonState extends State<_ViewAllProductsButton> {
       cursor: SystemMouseCursors.click,
       onEnter: (_) => setState(() => _isHovered = true),
       onExit: (_) => setState(() => _isHovered = false),
-      child: AnimatedContainer(
-        duration: const Duration(milliseconds: 200),
-        padding: const EdgeInsets.symmetric(horizontal: 26, vertical: 12),
-        decoration: BoxDecoration(
-          border: Border.all(color: Color.fromRGBO(245, 171, 30, _isHovered ? 1.0 : 0.6), width: 1.5),
-          borderRadius: BorderRadius.circular(8),
-          color: _isHovered ? const Color.fromRGBO(245, 171, 30, 0.08) : Colors.transparent,
-        ),
-        child: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            const Text(
-              "View All Companies",
-              style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: Colors.white, letterSpacing: 0.3),
-            ),
-            const SizedBox(width: 8),
-            AnimatedRotation(
-              duration: const Duration(milliseconds: 300),
-              turns: _isHovered ? 0.125 : 0.0,
-              child: const Icon(Icons.arrow_forward, color: Color.fromRGBO(245, 171, 30, 1), size: 16),
-            ),
-          ],
+     child: GestureDetector(
+        onTap: () {
+          Navigator.of(context).push(
+            MaterialPageRoute(builder: (_) => const ProductsPage()),
+          );
+        },
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 200),
+          padding: const EdgeInsets.symmetric(horizontal: 26, vertical: 12),
+          decoration: BoxDecoration(
+            border: Border.all(color: Color.fromRGBO(245, 171, 30, _isHovered ? 1.0 : 0.6), width: 1.5),
+            borderRadius: BorderRadius.circular(8),
+            color: _isHovered ? const Color.fromRGBO(245, 171, 30, 0.08) : Colors.transparent,
+          ),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const Text(
+                "View All Companies",
+                style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: Colors.white, letterSpacing: 0.3),
+              ),
+              const SizedBox(width: 8),
+              AnimatedRotation(
+                duration: const Duration(milliseconds: 300),
+                turns: _isHovered ? 0.125 : 0.0,
+                child: const Icon(Icons.arrow_forward, color: Color.fromRGBO(245, 171, 30, 1), size: 16),
+              ),
+            ],
+          ),
         ),
       ),
     );

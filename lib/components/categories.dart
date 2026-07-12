@@ -9,8 +9,7 @@ class CategoriesSection extends StatefulWidget {
 }
 
 class _CategoriesSectionState extends State<CategoriesSection> {
-  // Map each company name to its logo asset path.
-  // Update these paths to match wherever your logo images actually live.
+  
   static const List<_Company> _companies = [
     _Company(name: "Hafele", logo: "assets/logo.png"),
     _Company(name: "Blum", logo: "assets/logo.png"),
@@ -106,8 +105,6 @@ class _CategoriesSectionState extends State<CategoriesSection> {
                     final company = entry.value;
                     return _RevealOnVisible(
                       visible: _visible,
-                      // Staggers each logo box in turn, starting after
-                      // the title/underline/subtitle have already begun.
                       delay: Duration(milliseconds: 300 + (i * 80)),
                       child: _CompanyLogoBox(company: company),
                     );
@@ -132,14 +129,6 @@ class _CategoriesSectionState extends State<CategoriesSection> {
     );
   }
 }
-
-/// Fades in + slides up from below, once, after [delay] has passed
-/// following the moment [visible] first becomes true. Doesn't replay.
-///
-/// Checks both in initState (in case `visible` is already true on first
-/// build) and didUpdateWidget (in case it becomes true later), so the
-/// animation reliably fires regardless of when the section scrolls
-/// into view relative to this widget's own build.
 class _RevealOnVisible extends StatefulWidget {
   final bool visible;
   final Duration delay;
@@ -156,8 +145,8 @@ class _RevealOnVisible extends StatefulWidget {
 }
 
 class _RevealOnVisibleState extends State<_RevealOnVisible> {
-  bool _scheduled = false; // have we kicked off the delay timer yet?
-  bool _started = false; // should we actually be visible/animated-in yet?
+  bool _scheduled = false; 
+  bool _started = false; 
 
   @override
   void initState() {

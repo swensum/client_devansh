@@ -10,14 +10,15 @@ const double _kHeaderHeight = 100;
 const double _kBannerHeight = 100; // slim full-width banner below navbar
 
 class ProductsPage extends StatefulWidget {
-  const ProductsPage({super.key});
+   final String? initialCategoryId; 
+  const ProductsPage({super.key, this.initialCategoryId});
 
   @override
   State<ProductsPage> createState() => _ProductsPageState();
 }
 
 class _ProductsPageState extends State<ProductsPage> {
-  String _selectedCategoryId = kCategories.first.id;
+  String? _selectedCategoryId; 
   String? _selectedCompanyId;
   ViewMode _viewMode = ViewMode.grid;
   SortOption _sortOption = SortOption.relevance;
@@ -27,7 +28,7 @@ class _ProductsPageState extends State<ProductsPage> {
   @override
   void initState() {
     super.initState();
-    // Slide the header in shortly after first paint, same as HomePage.
+ _selectedCategoryId = widget.initialCategoryId; 
     WidgetsBinding.instance.addPostFrameCallback((_) {
       Future.delayed(const Duration(milliseconds: 150), () {
         if (mounted) setState(() => _headerRevealed = true);
@@ -35,15 +36,14 @@ class _ProductsPageState extends State<ProductsPage> {
     });
   }
 
-  void _selectCategory(String id) {
-    if (id == _selectedCategoryId) return;
-    setState(() {
-      _selectedCategoryId = id;
-      _selectedCompanyId = null;
-      _selectedMaterialId = null;
-    });
-  }
-
+  void _selectCategory(String? id) {
+  if (id == _selectedCategoryId) return;
+  setState(() {
+    _selectedCategoryId = id;
+    _selectedCompanyId = null;
+    _selectedMaterialId = null;
+  });
+}
   void _selectCompany(String? id) {
     setState(() => _selectedCompanyId = id);
   }
@@ -71,17 +71,18 @@ class _ProductsPageState extends State<ProductsPage> {
   }
 
   @override
-  Widget build(BuildContext context) {
-    final category = kCategories.firstWhere((c) => c.id == _selectedCategoryId);
-    final company =
-        _selectedCompanyId == null ? null : kCompanies.firstWhere((c) => c.id == _selectedCompanyId);
-    final products = _applySort(
-      Catalog.filtered(
-        categoryId: _selectedCategoryId,
-        companyId: _selectedCompanyId,
-        materialId: _selectedMaterialId,
-      ),
-    );
+Widget build(BuildContext context) {
+  final category =
+      _selectedCategoryId == null ? null : kCategories.firstWhere((c) => c.id == _selectedCategoryId);
+  final company =
+      _selectedCompanyId == null ? null : kCompanies.firstWhere((c) => c.id == _selectedCompanyId);
+  final products = _applySort(
+    Catalog.filtered(
+      categoryId: _selectedCategoryId, // now nullable — Catalog.filtered needs to treat null as "no filter"
+      companyId: _selectedCompanyId,
+      materialId: _selectedMaterialId,
+    ),
+  );
 
     return Scaffold(
       backgroundColor: Colors.black,
