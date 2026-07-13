@@ -20,6 +20,11 @@ class ProductsRightPanel extends StatefulWidget {
   final ValueChanged<ViewMode> onViewModeChanged;
   final ValueChanged<SortOption> onSortChanged;
   final ProductsPageResponsive r;
+  // NEW — when non-null, a "Filters" button is shown in the toolbar that
+  // opens the sidebar in a drawer (used on narrow screens where the sidebar
+  // isn't shown inline anymore).
+  final VoidCallback? onFilterTap;
+  final int activeFilterCount;
 
   const ProductsRightPanel({
     super.key,
@@ -33,6 +38,8 @@ class ProductsRightPanel extends StatefulWidget {
     required this.onViewModeChanged,
     required this.onSortChanged,
     required this.r,
+    this.onFilterTap,
+    this.activeFilterCount = 0,
   });
 
   @override
@@ -126,6 +133,8 @@ class _ProductsRightPanelState extends State<ProductsRightPanel> {
           sortOption: widget.sortOption,
           onViewModeChanged: widget.onViewModeChanged,
           onSortChanged: widget.onSortChanged,
+          onFilterTap: widget.onFilterTap,
+          activeFilterCount: widget.activeFilterCount,
         ),
         const SizedBox(height: 10),
         Divider(color: Colors.white.withValues(alpha: 0.15), height: 1),
@@ -350,18 +359,26 @@ class _ProductsToolbar extends StatelessWidget {
   final SortOption sortOption;
   final ValueChanged<ViewMode> onViewModeChanged;
   final ValueChanged<SortOption> onSortChanged;
+  final VoidCallback? onFilterTap;
+  final int activeFilterCount;
 
   const _ProductsToolbar({
     required this.viewMode,
     required this.sortOption,
     required this.onViewModeChanged,
     required this.onSortChanged,
+    this.onFilterTap,
+    this.activeFilterCount = 0,
   });
 
   @override
   Widget build(BuildContext context) {
     return Row(
       children: [
+        if (onFilterTap != null) ...[
+          _FilterButton(count: activeFilterCount, onTap: onFilterTap!),
+          const SizedBox(width: 10),
+        ],
         _ViewToggleButton(
           icon: Icons.grid_view_rounded,
           isSelected: viewMode == ViewMode.grid,
@@ -378,6 +395,67 @@ class _ProductsToolbar extends StatelessWidget {
         const SizedBox(width: 8),
         _SortDropdown(value: sortOption, onChanged: onSortChanged),
       ],
+    );
+  }
+}
+
+/// "Filters" trigger shown on narrow screens (where the sidebar is hidden)
+/// that opens the filter drawer. Shows a small amber badge with the number
+/// of active filters, if any.
+class _FilterButton extends StatelessWidget {
+  final int count;
+  final VoidCallback onTap;
+
+  const _FilterButton({required this.count, required this.onTap});
+
+  @override
+  Widget build(BuildContext context) {
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(8),
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+        decoration: BoxDecoration(
+          color: count > 0 ? _kAmber.withValues(alpha: 0.18) : Colors.transparent,
+          borderRadius: BorderRadius.circular(8),
+          border: Border.all(
+            color: count > 0 ? _kAmber : Colors.white.withValues(alpha: 0.2),
+          ),
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(Icons.tune_rounded, size: 16, color: count > 0 ? _kAmber : Colors.white70),
+            const SizedBox(width: 6),
+            Text(
+              'Filters',
+              style: TextStyle(
+                color: count > 0 ? _kAmber : Colors.white70,
+                fontSize: 13,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+            if (count > 0) ...[
+              const SizedBox(width: 6),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 1),
+                decoration: BoxDecoration(
+                  color: _kAmber,
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                child: Text(
+                  '$count',
+                  style: const TextStyle(
+                    color: Colors.black,
+                    fontSize: 11,
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+              ),
+            ],
+          ],
+        ),
+      ),
     );
   }
 }

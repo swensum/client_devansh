@@ -9,10 +9,13 @@ const _kAmber = Color.fromRGBO(245, 171, 30, 1);
 const _kGreen = Color(0xFF4CAF50);
 
 const double _kImageHeight = 420;
+const double _kImageHeightNarrow = 300;
 const double _kHeaderHeight = 100;
 const double _kBannerHeight = 100;
 
-const int _kRelatedItemsPerPage = 4;
+// Below this width, the image and details stack vertically instead of
+// sitting side-by-side in a Row.
+const double _kDetailStackBreakpoint = 800;
 
 class ProductDetailPage extends StatefulWidget {
   final Product product;
@@ -71,100 +74,121 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
                 Center(
                   child: ConstrainedBox(
                     constraints: const BoxConstraints(maxWidth: 1200),
-                    child: Padding(
-                      padding: const EdgeInsets.fromLTRB(16,50,16,16),
-                      child: Row(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Expanded(
-                            child: SizedBox(
-                              height: _kImageHeight,
-                              child: ClipRRect(
-                                borderRadius: BorderRadius.circular(12),
-                                child: Image.asset(
-                                  product.imageAsset,
-                                  fit: BoxFit.cover,
-                                  cacheWidth: 700,
-                                  errorBuilder: (context, error, stackTrace) => Container(
-                                    color: Colors.grey.shade800,
-                                    child: const Icon(Icons.image_not_supported_outlined,
-                                        color: Colors.white38, size: 32),
-                                  ),
-                                ),
+                    child: LayoutBuilder(
+                      builder: (context, constraints) {
+                        final isNarrow = constraints.maxWidth < _kDetailStackBreakpoint;
+
+                        final imageWidget = SizedBox(
+                          height: isNarrow ? _kImageHeightNarrow : _kImageHeight,
+                          width: double.infinity,
+                          child: ClipRRect(
+                            borderRadius: BorderRadius.circular(12),
+                            child: Image.asset(
+                              product.imageAsset,
+                              fit: BoxFit.cover,
+                              cacheWidth: 700,
+                              errorBuilder: (context, error, stackTrace) => Container(
+                                color: Colors.grey.shade800,
+                                child: const Icon(Icons.image_not_supported_outlined,
+                                    color: Colors.white38, size: 32),
                               ),
                             ),
                           ),
-                          const SizedBox(width: 24),
-                          Expanded(
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Text(
-                                  product.name,
-                                  style: const TextStyle(
-                                      color: Colors.white, fontSize: 28, fontWeight: FontWeight.bold),
-                                ),
-                                const SizedBox(height: 8),
-                                Text(
-                                  category.name,
-                                  style: TextStyle(color: _kAmber, fontSize: 16, fontWeight: FontWeight.w600),
-                                ),
-                                if (product.description != null &&
-                                    product.description!.trim().isNotEmpty) ...[
-                                  const SizedBox(height: 15),
-                                  Text(
-                                    product.description!,
-                                    style: TextStyle(
-                                        color: Colors.white.withValues(alpha: 0.75),
-                                        fontSize: 16,
-                                        height: 1.5),
-                                  ),
-                                ],
-                                const SizedBox(height: 20),
-                                Container(
-                                  width: double.infinity,
-                                  padding: const EdgeInsets.all(18),
-                                  decoration: BoxDecoration(
-                                    color: Colors.white.withValues(alpha: 0.08),
-                                    borderRadius: BorderRadius.circular(12),
-                                    border: Border.all(color: Colors.white.withValues(alpha: 0.15)),
-                                  ),
-                                  child: _DetailGrid(
-                                    entries: [
-                                      _DetailEntry(
-                                        label: 'Price',
-                                        value: '\$${product.price.toStringAsFixed(2)}',
-                                        valueColor: _kAmber,
-                                      ),
-                                      for (final entry in specs.entries)
-                                        _DetailEntry(
-                                          label: entry.key,
-                                          value: entry.value!,
-                                          isAvailability: entry.key == 'Availability',
-                                        ),
-                                    ],
-                                  ),
-                                ),
-                                const SizedBox(height: 30),
-                                SizedBox(
-                                  width: double.infinity,
-                                  child: ElevatedButton(
-                                    onPressed: () {},
-                                    style: ElevatedButton.styleFrom(
-                                      backgroundColor: _kAmber,
-                                      foregroundColor: Colors.black,
-                                      minimumSize: const Size(double.infinity, 46),
-                                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-                                    ),
-                                    child: const Text('Place Order',
-                                        style: TextStyle(fontWeight: FontWeight.w600)),
-                                  ),
-                                ),
-                              ],
+                        );
+
+                        final detailsWidget = Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              product.name,
+                              style: TextStyle(
+                                color: Colors.white,
+                                fontSize: isNarrow ? 22 : 28,
+                                fontWeight: FontWeight.bold,
+                              ),
                             ),
-                          ),
-                        ],
-                      ),
+                            const SizedBox(height: 8),
+                            Text(
+                              category.name,
+                              style: const TextStyle(
+                                  color: _kAmber, fontSize: 16, fontWeight: FontWeight.w600),
+                            ),
+                            if (product.description != null &&
+                                product.description!.trim().isNotEmpty) ...[
+                              const SizedBox(height: 15),
+                              Text(
+                                product.description!,
+                                style: TextStyle(
+                                    color: Colors.white.withValues(alpha: 0.75),
+                                    fontSize: 16,
+                                    height: 1.5),
+                              ),
+                            ],
+                            const SizedBox(height: 20),
+                            Container(
+                              width: double.infinity,
+                              padding: const EdgeInsets.all(18),
+                              decoration: BoxDecoration(
+                                color: Colors.white.withValues(alpha: 0.08),
+                                borderRadius: BorderRadius.circular(12),
+                                border: Border.all(color: Colors.white.withValues(alpha: 0.15)),
+                              ),
+                              child: _DetailGrid(
+                                entries: [
+                                  _DetailEntry(
+                                    label: 'Price',
+                                    value: '\$${product.price.toStringAsFixed(2)}',
+                                    valueColor: _kAmber,
+                                  ),
+                                  for (final entry in specs.entries)
+                                    _DetailEntry(
+                                      label: entry.key,
+                                      value: entry.value!,
+                                      isAvailability: entry.key == 'Availability',
+                                    ),
+                                ],
+                              ),
+                            ),
+                            const SizedBox(height: 30),
+                            SizedBox(
+                              width: double.infinity,
+                              child: ElevatedButton(
+                                onPressed: () {},
+                                style: ElevatedButton.styleFrom(
+                                  backgroundColor: _kAmber,
+                                  foregroundColor: Colors.black,
+                                  minimumSize: const Size(double.infinity, 46),
+                                  shape:
+                                      RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                                ),
+                                child: const Text('Place Order',
+                                    style: TextStyle(fontWeight: FontWeight.w600)),
+                              ),
+                            ),
+                          ],
+                        );
+
+                        return Padding(
+                          padding: EdgeInsets.fromLTRB(16, isNarrow ? 24 : 50, 16, 16),
+                          child: isNarrow
+                              ? Column(
+                                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                                  children: [
+                                    imageWidget,
+                                    const SizedBox(height: 24),
+                                    detailsWidget,
+                                  ],
+                                )
+                              : Row(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Expanded(child: imageWidget),
+                                    const SizedBox(width: 24),
+                                    Expanded(child: detailsWidget),
+                                  ],
+                                ),
+                        );
+                      },
                     ),
                   ),
                 ),
@@ -247,35 +271,48 @@ class _RelatedProductsSectionState extends State<_RelatedProductsSection> {
   static const int _kLoopMultiplier = 1000;
 
   static const double _kCardGap = 18;
+  static const double _kMaxSingleCardWidth = 340;
 
-  late final PageController _pageController;
+  late PageController _pageController;
   Timer? _autoSlideTimer;
   int _currentIndex = 0;
   int _virtualIndex = 0;
 
+  // Responsive — how many related-product cards are visible at once.
+  // Updated in build() based on available width.
+  int _itemsPerPage = 4;
+
   int get _itemCount => widget.products.length;
 
-  bool get _canSlide => _itemCount > _kRelatedItemsPerPage;
+  bool get _canSlide => _itemCount > _itemsPerPage;
+
+  static int _computeItemsPerPage(double width) {
+    if (width >= 900) return 4;
+    if (width >= 650) return 3;
+    if (width >= 420) return 2;
+    return 1;
+  }
 
   @override
   void initState() {
     super.initState();
+    _setupController(_itemsPerPage);
+  }
+
+  void _setupController(int itemsPerPage) {
+    _itemsPerPage = itemsPerPage;
     final start = _canSlide ? (_kLoopMultiplier ~/ 2) * _itemCount : 0;
     _virtualIndex = start;
-    _pageController = PageController(viewportFraction: 1 / _kRelatedItemsPerPage, initialPage: start);
-    _startAutoSlide();
+    _currentIndex = 0;
+    _pageController = PageController(viewportFraction: 1 / itemsPerPage, initialPage: start);
   }
 
   @override
   void didUpdateWidget(covariant _RelatedProductsSection oldWidget) {
     super.didUpdateWidget(oldWidget);
     if (oldWidget.products != widget.products) {
-      _currentIndex = 0;
-      final start = _canSlide ? (_kLoopMultiplier ~/ 2) * _itemCount : 0;
-      _virtualIndex = start;
-      if (_pageController.hasClients) {
-        _pageController.jumpToPage(start);
-      }
+      _pageController.dispose();
+      _setupController(_itemsPerPage);
       _startAutoSlide();
     }
   }
@@ -311,6 +348,20 @@ class _RelatedProductsSectionState extends State<_RelatedProductsSection> {
     _startAutoSlide();
   }
 
+  // Swaps the PageController for a new viewportFraction after the current
+  // frame, so a resize (e.g. browser window) updates how many cards are
+  // shown without rebuilding mid-layout.
+  void _scheduleItemsPerPageChange(int newItemsPerPage) {
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      setState(() {
+        _pageController.dispose();
+        _setupController(newItemsPerPage);
+        _startAutoSlide();
+      });
+    });
+  }
+
   @override
   Widget build(BuildContext context) {
     final pageItemCount = _canSlide ? _itemCount * _kLoopMultiplier : _itemCount;
@@ -336,8 +387,20 @@ class _RelatedProductsSectionState extends State<_RelatedProductsSection> {
                   height: 290,
                   child: LayoutBuilder(
                     builder: (context, constraints) {
-                      final slotWidth = constraints.maxWidth / _kRelatedItemsPerPage;
-                      final cardWidth = slotWidth - _kCardGap;
+                      final desiredItemsPerPage = _computeItemsPerPage(constraints.maxWidth);
+                      if (desiredItemsPerPage != _itemsPerPage) {
+                        // Use the current controller for this frame; the
+                        // rebuild with the new controller happens right after.
+                        _scheduleItemsPerPageChange(desiredItemsPerPage);
+                      }
+
+                      final slotWidth = constraints.maxWidth / _itemsPerPage;
+                      final rawCardWidth = slotWidth - _kCardGap;
+                      final cardWidth = _itemsPerPage == 1
+                          ? rawCardWidth.clamp(0, _kMaxSingleCardWidth).toDouble()
+                          : rawCardWidth;
+                      final alignment =
+                          _itemsPerPage == 1 ? Alignment.center : Alignment.centerLeft;
 
                       return NotificationListener<ScrollNotification>(
                         onNotification: (notification) {
@@ -349,13 +412,14 @@ class _RelatedProductsSectionState extends State<_RelatedProductsSection> {
                           return false;
                         },
                         child: PageView.builder(
+                          key: ValueKey(_itemsPerPage),
                           controller: _pageController,
                           padEnds: false,
                           itemCount: pageItemCount,
                           itemBuilder: (context, index) {
                             final product = widget.products[index % _itemCount];
                             return Align(
-                              alignment: Alignment.centerLeft,
+                              alignment: alignment,
                               child: SizedBox(
                                 width: cardWidth,
                                 child: Padding(

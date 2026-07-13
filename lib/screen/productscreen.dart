@@ -8,6 +8,7 @@ import 'package:flutter/material.dart';
 
 const double _kHeaderHeight = 100;
 const double _kBannerHeight = 100;
+const _kAmber = Color.fromRGBO(245, 171, 30, 1);
 
 class ProductsPage extends StatefulWidget {
   final String? initialCategoryId;
@@ -33,6 +34,8 @@ class _ProductsPageState extends State<ProductsPage> {
   String? _selectedTypeId;
 
   bool _headerRevealed = false;
+
+  final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
 
   @override
   void initState() {
@@ -66,7 +69,6 @@ class _ProductsPageState extends State<ProductsPage> {
   }
 
   void _selectType(String? id) {
-    // NEW
     setState(() => _selectedTypeId = id);
   }
 
@@ -96,12 +98,10 @@ class _ProductsPageState extends State<ProductsPage> {
     final company = _selectedCompanyId == null
         ? null
         : kCompanies.firstWhere((c) => c.id == _selectedCompanyId);
-    final type = // NEW
-    _selectedTypeId == null
+    final type = _selectedTypeId == null
         ? null
         : kProductTypes.firstWhere((t) => t.id == _selectedTypeId);
-    final material = // NEW
-    _selectedMaterialId == null
+    final material = _selectedMaterialId == null
         ? null
         : kMaterials.firstWhere((m) => m.id == _selectedMaterialId);
     final products = _applySort(
@@ -113,29 +113,40 @@ class _ProductsPageState extends State<ProductsPage> {
       ),
     );
 
+    // Built once — reused both inline (wide screens) and inside the filter
+    // drawer (narrow screens), so selecting a filter behaves identically.
+    final sidebar = CategorySidebar(
+      selectedCategoryId: _selectedCategoryId,
+      selectedCompanyId: _selectedCompanyId,
+      selectedMaterialId: _selectedMaterialId,
+      selectedTypeId: _selectedTypeId,
+      onCategoryTap: _selectCategory,
+      onCompanyTap: _selectCompany,
+      onMaterialTap: _selectMaterial,
+      onTypeTap: _selectType,
+    );
+
+    final activeFilterCount = [
+      _selectedCategoryId,
+      _selectedCompanyId,
+      _selectedTypeId,
+      _selectedMaterialId,
+    ].where((id) => id != null).length;
+
     return Scaffold(
+      key: _scaffoldKey,
       backgroundColor: Colors.black,
+      endDrawer: _FilterDrawer(sidebar: sidebar),
       body: Stack(
         children: [
           LayoutBuilder(
             builder: (context, constraints) {
               final r = ProductsPageResponsive.of(constraints.maxWidth);
 
-              final sidebar = CategorySidebar(
-                selectedCategoryId: _selectedCategoryId,
-                selectedCompanyId: _selectedCompanyId,
-                selectedMaterialId: _selectedMaterialId,
-                selectedTypeId: _selectedTypeId,
-                onCategoryTap: _selectCategory,
-                onCompanyTap: _selectCompany,
-                onMaterialTap: _selectMaterial,
-                onTypeTap: _selectType,
-              );
-
               final panel = ProductsRightPanel(
                 category: category,
                 company: company,
-                type: type, // NEW
+                type: type,
                 material: material,
                 products: products,
                 viewMode: _viewMode,
@@ -143,6 +154,12 @@ class _ProductsPageState extends State<ProductsPage> {
                 onViewModeChanged: (mode) => setState(() => _viewMode = mode),
                 onSortChanged: (option) => setState(() => _sortOption = option),
                 r: r,
+                // Only show the "Filters" trigger when the sidebar isn't
+                // already visible inline.
+                onFilterTap: r.sidebarOnLeft
+                    ? null
+                    : () => _scaffoldKey.currentState?.openEndDrawer(),
+                activeFilterCount: activeFilterCount,
               );
 
               if (r.sidebarOnLeft) {
@@ -170,6 +187,8 @@ class _ProductsPageState extends State<ProductsPage> {
                 );
               }
 
+              // Narrow screens: no stacked sidebar — just the banner and the
+              // right panel, with a Filters button opening the drawer above.
               return SingleChildScrollView(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -178,14 +197,7 @@ class _ProductsPageState extends State<ProductsPage> {
                     const _ProductsBanner(),
                     Padding(
                       padding: EdgeInsets.all(r.hPadding),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          sidebar,
-                          SizedBox(height: r.sectionGap),
-                          panel,
-                        ],
-                      ),
+                      child: panel,
                     ),
                     const _Divider(),
                     const Footer(),
@@ -206,6 +218,64 @@ class _ProductsPageState extends State<ProductsPage> {
             ),
           ),
         ],
+      ),
+    );
+  }
+}
+
+/// Slide-in drawer (from the right) housing the same [CategorySidebar] used
+/// inline on wide screens — shown on narrow screens via the panel's
+/// "Filters" button.
+class _FilterDrawer extends StatelessWidget {
+  final Widget sidebar;
+
+  const _FilterDrawer({required this.sidebar});
+
+  @override
+  Widget build(BuildContext context) {
+    return Drawer(
+      backgroundColor: const Color(0xFF1A1A1A),
+      width: 300,
+      child: SafeArea(
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Padding(
+              padding: const EdgeInsets.fromLTRB(20, 16, 8, 8),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  const Text(
+                    'Filters',
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontSize: 18,
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
+                  IconButton(
+                    onPressed: () => Navigator.of(context).pop(),
+                    icon: const Icon(Icons.close, color: Colors.white),
+                    splashRadius: 20,
+                  ),
+                ],
+              ),
+            ),
+            Container(
+              height: 2,
+              width: 30,
+              margin: const EdgeInsets.only(left: 20, bottom: 10),
+              color: _kAmber,
+            ),
+            const Divider(height: 1, color: Color(0xFF444444)),
+            Expanded(
+              child: SingleChildScrollView(
+                padding: const EdgeInsets.all(20),
+                child: sidebar,
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
