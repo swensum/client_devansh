@@ -12,7 +12,8 @@ const double _kBannerHeight = 100; // slim full-width banner below navbar
 class ProductsPage extends StatefulWidget {
    final String? initialCategoryId; 
      final String? initialCompanyId; 
-   const ProductsPage({super.key, this.initialCategoryId, this.initialCompanyId});
+      final String? initialTypeId; 
+   const ProductsPage({super.key, this.initialCategoryId, this.initialCompanyId, this.initialTypeId,});
 
   @override
   State<ProductsPage> createState() => _ProductsPageState();
@@ -25,6 +26,7 @@ class _ProductsPageState extends State<ProductsPage> {
   SortOption _sortOption = SortOption.relevance;
   String? _selectedMaterialId;
    String? _selectedTypeId; 
+    
   bool _headerRevealed = false;
 
   @override
@@ -32,6 +34,7 @@ class _ProductsPageState extends State<ProductsPage> {
     super.initState();
  _selectedCategoryId = widget.initialCategoryId; 
  _selectedCompanyId = widget.initialCompanyId; 
+ _selectedTypeId = widget.initialTypeId;
     WidgetsBinding.instance.addPostFrameCallback((_) {
       Future.delayed(const Duration(milliseconds: 150), () {
         if (mounted) setState(() => _headerRevealed = true);

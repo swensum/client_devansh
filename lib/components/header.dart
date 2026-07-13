@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:ui';
 import 'package:devansh/data/catalog.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
@@ -56,76 +57,87 @@ class _HeaderState extends State<Header> {
   }
 
   void _showDropdown(int index) {
-    _cancelClose();
-    if (_overlayEntry != null && _openIndex == index) return; // already open
-    _removeOverlay();
-    _openIndex = index;
+  _cancelClose();
+  if (_overlayEntry != null && _openIndex == index) return; // already open
+  _removeOverlay();
+  _openIndex = index;
 
-    final link = _layerLinks[index]!;
-    final bool isShop = index == 1;
+  final link = _layerLinks[index]!;
+  final bool isShop = index == 1;
 
-    _overlayEntry = OverlayEntry(
-      builder: (context) {
-        return Positioned.fill(
-          child: GestureDetector(
-            behavior: HitTestBehavior.translucent,
-            onTap: _closeDropdown,
-            child: Stack(
-              children: [
-                CompositedTransformFollower(
-                  link: link,
-                  showWhenUnlinked: false,
-                  targetAnchor: Alignment.bottomLeft,
-                  followerAnchor: Alignment.topLeft,
-                  offset: const Offset(0, 15), // small gap below the menu item
-                  child: MouseRegion(
-                    onEnter: (_) => _cancelClose(),
-                    onExit: (_) => _scheduleClose(),
-                    child: Material(
-                      elevation: 8,
+  _overlayEntry = OverlayEntry(
+    builder: (context) {
+      return Positioned.fill(
+        child: GestureDetector(
+          behavior: HitTestBehavior.translucent,
+          onTap: _closeDropdown,
+          child: Stack(
+            children: [
+              CompositedTransformFollower(
+                link: link,
+                showWhenUnlinked: false,
+                targetAnchor: Alignment.bottomLeft,
+                followerAnchor: Alignment.topLeft,
+                offset: const Offset(0, 15), // small gap below the menu item
+                child: MouseRegion(
+                  onEnter: (_) => _cancelClose(),
+                  onExit: (_) => _scheduleClose(),
+                  child: Material(
+                    elevation: 8,
+                    color: Colors.transparent, // let the glass show through, not Material's default surface
+                    borderRadius: BorderRadius.circular(8),
+                    child: ClipRRect(
                       borderRadius: BorderRadius.circular(8),
-                      child: Container(
-                        width: isShop ? 420 : 180,
-                        decoration: BoxDecoration(
-                          color: Colors.white,
-                          borderRadius: BorderRadius.circular(8),
-                          boxShadow: [
-                            BoxShadow(
-                              color: Colors.black.withValues(alpha: 0.2),
-                              blurRadius: 10,
-                              offset: const Offset(0, 4),
+                      child: BackdropFilter(
+                        filter: ImageFilter.blur(sigmaX: 16, sigmaY: 16),
+                        child: Container(
+                          width: isShop ? 420 : 180,
+                          decoration: BoxDecoration(
+                            color: Colors.white.withValues(alpha: 0.15), // frosted glass tint
+                            borderRadius: BorderRadius.circular(8),
+                            border: Border.all(
+                              color: Colors.white.withValues(alpha: 0.3),
+                              width: 1,
                             ),
-                          ],
-                        ),
-                        clipBehavior: Clip.antiAlias,
-                        child: isShop
-                            ? _ShopDropdownContent(
-                                onNavigate: (route) {
-                                  _closeDropdown();
-                                  context.push(route);
-                                },
-                              )
-                            : _DropdownList(
-                                items: _dropdownItems[index] ?? [],
-                                onSelect: (item) {
-                                  _closeDropdown();
-                                  print('Selected: $item');
-                                },
+                            boxShadow: [
+                              BoxShadow(
+                                color: Colors.black.withValues(alpha: 0.25),
+                                blurRadius: 20,
+                                offset: const Offset(2, 4),
                               ),
+                            ],
+                          ),
+                          clipBehavior: Clip.antiAlias,
+                          child: isShop
+                              ? _ShopDropdownContent(
+                                  onNavigate: (route) {
+                                    _closeDropdown();
+                                    context.push(route);
+                                  },
+                                )
+                              : _DropdownList(
+                                  items: _dropdownItems[index] ?? [],
+                                  onSelect: (item) {
+                                    _closeDropdown();
+                                    print('Selected: $item');
+                                  },
+                                ),
+                        ),
                       ),
                     ),
                   ),
                 ),
-              ],
-            ),
+              ),
+            ],
           ),
-        );
-      },
-    );
+        ),
+      );
+    },
+  );
 
-    Overlay.of(context).insert(_overlayEntry!);
-    setState(() => _hoveredIndex = index);
-  }
+  Overlay.of(context).insert(_overlayEntry!);
+  setState(() => _hoveredIndex = index);
+}
 
   void _closeDropdown() {
     _removeOverlay();
@@ -444,10 +456,6 @@ class _HeaderState extends State<Header> {
     );
   }
 }
-
-/// Two-column dropdown content for "Shop": left column lists categories,
-/// right column lists companies — both pulled live from catalog.dart so
-/// new categories/companies show up automatically without touching this file.
 class _ShopDropdownContent extends StatelessWidget {
   final void Function(String route) onNavigate;
 
@@ -466,24 +474,39 @@ class _ShopDropdownContent extends StatelessWidget {
           Expanded(
             child: _DropdownColumn(
               title: 'Categories',
-              items: [
-                for (final category in kCategories)
-                  _DropdownColumnItem(
-                    label: category.name,
-                    onTap: () => onNavigate('/products?category=${category.id}'),
+              children: [
+                for (final category in kCategories) ...[
+                  _DropdownColumnRow(
+                    item: _DropdownColumnItem(
+                      label: category.name,
+                      onTap: () => onNavigate('/products?category=${category.id}'),
+                    ),
                   ),
+                  for (final type in Catalog.typesInCategory(category.id))
+                    _DropdownColumnRow(
+                      item: _DropdownColumnItem(
+                        label: '- ${type.name}',
+                        onTap: () => onNavigate(
+                          '/products?category=${category.id}&type=${type.id}',
+                        ),
+                      ),
+                      isSubItem: true,
+                    ),
+                ],
               ],
             ),
           ),
-          Container(width: 1, color: Colors.grey.shade200),
+          Container(width: 1, color: Colors.white.withValues(alpha: 0.2)),
           Expanded(
             child: _DropdownColumn(
               title: 'Companies',
-              items: [
+              children: [
                 for (final company in companies)
-                  _DropdownColumnItem(
-                    label: company.name,
-                    onTap: () => onNavigate('/products?company=${company.id}'),
+                  _DropdownColumnRow(
+                    item: _DropdownColumnItem(
+                      label: company.name,
+                      onTap: () => onNavigate('/products?company=${company.id}'),
+                    ),
                   ),
               ],
             ),
@@ -493,7 +516,6 @@ class _ShopDropdownContent extends StatelessWidget {
     );
   }
 }
-
 class _DropdownColumnItem {
   final String label;
   final VoidCallback onTap;
@@ -503,9 +525,10 @@ class _DropdownColumnItem {
 
 class _DropdownColumn extends StatelessWidget {
   final String title;
-  final List<_DropdownColumnItem> items;
+  final List<Widget> children; // CHANGED: now takes built rows directly,
+  // since rows can be either category rows or nested sub-type rows.
 
-  const _DropdownColumn({required this.title, required this.items});
+  const _DropdownColumn({required this.title, required this.children});
 
   @override
   Widget build(BuildContext context) {
@@ -525,17 +548,17 @@ class _DropdownColumn extends StatelessWidget {
             ),
           ),
         ),
-        for (final item in items) _DropdownColumnRow(item: item),
+        ...children,
         const SizedBox(height: 8),
       ],
     );
   }
 }
-
 class _DropdownColumnRow extends StatefulWidget {
   final _DropdownColumnItem item;
+  final bool isSubItem; // NEW — true for nested type rows under a category
 
-  const _DropdownColumnRow({required this.item});
+  const _DropdownColumnRow({required this.item, this.isSubItem = false});
 
   @override
   State<_DropdownColumnRow> createState() => _DropdownColumnRowState();
@@ -554,10 +577,15 @@ class _DropdownColumnRowState extends State<_DropdownColumnRow> {
         onTap: widget.item.onTap,
         child: Container(
           width: double.infinity,
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+          padding: EdgeInsets.only(
+            left: widget.isSubItem ? 28 : 16, // extra indent for sub-types
+            right: 16,
+            top: widget.isSubItem ? 6 : 8,
+            bottom: widget.isSubItem ? 6 : 8,
+          ),
           decoration: BoxDecoration(
             color: _isHovered
-                ? const Color.fromRGBO(245, 171, 30, 0.1)
+                ? const Color.fromRGBO(245, 171, 30, 0.15)
                 : Colors.transparent,
             border: Border(
               left: BorderSide(
@@ -573,8 +601,9 @@ class _DropdownColumnRowState extends State<_DropdownColumnRow> {
             style: TextStyle(
               color: _isHovered
                   ? const Color.fromRGBO(245, 171, 30, 1)
-                  : Colors.black87,
-              fontSize: 13.5,
+                  : (widget.isSubItem ? Colors.white70 : Colors.white),
+              fontSize: widget.isSubItem ? 12.5 : 13.5,
+              fontWeight: widget.isSubItem ? FontWeight.w400 : FontWeight.w500,
             ),
           ),
         ),
@@ -607,7 +636,6 @@ class _DropdownListState extends State<_DropdownList> {
       children: widget.items.asMap().entries.map((entry) {
         final i = entry.key;
         final item = entry.value;
-        final isLast = i == widget.items.length - 1;
         final isHovered = _hoveredItem == i;
 
         return MouseRegion(
@@ -626,12 +654,7 @@ class _DropdownListState extends State<_DropdownList> {
                     ? const Color.fromRGBO(245, 171, 30, 0.1)
                     : Colors.transparent,
                 border: Border(
-                  bottom: isLast
-                      ? BorderSide.none
-                      : BorderSide(
-                          color: Colors.grey.shade200,
-                          width: 0.5,
-                        ),
+                  
                   right: BorderSide(
                     color: isHovered
                         ? const Color.fromRGBO(245, 171, 30, 1)
@@ -645,7 +668,7 @@ class _DropdownListState extends State<_DropdownList> {
                 style: TextStyle(
                   color: isHovered
                       ? const Color.fromRGBO(245, 171, 30, 1)
-                      : Colors.black87,
+                      : Colors.white,
                   fontSize: 14,
                 ),
               ),

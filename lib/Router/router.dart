@@ -44,11 +44,13 @@ final GoRouter appRouter = GoRouter(
       pageBuilder: (context, state) {
         final categoryId = state.uri.queryParameters['category'];
         final companyId = state.uri.queryParameters['company'];
+        final typeId = state.uri.queryParameters['type'];
         return _slideFromRightPage(
           key: state.pageKey,
           child: ProductsPage(
             initialCategoryId: categoryId,
             initialCompanyId: companyId,
+             initialTypeId: typeId,
           ),
         );
       },
