@@ -7,34 +7,39 @@ import 'package:devansh/productwidgets/productview.dart';
 import 'package:flutter/material.dart';
 
 const double _kHeaderHeight = 100;
-const double _kBannerHeight = 100; // slim full-width banner below navbar
+const double _kBannerHeight = 100;
 
 class ProductsPage extends StatefulWidget {
-   final String? initialCategoryId; 
-     final String? initialCompanyId; 
-      final String? initialTypeId; 
-   const ProductsPage({super.key, this.initialCategoryId, this.initialCompanyId, this.initialTypeId,});
+  final String? initialCategoryId;
+  final String? initialCompanyId;
+  final String? initialTypeId;
+  const ProductsPage({
+    super.key,
+    this.initialCategoryId,
+    this.initialCompanyId,
+    this.initialTypeId,
+  });
 
   @override
   State<ProductsPage> createState() => _ProductsPageState();
 }
 
 class _ProductsPageState extends State<ProductsPage> {
-  String? _selectedCategoryId; 
+  String? _selectedCategoryId;
   String? _selectedCompanyId;
   ViewMode _viewMode = ViewMode.grid;
   SortOption _sortOption = SortOption.relevance;
   String? _selectedMaterialId;
-   String? _selectedTypeId; 
-    
+  String? _selectedTypeId;
+
   bool _headerRevealed = false;
 
   @override
   void initState() {
     super.initState();
- _selectedCategoryId = widget.initialCategoryId; 
- _selectedCompanyId = widget.initialCompanyId; 
- _selectedTypeId = widget.initialTypeId;
+    _selectedCategoryId = widget.initialCategoryId;
+    _selectedCompanyId = widget.initialCompanyId;
+    _selectedTypeId = widget.initialTypeId;
     WidgetsBinding.instance.addPostFrameCallback((_) {
       Future.delayed(const Duration(milliseconds: 150), () {
         if (mounted) setState(() => _headerRevealed = true);
@@ -43,14 +48,15 @@ class _ProductsPageState extends State<ProductsPage> {
   }
 
   void _selectCategory(String? id) {
-  if (id == _selectedCategoryId) return;
-  setState(() {
-    _selectedCategoryId = id;
-    _selectedCompanyId = null;
-    _selectedMaterialId = null;
-    _selectedTypeId = null; 
-  });
-}
+    if (id == _selectedCategoryId) return;
+    setState(() {
+      _selectedCategoryId = id;
+      _selectedCompanyId = null;
+      _selectedMaterialId = null;
+      _selectedTypeId = null;
+    });
+  }
+
   void _selectCompany(String? id) {
     setState(() => _selectedCompanyId = id);
   }
@@ -58,9 +64,12 @@ class _ProductsPageState extends State<ProductsPage> {
   void _selectMaterial(String? id) {
     setState(() => _selectedMaterialId = id);
   }
- void _selectType(String? id) { // NEW
+
+  void _selectType(String? id) {
+    // NEW
     setState(() => _selectedTypeId = id);
   }
+
   List<Product> _applySort(List<Product> input) {
     final sorted = [...input];
     switch (_sortOption) {
@@ -80,19 +89,29 @@ class _ProductsPageState extends State<ProductsPage> {
   }
 
   @override
-Widget build(BuildContext context) {
-  final category =
-      _selectedCategoryId == null ? null : kCategories.firstWhere((c) => c.id == _selectedCategoryId);
-  final company =
-      _selectedCompanyId == null ? null : kCompanies.firstWhere((c) => c.id == _selectedCompanyId);
-  final products = _applySort(
-    Catalog.filtered(
-      categoryId: _selectedCategoryId,
-      companyId: _selectedCompanyId,
-      materialId: _selectedMaterialId,
-      typeId: _selectedTypeId,
-    ),
-  );
+  Widget build(BuildContext context) {
+    final category = _selectedCategoryId == null
+        ? null
+        : kCategories.firstWhere((c) => c.id == _selectedCategoryId);
+    final company = _selectedCompanyId == null
+        ? null
+        : kCompanies.firstWhere((c) => c.id == _selectedCompanyId);
+    final type = // NEW
+    _selectedTypeId == null
+        ? null
+        : kProductTypes.firstWhere((t) => t.id == _selectedTypeId);
+    final material = // NEW
+    _selectedMaterialId == null
+        ? null
+        : kMaterials.firstWhere((m) => m.id == _selectedMaterialId);
+    final products = _applySort(
+      Catalog.filtered(
+        categoryId: _selectedCategoryId,
+        companyId: _selectedCompanyId,
+        materialId: _selectedMaterialId,
+        typeId: _selectedTypeId,
+      ),
+    );
 
     return Scaffold(
       backgroundColor: Colors.black,
@@ -116,6 +135,8 @@ Widget build(BuildContext context) {
               final panel = ProductsRightPanel(
                 category: category,
                 company: company,
+                type: type, // NEW
+                material: material,
                 products: products,
                 viewMode: _viewMode,
                 sortOption: _sortOption,
@@ -202,19 +223,16 @@ class _ProductsBanner extends StatelessWidget {
         fit: StackFit.expand,
         children: [
           Image.asset(
-            'assets/image1.png', 
+            'assets/image1.png',
             fit: BoxFit.cover,
-            errorBuilder: (context, error, stackTrace) => Container(
-              color: Colors.grey.shade900,
-            ),
+            errorBuilder: (context, error, stackTrace) =>
+                Container(color: Colors.grey.shade900),
           ),
-          
         ],
       ),
     );
   }
 }
-
 
 class _Divider extends StatelessWidget {
   const _Divider();

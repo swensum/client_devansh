@@ -2,7 +2,7 @@ import 'package:devansh/data/catalog.dart';
 import 'package:devansh/productwidgets/productdetail.dart';
 import 'package:devansh/productwidgets/productview.dart';
 
-import 'package:flutter/material.dart';
+import 'package:flutter/material.dart' hide MaterialType;
 
 
 const _kAmber = Color.fromRGBO(245, 171, 30, 1);
@@ -13,6 +13,8 @@ class ProductsRightPanel extends StatefulWidget {
   final Category? category;
   final Company? company;
   final List<Product> products;
+  final ProductType? type; // NEW
+  final MaterialType? material;
   final ViewMode viewMode;
   final SortOption sortOption;
   final ValueChanged<ViewMode> onViewModeChanged;
@@ -24,6 +26,8 @@ class ProductsRightPanel extends StatefulWidget {
     required this.category,
     required this.company,
     required this.products,
+    required this.type, // NEW
+    required this.material,
     required this.viewMode,
     required this.sortOption,
     required this.onViewModeChanged,
@@ -43,6 +47,8 @@ class _ProductsRightPanelState extends State<ProductsRightPanel> {
     super.didUpdateWidget(oldWidget);
     if (oldWidget.category?.id != widget.category?.id ||
         oldWidget.company?.id != widget.company?.id ||
+         oldWidget.type?.id != widget.type?.id || 
+      oldWidget.material?.id != widget.material?.id || 
         oldWidget.products != widget.products ||
         oldWidget.viewMode != widget.viewMode) {
       _currentPage = 0;
@@ -78,18 +84,27 @@ class _ProductsRightPanelState extends State<ProductsRightPanel> {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         // "Aldrops" or "Aldrops : Devansh Hardware"
-        RichText(
-          text: TextSpan(
-            style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: Colors.white),
-            children: [
-              TextSpan(text: widget.category?.name ?? 'All Products'),
-              if (widget.company != null) ...[
-                const TextSpan(text: '  :  ', style: TextStyle(color: Colors.white38, fontWeight: FontWeight.w400)),
-                TextSpan(text: widget.company!.name, style: const TextStyle(color: _kAmber)),
-              ],
-            ],
-          ),
-        ),
+        
+       RichText(
+  text: TextSpan(
+    style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: Colors.white),
+    children: [
+      TextSpan(text: widget.category?.name ?? 'All Products'),
+      if (widget.company != null) ...[
+        const TextSpan(text: '  :  ', style: TextStyle(color: Colors.white38, fontWeight: FontWeight.w400)),
+        TextSpan(text: widget.company!.name, style: const TextStyle(color: _kAmber)),
+      ],
+      if (widget.type != null) ...[
+        const TextSpan(text: '  /  ', style: TextStyle(color: Colors.white38, fontWeight: FontWeight.w400)),
+        TextSpan(text: widget.type!.name, style: const TextStyle(color: _kAmber)),
+      ],
+      if (widget.material != null) ...[
+        const TextSpan(text: '  /  ', style: TextStyle(color: Colors.white38, fontWeight: FontWeight.w400)),
+        TextSpan(text: widget.material!.name, style: const TextStyle(color: _kAmber)),
+      ],
+    ],
+  ),
+),
         SizedBox(height: widget.r.sectionGap * 0.6),
 
         if (banner != null) ...[
