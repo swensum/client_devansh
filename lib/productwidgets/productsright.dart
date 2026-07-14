@@ -20,9 +20,6 @@ class ProductsRightPanel extends StatefulWidget {
   final ValueChanged<ViewMode> onViewModeChanged;
   final ValueChanged<SortOption> onSortChanged;
   final ProductsPageResponsive r;
-  // NEW — when non-null, a "Filters" button is shown in the toolbar that
-  // opens the sidebar in a drawer (used on narrow screens where the sidebar
-  // isn't shown inline anymore).
   final VoidCallback? onFilterTap;
   final int activeFilterCount;
 
@@ -172,7 +169,7 @@ class _ProductsRightPanelState extends State<ProductsRightPanel> {
             shrinkWrap: true,
             physics: const NeverScrollableScrollPhysics(),
             itemCount: pageProducts.length,
-            separatorBuilder: (_, __) => SizedBox(height: widget.r.gridSpacing),
+            separatorBuilder: (_, _) => SizedBox(height: widget.r.gridSpacing),
             itemBuilder: (context, index) => _ProductListTile(product: pageProducts[index]),
           ),
 

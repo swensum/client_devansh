@@ -120,7 +120,7 @@ class _HeaderState extends State<Header> {
                                     items: _dropdownItems[index] ?? [],
                                     onSelect: (item) {
                                       _closeDropdown();
-                                      print('Selected: $item');
+                                      debugPrint('Selected: $item');
                                     },
                                   ),
                           ),
@@ -170,7 +170,7 @@ class _HeaderState extends State<Header> {
           // Generic items (Collection / Pages) — no route, just closes + logs.
           onSelect: (item) {
             _mobileSidebarKey.currentState?.close();
-            print('Selected: $item');
+            debugPrint('Selected: $item');
           },
           // Shop items (categories, types, companies) — actually navigate.
           onNavigate: (route) {

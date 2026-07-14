@@ -28,9 +28,6 @@ class ProductsPageResponsive {
   final double hPadding;
   final double vPadding;
   final double sectionGap;
-  // Deliberately capped well below what a full hero banner would use —
-  // this is an identifying strip above the toolbar, not the page's main
-  // visual, so it needs to stay short at every width.
   final double bannerHeight;
 
   const ProductsPageResponsive({

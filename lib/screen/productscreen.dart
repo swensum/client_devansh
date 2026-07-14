@@ -154,8 +154,6 @@ class _ProductsPageState extends State<ProductsPage> {
                 onViewModeChanged: (mode) => setState(() => _viewMode = mode),
                 onSortChanged: (option) => setState(() => _sortOption = option),
                 r: r,
-                // Only show the "Filters" trigger when the sidebar isn't
-                // already visible inline.
                 onFilterTap: r.sidebarOnLeft
                     ? null
                     : () => _scaffoldKey.currentState?.openEndDrawer(),
@@ -186,9 +184,6 @@ class _ProductsPageState extends State<ProductsPage> {
                   ),
                 );
               }
-
-              // Narrow screens: no stacked sidebar — just the banner and the
-              // right panel, with a Filters button opening the drawer above.
               return SingleChildScrollView(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -222,10 +217,6 @@ class _ProductsPageState extends State<ProductsPage> {
     );
   }
 }
-
-/// Slide-in drawer (from the right) housing the same [CategorySidebar] used
-/// inline on wide screens — shown on narrow screens via the panel's
-/// "Filters" button.
 class _FilterDrawer extends StatelessWidget {
   final Widget sidebar;
 
