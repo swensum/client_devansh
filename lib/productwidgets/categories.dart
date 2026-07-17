@@ -1,14 +1,103 @@
+
 import 'package:devansh/data/catalog.dart';
-import 'package:flutter/material.dart';
+import 'package:devansh/models/catalogmodels.dart';
+import 'package:devansh/services/catalogservice.dart';
+import 'package:flutter/material.dart' hide MaterialType;
 
 const _kAmber = Color.fromRGBO(245, 171, 30, 1);
+
+/// ---------------------------------------------------------------------
+/// Loader: combines the 5 live Firestore streams this sidebar needs
+/// (categories, products, companies, materials, productTypes) so the
+/// actual sidebar UI below can stay focused on layout, not data-fetching.
+/// ---------------------------------------------------------------------
+typedef _SidebarDataBuilder = Widget Function(
+  BuildContext context,
+  List<Category> categories,
+  List<Product> products,
+  List<Company> companies,
+  List<MaterialType> materials,
+  List<ProductType> types,
+);
+
+class _CategorySidebarData extends StatelessWidget {
+  final _SidebarDataBuilder builder;
+
+  const _CategorySidebarData({required this.builder});
+
+  @override
+  Widget build(BuildContext context) {
+    final catalogService = CatalogService();
+
+    return StreamBuilder<List<Category>>(
+      stream: catalogService.watchCategories(),
+      builder: (context, categorySnap) {
+        final categories = categorySnap.data ?? [];
+        return StreamBuilder<List<Product>>(
+          stream: catalogService.watchProducts(),
+          builder: (context, productSnap) {
+            final products = productSnap.data ?? [];
+            return StreamBuilder<List<Company>>(
+              stream: catalogService.watchCompanies(),
+              builder: (context, companySnap) {
+                final companies = companySnap.data ?? [];
+                return StreamBuilder<List<MaterialType>>(
+                  stream: catalogService.watchMaterials(),
+                  builder: (context, materialSnap) {
+                    final materials = materialSnap.data ?? [];
+                    return StreamBuilder<List<ProductType>>(
+                      stream: catalogService.watchProductTypes(),
+                      builder: (context, typeSnap) {
+                        final types = typeSnap.data ?? [];
+
+                        final stillLoading =
+                            categorySnap.connectionState ==
+                                    ConnectionState.waiting &&
+                                categories.isEmpty;
+
+                        if (stillLoading) {
+                          return const Padding(
+                            padding: EdgeInsets.symmetric(vertical: 24),
+                            child: Center(
+                              child: SizedBox(
+                                width: 20,
+                                height: 20,
+                                child: CircularProgressIndicator(
+                                  strokeWidth: 2,
+                                  color: _kAmber,
+                                ),
+                              ),
+                            ),
+                          );
+                        }
+
+                        return builder(
+                          context,
+                          categories,
+                          products,
+                          companies,
+                          materials,
+                          types,
+                        );
+                      },
+                    );
+                  },
+                );
+              },
+            );
+          },
+        );
+      },
+    );
+  }
+}
 
 class CategorySidebar extends StatelessWidget {
   final String? selectedCategoryId; // now nullable
   final String? selectedCompanyId;
   final String? selectedMaterialId;
   final String? selectedTypeId;
-  final ValueChanged<String?> onCategoryTap; 
+  final ValueChanged<String?> onCategoryTap;
   final ValueChanged<String?> onCompanyTap;
   final ValueChanged<String?> onMaterialTap;
   final ValueChanged<String?> onTypeTap;
@@ -27,80 +116,90 @@ class CategorySidebar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final materials =
-        selectedCategoryId == null ? <dynamic>[] : Catalog.materialsInCategory(selectedCategoryId!);
-    final showMaterials = materials.isNotEmpty;
-final types = // NEW
-        selectedCategoryId == null ? <dynamic>[] : Catalog.typesInCategory(selectedCategoryId!);
-    final showTypes = types.isNotEmpty; // NEW
+    return _CategorySidebarData(
+      builder: (context, categories, products, companies, allMaterials, allTypes) {
+        final materials = selectedCategoryId == null
+            ? <MaterialType>[]
+            : Catalog.materialsInCategory(products, allMaterials, selectedCategoryId!);
+        final showMaterials = materials.isNotEmpty;
 
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        const Text(
-          'Categories',
-          style: TextStyle(color: Colors.white, fontSize: 20, fontWeight: FontWeight.bold),
-        ),
-        const SizedBox(height: 14),
-         _AllCategoriesEntry(
-          isSelected: selectedCategoryId == null,
-          onTap: () => onCategoryTap(null),
-        ),
-        for (final category in kCategories)
-          _CategoryEntry(
-            category: category,
-            isSelected: category.id == selectedCategoryId,
-            selectedCompanyId: selectedCompanyId,
-            onCategoryTap: () => onCategoryTap(category.id),
-            onCompanyTap: onCompanyTap,
-          ),
-           if (showTypes) ...[
-          const SizedBox(height: 16),
-          Divider(color: Colors.white.withValues(alpha: 0.15), height: 1),
-          const SizedBox(height: 16),
-          const Text(
-            'Type',
-            style: TextStyle(color: Colors.white, fontSize: 20, fontWeight: FontWeight.bold),
-          ),
-          const SizedBox(height: 10),
-          _CompanyRow(
-            label: 'All',
-            isSelected: selectedTypeId == null,
-            onTap: () => onTypeTap(null),
-          ),
-          for (final type in types)
-            _CompanyRow(
-              label: type.name,
-              isSelected: selectedTypeId == type.id,
-              onTap: () => onTypeTap(type.id),
+        final types = selectedCategoryId == null
+            ? <ProductType>[]
+            : Catalog.typesInCategory(products, allTypes, selectedCategoryId!);
+        final showTypes = types.isNotEmpty;
+
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const Text(
+              'Categories',
+              style: TextStyle(color: Colors.white, fontSize: 20, fontWeight: FontWeight.bold),
             ),
-        ],
-        if (showMaterials) ...[
-          const SizedBox(height: 16),
-          Divider(color: Colors.white.withValues(alpha: 0.15), height: 1),
-          const SizedBox(height: 16),
-          const Text(
-            'Materials',
-            style: TextStyle(color: Colors.white, fontSize: 20, fontWeight: FontWeight.bold),
-          ),
-          const SizedBox(height: 10),
-          _CompanyRow(
-            label: 'All',
-            isSelected: selectedMaterialId == null,
-            onTap: () => onMaterialTap(null),
-          ),
-          for (final material in materials)
-            _CompanyRow(
-              label: material.name,
-              isSelected: selectedMaterialId == material.id,
-              onTap: () => onMaterialTap(material.id),
+            const SizedBox(height: 14),
+            _AllCategoriesEntry(
+              isSelected: selectedCategoryId == null,
+              onTap: () => onCategoryTap(null),
             ),
-        ],
-      ],
+            for (final category in categories)
+              _CategoryEntry(
+                category: category,
+                products: products,
+                companies: companies,
+                isSelected: category.id == selectedCategoryId,
+                selectedCompanyId: selectedCompanyId,
+                onCategoryTap: () => onCategoryTap(category.id),
+                onCompanyTap: onCompanyTap,
+              ),
+            if (showTypes) ...[
+              const SizedBox(height: 16),
+              Divider(color: Colors.white.withValues(alpha: 0.15), height: 1),
+              const SizedBox(height: 16),
+              const Text(
+                'Type',
+                style: TextStyle(color: Colors.white, fontSize: 20, fontWeight: FontWeight.bold),
+              ),
+              const SizedBox(height: 10),
+              _CompanyRow(
+                label: 'All',
+                isSelected: selectedTypeId == null,
+                onTap: () => onTypeTap(null),
+              ),
+              for (final type in types)
+                _CompanyRow(
+                  label: type.name,
+                  isSelected: selectedTypeId == type.id,
+                  onTap: () => onTypeTap(type.id),
+                ),
+            ],
+            if (showMaterials) ...[
+              const SizedBox(height: 16),
+              Divider(color: Colors.white.withValues(alpha: 0.15), height: 1),
+              const SizedBox(height: 16),
+              const Text(
+                'Materials',
+                style: TextStyle(color: Colors.white, fontSize: 20, fontWeight: FontWeight.bold),
+              ),
+              const SizedBox(height: 10),
+              _CompanyRow(
+                label: 'All',
+                isSelected: selectedMaterialId == null,
+                onTap: () => onMaterialTap(null),
+              ),
+              for (final material in materials)
+                _CompanyRow(
+                  label: material.name,
+                  isSelected: selectedMaterialId == material.id,
+                  onTap: () => onMaterialTap(material.id),
+                ),
+            ],
+          ],
+        );
+      },
     );
   }
 }
+
 class _AllCategoriesEntry extends StatelessWidget {
   final bool isSelected;
   final VoidCallback onTap;
@@ -140,8 +239,11 @@ class _AllCategoriesEntry extends StatelessWidget {
     );
   }
 }
+
 class _CategoryEntry extends StatefulWidget {
   final Category category;
+  final List<Product> products;
+  final List<Company> companies;
   final bool isSelected;
   final String? selectedCompanyId;
   final VoidCallback onCategoryTap;
@@ -149,6 +251,8 @@ class _CategoryEntry extends StatefulWidget {
 
   const _CategoryEntry({
     required this.category,
+    required this.products,
+    required this.companies,
     required this.isSelected,
     required this.selectedCompanyId,
     required this.onCategoryTap,
@@ -187,7 +291,11 @@ class _CategoryEntryState extends State<_CategoryEntry> {
     final onCategoryTap = widget.onCategoryTap;
     final onCompanyTap = widget.onCompanyTap;
 
-    final companies = Catalog.companiesInCategory(category.id);
+    final companies = Catalog.companiesInCategory(
+      widget.products,
+      widget.companies,
+      category.id,
+    );
     final showCompanies = isSelected && companies.length > 1;
 
     // "All" row + one row per company.

@@ -3,7 +3,9 @@ import 'dart:async';
 import 'package:devansh/components/footer.dart';
 import 'package:devansh/components/header.dart';
 import 'package:devansh/data/catalog.dart';
-import 'package:flutter/material.dart';
+import 'package:devansh/models/catalogmodels.dart';
+import 'package:devansh/services/catalogservice.dart';
+import 'package:flutter/material.dart' hide MaterialType;
 
 const _kAmber = Color.fromRGBO(245, 171, 30, 1);
 const _kGreen = Color(0xFF4CAF50);
@@ -28,6 +30,7 @@ class ProductDetailPage extends StatefulWidget {
 
 class _ProductDetailPageState extends State<ProductDetailPage> {
   bool _headerRevealed = false;
+  final CatalogService _catalogService = CatalogService();
 
   @override
   void initState() {
@@ -42,178 +45,256 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
   @override
   Widget build(BuildContext context) {
     final product = widget.product;
-    final company = Catalog.companyFor(product);
-    final material = Catalog.materialFor(product);
-    final category = kCategories.firstWhere((c) => c.id == product.categoryId);
 
-    final specs = <String, String?>{
-      'Thickness': product.thickness,
-      'Size': product.size,
-      'Quantity': product.quantity,
-      'Brand': company?.name,
-      'Finish': product.finish,
-      'Material': material?.name,
-      'Availability': product.availability,
-    }..removeWhere((key, value) => value == null || value.trim().isEmpty);
+    // Live lookup data — companies, materials, categories, and all
+    // products (needed to find related items in the same category).
+    return StreamBuilder<List<Company>>(
+      stream: _catalogService.watchCompanies(),
+      builder: (context, companySnap) {
+        final companies = companySnap.data ?? [];
+        return StreamBuilder<List<MaterialType>>(
+          stream: _catalogService.watchMaterials(),
+          builder: (context, materialSnap) {
+            final materials = materialSnap.data ?? [];
+            return StreamBuilder<List<Category>>(
+              stream: _catalogService.watchCategories(),
+              builder: (context, categorySnap) {
+                final categories = categorySnap.data ?? [];
+                return StreamBuilder<List<Product>>(
+                  stream: _catalogService.watchProducts(),
+                  builder: (context, productSnap) {
+                    final allProducts = productSnap.data ?? [];
 
-    // Same category, excluding the product currently being viewed.
-    final relatedProducts =
-        Catalog.byCategory(product.categoryId).where((p) => p.id != product.id).toList();
+                    final stillLoading =
+                        categorySnap.connectionState == ConnectionState.waiting &&
+                            categories.isEmpty;
 
-    return Scaffold(
-      backgroundColor: Colors.black,
-      body: Stack(
-        children: [
-          SingleChildScrollView(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                const SizedBox(height: _kHeaderHeight),
-                const _DetailBanner(),
-                const SizedBox(height: 40),
-                Center(
-                  child: ConstrainedBox(
-                    constraints: const BoxConstraints(maxWidth: 1200),
-                    child: LayoutBuilder(
-                      builder: (context, constraints) {
-                        final isNarrow = constraints.maxWidth < _kDetailStackBreakpoint;
+                    if (stillLoading) {
+                      return const Scaffold(
+                        backgroundColor: Colors.black,
+                        body: Center(
+                          child: CircularProgressIndicator(color: _kAmber),
+                        ),
+                      );
+                    }
 
-                        final imageWidget = SizedBox(
-                          height: isNarrow ? _kImageHeightNarrow : _kImageHeight,
-                          width: double.infinity,
-                          child: ClipRRect(
-                            borderRadius: BorderRadius.circular(12),
-                            child: Image.asset(
-                              product.imageAsset,
-                              fit: BoxFit.cover,
-                              cacheWidth: 700,
-                              errorBuilder: (context, error, stackTrace) => Container(
-                                color: Colors.grey.shade800,
-                                child: const Icon(Icons.image_not_supported_outlined,
-                                    color: Colors.white38, size: 32),
-                              ),
+                    final company = Catalog.companyFor(product, companies);
+                    final material = Catalog.materialFor(product, materials);
+                    final category = categories.firstWhere(
+                      (c) => c.id == product.categoryId,
+                      orElse: () => Category(id: product.categoryId, name: 'Uncategorized'),
+                    );
+
+                    final specs = <String, String?>{
+                      'Thickness': product.thickness,
+                      'Size': product.size,
+                      'Quantity': product.quantity,
+                      'Brand': company?.name,
+                      'Finish': product.finish,
+                      'Material': material?.name,
+                      'Availability': product.availability,
+                    }..removeWhere((key, value) => value == null || value.trim().isEmpty);
+
+                    // Same category, excluding the product currently being viewed.
+                    final relatedProducts = Catalog.byCategory(allProducts, product.categoryId)
+                        .where((p) => p.id != product.id)
+                        .toList();
+
+                    return Scaffold(
+                      backgroundColor: Colors.black,
+                      body: Stack(
+                        children: [
+                          SingleChildScrollView(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.stretch,
+                              children: [
+                                const SizedBox(height: _kHeaderHeight),
+                                const _DetailBanner(),
+                                const SizedBox(height: 40),
+                                Center(
+                                  child: ConstrainedBox(
+                                    constraints: const BoxConstraints(maxWidth: 1200),
+                                    child: LayoutBuilder(
+                                      builder: (context, constraints) {
+                                        final isNarrow =
+                                            constraints.maxWidth < _kDetailStackBreakpoint;
+
+                                        final imageWidget = SizedBox(
+                                          height: isNarrow ? _kImageHeightNarrow : _kImageHeight,
+                                          width: double.infinity,
+                                          child: ClipRRect(
+                                            borderRadius: BorderRadius.circular(12),
+                                            child: product.imageUrl.isNotEmpty
+                                                ? Image.network(
+                                                    product.imageUrl,
+                                                    fit: BoxFit.cover,
+                                                    loadingBuilder: (context, child, progress) {
+                                                      if (progress == null) return child;
+                                                      return Container(
+                                                        color: Colors.grey.shade900,
+                                                        child: const Center(
+                                                          child: CircularProgressIndicator(
+                                                            color: _kAmber,
+                                                            strokeWidth: 2,
+                                                          ),
+                                                        ),
+                                                      );
+                                                    },
+                                                    errorBuilder: (context, error, stackTrace) =>
+                                                        Container(
+                                                      color: Colors.grey.shade800,
+                                                      child: const Icon(
+                                                          Icons.image_not_supported_outlined,
+                                                          color: Colors.white38,
+                                                          size: 32),
+                                                    ),
+                                                  )
+                                                : Container(
+                                                    color: Colors.grey.shade800,
+                                                    child: const Icon(
+                                                        Icons.image_not_supported_outlined,
+                                                        color: Colors.white38,
+                                                        size: 32),
+                                                  ),
+                                          ),
+                                        );
+
+                                        final detailsWidget = Column(
+                                          crossAxisAlignment: CrossAxisAlignment.start,
+                                          children: [
+                                            Text(
+                                              product.name,
+                                              style: TextStyle(
+                                                color: Colors.white,
+                                                fontSize: isNarrow ? 22 : 28,
+                                                fontWeight: FontWeight.bold,
+                                              ),
+                                            ),
+                                            const SizedBox(height: 8),
+                                            Text(
+                                              category.name,
+                                              style: const TextStyle(
+                                                  color: _kAmber,
+                                                  fontSize: 16,
+                                                  fontWeight: FontWeight.w600),
+                                            ),
+                                            if (product.description != null &&
+                                                product.description!.trim().isNotEmpty) ...[
+                                              const SizedBox(height: 15),
+                                              Text(
+                                                product.description!,
+                                                style: TextStyle(
+                                                    color: Colors.white.withValues(alpha: 0.75),
+                                                    fontSize: 16,
+                                                    height: 1.5),
+                                              ),
+                                            ],
+                                            const SizedBox(height: 20),
+                                            Container(
+                                              width: double.infinity,
+                                              padding: const EdgeInsets.all(18),
+                                              decoration: BoxDecoration(
+                                                color: Colors.white.withValues(alpha: 0.08),
+                                                borderRadius: BorderRadius.circular(12),
+                                                border: Border.all(
+                                                    color: Colors.white.withValues(alpha: 0.15)),
+                                              ),
+                                              child: _DetailGrid(
+                                                entries: [
+                                                  _DetailEntry(
+                                                    label: 'Price',
+                                                    value:
+                                                        '\$${product.price.toStringAsFixed(2)}',
+                                                    valueColor: _kAmber,
+                                                  ),
+                                                  for (final entry in specs.entries)
+                                                    _DetailEntry(
+                                                      label: entry.key,
+                                                      value: entry.value!,
+                                                      isAvailability:
+                                                          entry.key == 'Availability',
+                                                    ),
+                                                ],
+                                              ),
+                                            ),
+                                            const SizedBox(height: 30),
+                                            SizedBox(
+                                              width: double.infinity,
+                                              child: ElevatedButton(
+                                                onPressed: () {},
+                                                style: ElevatedButton.styleFrom(
+                                                  backgroundColor: _kAmber,
+                                                  foregroundColor: Colors.black,
+                                                  minimumSize: const Size(double.infinity, 46),
+                                                  shape: RoundedRectangleBorder(
+                                                      borderRadius: BorderRadius.circular(8)),
+                                                ),
+                                                child: const Text('Place Order',
+                                                    style:
+                                                        TextStyle(fontWeight: FontWeight.w600)),
+                                              ),
+                                            ),
+                                          ],
+                                        );
+
+                                        return Padding(
+                                          padding:
+                                              EdgeInsets.fromLTRB(16, isNarrow ? 24 : 50, 16, 16),
+                                          child: isNarrow
+                                              ? Column(
+                                                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                                                  children: [
+                                                    imageWidget,
+                                                    const SizedBox(height: 24),
+                                                    detailsWidget,
+                                                  ],
+                                                )
+                                              : Row(
+                                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                                  children: [
+                                                    Expanded(child: imageWidget),
+                                                    const SizedBox(width: 24),
+                                                    Expanded(child: detailsWidget),
+                                                  ],
+                                                ),
+                                        );
+                                      },
+                                    ),
+                                  ),
+                                ),
+                                if (relatedProducts.isNotEmpty) ...[
+                                  const SizedBox(height: 86),
+                                  _RelatedProductsSection(
+                                    products: relatedProducts,
+                                    companies: companies,
+                                  ),
+                                ],
+                                const _Divider(),
+                                const Footer(),
+                              ],
                             ),
                           ),
-                        );
-
-                        final detailsWidget = Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              product.name,
-                              style: TextStyle(
-                                color: Colors.white,
-                                fontSize: isNarrow ? 22 : 28,
-                                fontWeight: FontWeight.bold,
-                              ),
+                          Positioned(
+                            top: 0,
+                            left: 0,
+                            right: 0,
+                            child: AnimatedSlide(
+                              duration: const Duration(milliseconds: 500),
+                              curve: Curves.easeOutCubic,
+                              offset: _headerRevealed ? Offset.zero : const Offset(0, -1),
+                              child: const Header(),
                             ),
-                            const SizedBox(height: 8),
-                            Text(
-                              category.name,
-                              style: const TextStyle(
-                                  color: _kAmber, fontSize: 16, fontWeight: FontWeight.w600),
-                            ),
-                            if (product.description != null &&
-                                product.description!.trim().isNotEmpty) ...[
-                              const SizedBox(height: 15),
-                              Text(
-                                product.description!,
-                                style: TextStyle(
-                                    color: Colors.white.withValues(alpha: 0.75),
-                                    fontSize: 16,
-                                    height: 1.5),
-                              ),
-                            ],
-                            const SizedBox(height: 20),
-                            Container(
-                              width: double.infinity,
-                              padding: const EdgeInsets.all(18),
-                              decoration: BoxDecoration(
-                                color: Colors.white.withValues(alpha: 0.08),
-                                borderRadius: BorderRadius.circular(12),
-                                border: Border.all(color: Colors.white.withValues(alpha: 0.15)),
-                              ),
-                              child: _DetailGrid(
-                                entries: [
-                                  _DetailEntry(
-                                    label: 'Price',
-                                    value: '\$${product.price.toStringAsFixed(2)}',
-                                    valueColor: _kAmber,
-                                  ),
-                                  for (final entry in specs.entries)
-                                    _DetailEntry(
-                                      label: entry.key,
-                                      value: entry.value!,
-                                      isAvailability: entry.key == 'Availability',
-                                    ),
-                                ],
-                              ),
-                            ),
-                            const SizedBox(height: 30),
-                            SizedBox(
-                              width: double.infinity,
-                              child: ElevatedButton(
-                                onPressed: () {},
-                                style: ElevatedButton.styleFrom(
-                                  backgroundColor: _kAmber,
-                                  foregroundColor: Colors.black,
-                                  minimumSize: const Size(double.infinity, 46),
-                                  shape:
-                                      RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-                                ),
-                                child: const Text('Place Order',
-                                    style: TextStyle(fontWeight: FontWeight.w600)),
-                              ),
-                            ),
-                          ],
-                        );
-
-                        return Padding(
-                          padding: EdgeInsets.fromLTRB(16, isNarrow ? 24 : 50, 16, 16),
-                          child: isNarrow
-                              ? Column(
-                                  crossAxisAlignment: CrossAxisAlignment.stretch,
-                                  children: [
-                                    imageWidget,
-                                    const SizedBox(height: 24),
-                                    detailsWidget,
-                                  ],
-                                )
-                              : Row(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    Expanded(child: imageWidget),
-                                    const SizedBox(width: 24),
-                                    Expanded(child: detailsWidget),
-                                  ],
-                                ),
-                        );
-                      },
-                    ),
-                  ),
-                ),
-                if (relatedProducts.isNotEmpty) ...[
-                  const SizedBox(height: 86),
-                  _RelatedProductsSection(products: relatedProducts),
-                ],
-                const _Divider(),
-                const Footer(),
-              ],
-            ),
-          ),
-          Positioned(
-            top: 0,
-            left: 0,
-            right: 0,
-            child: AnimatedSlide(
-              duration: const Duration(milliseconds: 500),
-              curve: Curves.easeOutCubic,
-              offset: _headerRevealed ? Offset.zero : const Offset(0, -1),
-              child: const Header(),
-            ),
-          ),
-        ],
-      ),
+                          ),
+                        ],
+                      ),
+                    );
+                  },
+                );
+              },
+            );
+          },
+        );
+      },
     );
   }
 }
@@ -260,8 +341,9 @@ class _Divider extends StatelessWidget {
 
 class _RelatedProductsSection extends StatefulWidget {
   final List<Product> products;
+  final List<Company> companies;
 
-  const _RelatedProductsSection({required this.products});
+  const _RelatedProductsSection({required this.products, required this.companies});
 
   @override
   State<_RelatedProductsSection> createState() => _RelatedProductsSectionState();
@@ -424,7 +506,10 @@ class _RelatedProductsSectionState extends State<_RelatedProductsSection> {
                                 width: cardWidth,
                                 child: Padding(
                                   padding: EdgeInsets.fromLTRB(_kCardGap / 2, 8, _kCardGap / 2, 8),
-                                  child: _RelatedProductCard(product: product),
+                                  child: _RelatedProductCard(
+                                    product: product,
+                                    companies: widget.companies,
+                                  ),
                                 ),
                               ),
                             );
@@ -467,8 +552,9 @@ class _RelatedProductsSectionState extends State<_RelatedProductsSection> {
 
 class _RelatedProductCard extends StatefulWidget {
   final Product product;
+  final List<Company> companies;
 
-  const _RelatedProductCard({required this.product});
+  const _RelatedProductCard({required this.product, required this.companies});
 
   @override
   State<_RelatedProductCard> createState() => _RelatedProductCardState();
@@ -508,7 +594,7 @@ class _RelatedProductCardState extends State<_RelatedProductCard> with SingleTic
   @override
   Widget build(BuildContext context) {
     final product = widget.product;
-    final company = Catalog.companyFor(product);
+    final company = Catalog.companyFor(product, widget.companies);
 
     return MouseRegion(
       cursor: SystemMouseCursors.click,
@@ -556,17 +642,34 @@ class _RelatedProductCardState extends State<_RelatedProductCard> with SingleTic
                         child: Stack(
                           fit: StackFit.expand,
                           children: [
-                            Image.asset(
-                              product.imageAsset,
-                              fit: BoxFit.cover,
-                              cacheWidth: 300,
-                              errorBuilder: (context, error, stackTrace) => Container(
-                                color: Colors.grey.shade800,
-                                child: const Center(
-                                  child: Icon(Icons.image_not_supported_outlined, color: Colors.white38),
-                                ),
-                              ),
-                            ),
+                            product.imageUrl.isNotEmpty
+                                ? Image.network(
+                                    product.imageUrl,
+                                    fit: BoxFit.cover,
+                                    loadingBuilder: (context, child, progress) {
+                                      if (progress == null) return child;
+                                      return const Center(
+                                        child: CircularProgressIndicator(
+                                          color: _kAmber,
+                                          strokeWidth: 2,
+                                        ),
+                                      );
+                                    },
+                                    errorBuilder: (context, error, stackTrace) => Container(
+                                      color: Colors.grey.shade800,
+                                      child: const Center(
+                                        child: Icon(Icons.image_not_supported_outlined,
+                                            color: Colors.white38),
+                                      ),
+                                    ),
+                                  )
+                                : Container(
+                                    color: Colors.grey.shade800,
+                                    child: const Center(
+                                      child: Icon(Icons.image_not_supported_outlined,
+                                          color: Colors.white38),
+                                    ),
+                                  ),
                             AnimatedOpacity(
                               duration: const Duration(milliseconds: 200),
                               opacity: _isHovered ? 0.3 : 0.0,

@@ -51,7 +51,7 @@ class _HomePageState extends State<HomePage> {
                 const AboutSection(),
                 const _Divider(),
                 const CategoriesSection(),
-                const TopProductsSection(),
+                // const TopProductsSection(),
                 const _Divider(),
                 const ReviewsSection(),
                 const ContactSection(),
