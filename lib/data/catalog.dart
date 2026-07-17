@@ -1,10 +1,11 @@
 library;
 
+import 'package:cloud_firestore/cloud_firestore.dart';
+
 class Category {
   final String id;
   final String name;
- 
-  final String? bannerAsset;
+  final String? bannerAsset; 
 
   const Category({required this.id, required this.name, this.bannerAsset});
 }
@@ -12,7 +13,7 @@ class Category {
 class Company {
   final String id;
   final String name;
-  final String? logoAsset;
+  final String? logoAsset; // now holds a Cloudinary URL, not an asset path
 
   const Company({required this.id, required this.name, this.logoAsset});
 }
@@ -23,6 +24,7 @@ class MaterialType {
 
   const MaterialType({required this.id, required this.name});
 }
+
 class ProductType {
   final String id;
   final String name;
@@ -33,19 +35,19 @@ class ProductType {
 class Product {
   final String id;
   final String name;
-  final String imageAsset;
+  final String imageAsset; 
   final double price;
   final String categoryId;
-  final String? companyId; 
-  final String materialId; 
-   final String? typeId; 
-final String? description;
+  final String? companyId;
+  final String? materialId; 
+  final String? typeId;
+  final String? description;
   final String? thickness;
   final String? size;
   final String? quantity;
   final String? finish;
   final String? availability;
-   final bool isTopProduct; 
+  final bool isTopProduct;
 
   const Product({
     required this.id,
@@ -54,8 +56,8 @@ final String? description;
     required this.price,
     required this.categoryId,
     this.companyId,
-    required this.materialId,
-     this.typeId,
+    this.materialId,
+    this.typeId,
     this.description,
     this.thickness,
     this.size,
@@ -66,221 +68,84 @@ final String? description;
   });
 }
 
+List<Category> kCategories = [];
+List<Company> kCompanies = [];
+List<MaterialType> kMaterials = [];
+List<ProductType> kProductTypes = [];
+List<Product> kProducts = [];
 
-const List<Category> kCategories = [
-  Category(id: 'handles', name: 'Cabinet Handles', bannerAsset: 'assets/port.jpg'),
-  Category(id: 'hinges', name: 'Hinges', bannerAsset: 'assets/port3.png'),
-  Category(id: 'aldrops', name: 'Aldrops', bannerAsset: 'assets/port2.png'),
-  Category(id: 'locks', name: 'Locks', bannerAsset: 'assets/port.jpg'),
-  Category(id: 'chimneys', name: 'Chimneys', bannerAsset: 'assets/port2.png'),
-  Category(id: 'baskets', name: 'Baskets', bannerAsset: 'assets/port3.png'),
-];
+class CatalogRepository {
+  CatalogRepository._();
+  static final CatalogRepository instance = CatalogRepository._();
 
-const List<Company> kCompanies = [
-  Company(id: 'devansh', name: 'Devansh Hardware', logoAsset: 'assets/logo.png'),
-  Company(id: 'nova', name: 'Nova Fittings'),
-  Company(id: 'hearth_co', name: 'Hearth & Co.'),
-  Company(id: 'basketry', name: 'Basketry Works'),
-  Company(id: 'unknown', name: 'Unknown'),
-  Company(id: 'others', name: 'others'),
-];
+  bool _loaded = false;
+  bool get isLoaded => _loaded;
 
-const List<MaterialType> kMaterials = [
-  MaterialType(id: 'aluminium', name: 'Aluminium'),
-  MaterialType(id: 'silver', name: 'Silver'),
-  MaterialType(id: 'metal', name: 'Metal'),
-  MaterialType(id: 'ss', name: 'Stainless Steel'),
-];
-const List<ProductType> kProductTypes = [
-  ProductType(id: 'mortice', name: 'Mortice Lock'),
-  ProductType(id: 'multipurpose', name: 'Multipurpose Lock'),
-  ProductType(id: 'cupboard', name: 'Cupboard Lock'),
-  ProductType(id: 'main_door', name: 'Main Door Lock'),
-];
+  Future<void> load() async {
+    if (_loaded) return;
+    final db = FirebaseFirestore.instance;
 
-const List<Product> kProducts = [
-  // Devansh — sells across several categories.
- Product(
-  id: 'p1',
-  name: 'Matte Black Cabinet Handle',
-  imageAsset: 'assets/port.jpg',
-  price: 12.99,
-  categoryId: 'handles',
-  companyId: 'devansh',
-  materialId: 'aluminium',
-  description: 'A sleek, minimal handle designed for modern cabinetry A sleek, minimal handle designed for modern cabinetry A sleek, minimal handle designed for modern cabinetry A sleek, minimal handle designed for modern cabinetry.',
-  thickness: '3mm',
-  size: '128mm center-to-center',
-  quantity: 'Pack of 2',
-  finish: 'Matte Black',
-  availability: 'In Stock',
-  isTopProduct: true,
-),
-  Product(
-  id: 'p2',
-  name: 'Stainless Chimney Hood',
-  imageAsset: 'assets/port2.png',
-  price: 89.00,
-  categoryId: 'chimneys',
-  companyId: 'hearth_co',
-  materialId: 'ss',
-  description: 'High-suction chimney hood built for daily kitchen use.',
-  // no thickness/size/quantity/finish set — those rows just won't appear
-  availability: 'Made to Order',
-  isTopProduct: true,
-),
-  Product(
-    id: 'p3',
-    name: 'Modern Aldrop Lock',
-    imageAsset: 'assets/port.jpg',
-    price: 24.00,
-    categoryId: 'aldrops',
-    companyId: 'devansh',
-    materialId: 'metal',
-    isTopProduct: true,
-  ),
+    final categoriesSnap = await db.collection('categories').get();
+    kCategories = categoriesSnap.docs.map((d) {
+      final data = d.data();
+      return Category(
+        id: d.id,
+        name: data['name'] ?? '',
+        bannerAsset: data['imageUrl'],
+      );
+    }).toList();
 
-  // Nova — hinges + handles only.
-  Product(
-    id: 'p4',
-    name: 'Concealed Door Hinge',
-    imageAsset: 'assets/port3.png',
-    price: 11.00,
-    categoryId: 'hinges',
-    companyId: 'nova',
-    materialId: 'metal',
-    isTopProduct: true,
-  ),
-  Product(
-    id: 'p5',
-    name: 'Brushed Steel Door Handle',
-    imageAsset: 'assets/port2.png',
-    price: 18.50,
-    categoryId: 'handles',
-    companyId: 'nova',
-    materialId: 'ss',
-    isTopProduct: true,
-  ),
+    final companiesSnap = await db.collection('companies').get();
+    kCompanies = companiesSnap.docs.map((d) {
+      final data = d.data();
+      return Company(
+        id: d.id,
+        name: data['name'] ?? '',
+        logoAsset: data['imageUrl'],
+      );
+    }).toList();
 
-  // Hearth & Co. — chimneys only.
-  Product(
-    id: 'p6',
-    name: 'Stainless Chimney Hood',
-    imageAsset: 'assets/port2.png',
-    price: 89.00,
-    categoryId: 'chimneys',
-    companyId: 'hearth_co',
-    materialId: 'ss',
-    isTopProduct: true,
-  ),
+    final materialsSnap = await db.collection('materials').get();
+    kMaterials = materialsSnap.docs
+        .map((d) => MaterialType(id: d.id, name: d.data()['name'] ?? ''))
+        .toList();
 
-  // Basketry Works — baskets only.
-  Product(
-    id: 'p7',
-    name: 'Pull-Out Wire Basket',
-    imageAsset: 'assets/port3.png',
-    price: 22.50,
-    categoryId: 'baskets',
-    companyId: 'basketry',
-    materialId: 'metal',
-    isTopProduct: true,
-  ),
+    final typesSnap = await db.collection('productTypes').get();
+    kProductTypes = typesSnap.docs
+        .map((d) => ProductType(id: d.id, name: d.data()['name'] ?? ''))
+        .toList();
 
-  // Generic / unaffiliated items.
-  Product(
-    id: 'p8',
-    name: 'Generic Tower Bolt',
-    imageAsset: 'assets/port.jpg',
-    price: 8.50,
-    categoryId: 'handles',
-    companyId: 'others',
-    materialId: 'metal',
-    isTopProduct: true,
-  ),
-  Product(
-    id: 'p9',
-    name: 'Basic Cabinet Knob',
-    imageAsset: 'assets/port2.png',
-    price: 6.25,
-    categoryId: 'handles',
-    companyId: 'unknown',
-    materialId: 'aluminium',
-    isTopProduct: true,
-  ),
+    final productsSnap = await db.collection('products').get();
+    kProducts = productsSnap.docs.map((d) {
+      final data = d.data();
+      return Product(
+        id: d.id,
+        name: data['name'] ?? '',
+        imageAsset: data['imageUrl'] ?? '',
+        price: (data['price'] as num?)?.toDouble() ?? 0,
+        categoryId: data['categoryId'] ?? '',
+        companyId: data['companyId'],
+        materialId: data['materialId'],
+        typeId: data['typeId'],
+        description: data['description'],
+        thickness: data['thickness'],
+        size: data['size'],
+        quantity: data['quantity'],
+        finish: data['finish'],
+        availability: data['availability'],
+        isTopProduct: data['isTopProduct'] ?? false,
+      );
+    }).toList();
 
-  Product(
-    id: 'p10',
-    name: 'Brass Cabinet Pull',
-    imageAsset: 'assets/port2.png',
-    price: 14.25,
-    categoryId: 'handles',
-    companyId: 'devansh',
-    materialId: 'metal',
-    isTopProduct: true,
-  ),
-  Product(
-    id: 'p11',
-    name: 'Zinc Alloy Hinge',
-    imageAsset: 'assets/port.jpg',
-    price: 7.50,
-    categoryId: 'hinges',
-    companyId: 'nova',
-    materialId: 'aluminium',
-    isTopProduct: true,
-  ),
-  Product(
-    id: 'p12',
-    name: 'Heavy Duty Aldrop',
-    imageAsset: 'assets/port3.png',
-    price: 31.00,
-    categoryId: 'aldrops',
-    companyId: 'devansh',
-    materialId: 'ss',
-    isTopProduct: true,
-  ),
-  Product(
-    id: 'p13',
-    name: 'Round Wire Basket',
-    imageAsset: 'assets/port.jpg',
-    price: 18.75,
-    categoryId: 'baskets',
-    companyId: 'basketry',
-    materialId: 'ss',
-    isTopProduct: true,
-  ),
-  Product(
-    id: 'p14',
-    name: 'Keyless Door Lock',
-    imageAsset: 'assets/port2.png',
-    price: 15.00,
-    categoryId: 'locks',
-    companyId: 'nova',
-    materialId: 'metal',
-     typeId: 'main_door',
-     isTopProduct: true,
-  ),
-  Product(
-    id: 'p15',
-    name: 'Satin Nickel Handle',
-    imageAsset: 'assets/port3.png',
-    price: 21.50,
-    categoryId: 'handles',
-    companyId: 'nova',
-    materialId: 'silver',
-    isTopProduct: true,
-  ),
-   Product(
-    id: 'p16',
-    name: 'Keyless Door Lock',
-    imageAsset: 'assets/port2.png',
-    price: 15.00,
-    categoryId: 'locks',
-    companyId: 'devansh',
-    materialId: 'metal',
-    typeId: 'mortice',
-    isTopProduct: true,
-  ),
-];
+    _loaded = true;
+  }
+
+  /// Call this if you ever need to force a re-fetch (e.g. pull-to-refresh).
+  Future<void> reload() {
+    _loaded = false;
+    return load();
+  }
+}
 
 class Catalog {
   /// Products in a given category.
@@ -293,22 +158,29 @@ class Catalog {
     return inCategory.where((p) => p.companyId == companyId).toList();
   }
 
-  static List<Product> filtered({String? categoryId, String? companyId, String? materialId,  String? typeId,}) {
-  return kProducts.where((p) {
-    if (categoryId != null && p.categoryId != categoryId) return false;
-    if (companyId != null && p.companyId != companyId) return false;
-    if (materialId != null && p.materialId != materialId) return false;
-    if (typeId != null && p.typeId != typeId) return false;
-    return true;
-  }).toList();
-}
-static List<ProductType> typesInCategory(String categoryId) {
-  final typeIds = byCategory(categoryId)
-      .map((p) => p.typeId)
-      .whereType<String>() // drops nulls
-      .toSet();
-  return kProductTypes.where((t) => typeIds.contains(t.id)).toList();
-}
+  static List<Product> filtered({
+    String? categoryId,
+    String? companyId,
+    String? materialId,
+    String? typeId,
+  }) {
+    return kProducts.where((p) {
+      if (categoryId != null && p.categoryId != categoryId) return false;
+      if (companyId != null && p.companyId != companyId) return false;
+      if (materialId != null && p.materialId != materialId) return false;
+      if (typeId != null && p.typeId != typeId) return false;
+      return true;
+    }).toList();
+  }
+
+  static List<ProductType> typesInCategory(String categoryId) {
+    final typeIds = byCategory(categoryId)
+        .map((p) => p.typeId)
+        .whereType<String>() // drops nulls
+        .toSet();
+    return kProductTypes.where((t) => typeIds.contains(t.id)).toList();
+  }
+
   /// The company for a product, or null if it doesn't have one.
   static Company? companyFor(Product product) {
     if (product.companyId == null) return null;
@@ -318,16 +190,21 @@ static List<ProductType> typesInCategory(String categoryId) {
     return null;
   }
 
-  /// The material for a product.
+  /// The material for a product, or null if it doesn't have one.
   static MaterialType? materialFor(Product product) {
+    if (product.materialId == null) return null;
     for (final m in kMaterials) {
       if (m.id == product.materialId) return m;
     }
     return null;
   }
-static List<Product> get topProducts => kProducts.where((p) => p.isTopProduct).toList();
+
+  static List<Product> get topProducts => kProducts.where((p) => p.isTopProduct).toList();
+
   static String? bannerFor(String categoryId) {
-    final category = kCategories.firstWhere((c) => c.id == categoryId);
+    final matches = kCategories.where((c) => c.id == categoryId);
+    if (matches.isEmpty) return null;
+    final category = matches.first;
     if (category.bannerAsset != null) return category.bannerAsset;
     final products = byCategory(categoryId);
     return products.isNotEmpty ? products.first.imageAsset : null;
@@ -340,8 +217,12 @@ static List<Product> get topProducts => kProducts.where((p) => p.isTopProduct).t
         .toSet();
     return kCompanies.where((c) => companyIds.contains(c.id)).toList();
   }
+
   static List<MaterialType> materialsInCategory(String categoryId) {
-  final materialIds = byCategory(categoryId).map((p) => p.materialId).toSet();
-  return kMaterials.where((m) => materialIds.contains(m.id)).toList();
-}
+    final materialIds = byCategory(categoryId)
+        .map((p) => p.materialId)
+        .whereType<String>() // drops nulls
+        .toSet();
+    return kMaterials.where((m) => materialIds.contains(m.id)).toList();
+  }
 }
