@@ -1,6 +1,9 @@
+
 import 'package:devansh/data/catalog.dart';
+import 'package:devansh/models/catalogmodels.dart';
 import 'package:devansh/productwidgets/productdetail.dart';
 import 'package:devansh/productwidgets/productview.dart';
+import 'package:devansh/services/catalogservice.dart';
 
 import 'package:flutter/material.dart' hide MaterialType;
 
@@ -45,6 +48,7 @@ class ProductsRightPanel extends StatefulWidget {
 
 class _ProductsRightPanelState extends State<ProductsRightPanel> {
   int _currentPage = 0;
+  final CatalogService _catalogService = CatalogService();
 
   @override
   void didUpdateWidget(covariant ProductsRightPanel oldWidget) {
@@ -76,112 +80,151 @@ class _ProductsRightPanelState extends State<ProductsRightPanel> {
 
   @override
   Widget build(BuildContext context) {
-    final banner = widget.category != null ? Catalog.bannerFor(widget.category!.id) : null;
-    final products = widget.products;
-    final totalPages = _totalPages(products.length);
+    return StreamBuilder<List<Company>>(
+      stream: _catalogService.watchCompanies(),
+      builder: (context, companySnap) {
+        final companies = companySnap.data ?? [];
+        final products = widget.products;
+        final banner = widget.category != null
+              ? (widget.category!.imageUrl ??
+                (products.isNotEmpty ? products.first.imageUrl : null))
+            : null;
+        final bannerIsNetwork = banner != null && banner.startsWith('http');
 
-    final start = _currentPage * _kItemsPerPage;
-    final end = (start + _kItemsPerPage).clamp(0, products.length);
-    final pageProducts = products.isEmpty ? const <Product>[] : products.sublist(start, end);
+        final totalPages = _totalPages(products.length);
 
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        // "Aldrops" or "Aldrops : Devansh Hardware"
-        
-       RichText(
-  text: TextSpan(
-    style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: Colors.white),
-    children: [
-      TextSpan(text: widget.category?.name ?? 'All Products'),
-      if (widget.company != null) ...[
-        const TextSpan(text: '  :  ', style: TextStyle(color: Colors.white38, fontWeight: FontWeight.w400)),
-        TextSpan(text: widget.company!.name, style: const TextStyle(color: _kAmber)),
-      ],
-      if (widget.type != null) ...[
-        const TextSpan(text: '  /  ', style: TextStyle(color: Colors.white38, fontWeight: FontWeight.w400)),
-        TextSpan(text: widget.type!.name, style: const TextStyle(color: _kAmber)),
-      ],
-      if (widget.material != null) ...[
-        const TextSpan(text: '  /  ', style: TextStyle(color: Colors.white38, fontWeight: FontWeight.w400)),
-        TextSpan(text: widget.material!.name, style: const TextStyle(color: _kAmber)),
-      ],
-    ],
-  ),
-),
-        SizedBox(height: widget.r.sectionGap * 0.6),
+        final start = _currentPage * _kItemsPerPage;
+        final end = (start + _kItemsPerPage).clamp(0, products.length);
+        final pageProducts = products.isEmpty ? const <Product>[] : products.sublist(start, end);
 
-        if (banner != null) ...[
-          ClipRRect(
-            borderRadius: BorderRadius.circular(10),
-            child: Image.asset(
-              banner,
-              width: double.infinity,
-              height: widget.r.bannerHeight,
-              fit: BoxFit.cover,
-              cacheWidth: 800,
-            ),
-          ),
-          SizedBox(height: widget.r.sectionGap * 0.6),
-        ],
-
-        _ProductsToolbar(
-          viewMode: widget.viewMode,
-          sortOption: widget.sortOption,
-          onViewModeChanged: widget.onViewModeChanged,
-          onSortChanged: widget.onSortChanged,
-          onFilterTap: widget.onFilterTap,
-          activeFilterCount: widget.activeFilterCount,
-        ),
-        const SizedBox(height: 10),
-        Divider(color: Colors.white.withValues(alpha: 0.15), height: 1),
-        SizedBox(height: widget.r.sectionGap * 0.6),
-
-        if (products.isEmpty)
-          Padding(
-            padding: const EdgeInsets.symmetric(vertical: 60),
-            child: Center(
-              child: Text(
-                'No products in this category yet.',
-                style: TextStyle(color: Colors.white.withValues(alpha: 0.6)),
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            RichText(
+              text: TextSpan(
+                style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: Colors.white),
+                children: [
+                  TextSpan(text: widget.category?.name ?? 'All Products'),
+                  if (widget.company != null) ...[
+                    const TextSpan(text: '  :  ', style: TextStyle(color: Colors.white38, fontWeight: FontWeight.w400)),
+                    TextSpan(text: widget.company!.name, style: const TextStyle(color: _kAmber)),
+                  ],
+                  if (widget.type != null) ...[
+                    const TextSpan(text: '  /  ', style: TextStyle(color: Colors.white38, fontWeight: FontWeight.w400)),
+                    TextSpan(text: widget.type!.name, style: const TextStyle(color: _kAmber)),
+                  ],
+                  if (widget.material != null) ...[
+                    const TextSpan(text: '  /  ', style: TextStyle(color: Colors.white38, fontWeight: FontWeight.w400)),
+                    TextSpan(text: widget.material!.name, style: const TextStyle(color: _kAmber)),
+                  ],
+                ],
               ),
             ),
-          )
-        else if (widget.viewMode == ViewMode.grid)
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 6),
-            child: GridView.builder(
-              shrinkWrap: true,
-              physics: const NeverScrollableScrollPhysics(),
-              clipBehavior: Clip.none,
-              itemCount: pageProducts.length,
-              gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-                crossAxisCount: widget.r.crossAxisCount,
-                crossAxisSpacing: widget.r.gridSpacing,
-                mainAxisSpacing: widget.r.gridSpacing,
-                childAspectRatio: widget.r.childAspectRatio,
-              ),
-              itemBuilder: (context, index) => _ProductCard(product: pageProducts[index]),
-            ),
-          )
-        else
-          ListView.separated(
-            shrinkWrap: true,
-            physics: const NeverScrollableScrollPhysics(),
-            itemCount: pageProducts.length,
-            separatorBuilder: (_, _) => SizedBox(height: widget.r.gridSpacing),
-            itemBuilder: (context, index) => _ProductListTile(product: pageProducts[index]),
-          ),
+            SizedBox(height: widget.r.sectionGap * 0.6),
 
-        if (totalPages > 1) ...[
-          SizedBox(height: widget.r.sectionGap * 0.8),
-          _Pagination(
-            currentPage: _currentPage,
-            totalPages: totalPages,
-            onPageSelected: _goToPage,
-          ),
-        ],
-      ],
+            if (banner != null) ...[
+              ClipRRect(
+                borderRadius: BorderRadius.circular(10),
+                child: bannerIsNetwork
+                    ? Image.network(
+                        banner,
+                        width: double.infinity,
+                        height: widget.r.bannerHeight,
+                        fit: BoxFit.cover,
+                        loadingBuilder: (context, child, progress) {
+                          if (progress == null) return child;
+                          return Container(
+                            width: double.infinity,
+                            height: widget.r.bannerHeight,
+                            color: Colors.grey.shade900,
+                            child: const Center(
+                              child: CircularProgressIndicator(color: _kAmber, strokeWidth: 2),
+                            ),
+                          );
+                        },
+                        errorBuilder: (context, error, stackTrace) => Container(
+                          width: double.infinity,
+                          height: widget.r.bannerHeight,
+                          color: Colors.grey.shade900,
+                        ),
+                      )
+                    : Image.asset(
+                        banner,
+                        width: double.infinity,
+                        height: widget.r.bannerHeight,
+                        fit: BoxFit.cover,
+                        cacheWidth: 800,
+                        errorBuilder: (context, error, stackTrace) => Container(
+                          width: double.infinity,
+                          height: widget.r.bannerHeight,
+                          color: Colors.grey.shade900,
+                        ),
+                      ),
+              ),
+              SizedBox(height: widget.r.sectionGap * 0.6),
+            ],
+
+            _ProductsToolbar(
+              viewMode: widget.viewMode,
+              sortOption: widget.sortOption,
+              onViewModeChanged: widget.onViewModeChanged,
+              onSortChanged: widget.onSortChanged,
+              onFilterTap: widget.onFilterTap,
+              activeFilterCount: widget.activeFilterCount,
+            ),
+            const SizedBox(height: 10),
+            Divider(color: Colors.white.withValues(alpha: 0.15), height: 1),
+            SizedBox(height: widget.r.sectionGap * 0.6),
+
+            if (products.isEmpty)
+              Padding(
+                padding: const EdgeInsets.symmetric(vertical: 60),
+                child: Center(
+                  child: Text(
+                    'No products in this category yet.',
+                    style: TextStyle(color: Colors.white.withValues(alpha: 0.6)),
+                  ),
+                ),
+              )
+            else if (widget.viewMode == ViewMode.grid)
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 6),
+                child: GridView.builder(
+                  shrinkWrap: true,
+                  physics: const NeverScrollableScrollPhysics(),
+                  clipBehavior: Clip.none,
+                  itemCount: pageProducts.length,
+                  gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                    crossAxisCount: widget.r.crossAxisCount,
+                    crossAxisSpacing: widget.r.gridSpacing,
+                    mainAxisSpacing: widget.r.gridSpacing,
+                    childAspectRatio: widget.r.childAspectRatio,
+                  ),
+                  itemBuilder: (context, index) =>
+                      _ProductCard(product: pageProducts[index], companies: companies),
+                ),
+              )
+            else
+              ListView.separated(
+                shrinkWrap: true,
+                physics: const NeverScrollableScrollPhysics(),
+                itemCount: pageProducts.length,
+                separatorBuilder: (_, _) => SizedBox(height: widget.r.gridSpacing),
+                itemBuilder: (context, index) =>
+                    _ProductListTile(product: pageProducts[index], companies: companies),
+              ),
+
+            if (totalPages > 1) ...[
+              SizedBox(height: widget.r.sectionGap * 0.8),
+              _Pagination(
+                currentPage: _currentPage,
+                totalPages: totalPages,
+                onPageSelected: _goToPage,
+              ),
+            ],
+          ],
+        );
+      },
     );
   }
 }
@@ -518,8 +561,9 @@ class _SortDropdown extends StatelessWidget {
 /// Horizontal card used in list view: small thumbnail, details, price.
 class _ProductListTile extends StatefulWidget {
   final Product product;
+  final List<Company> companies;
 
-  const _ProductListTile({required this.product});
+  const _ProductListTile({required this.product, required this.companies});
 
   @override
   State<_ProductListTile> createState() => _ProductListTileState();
@@ -531,7 +575,7 @@ class _ProductListTileState extends State<_ProductListTile> {
   @override
   Widget build(BuildContext context) {
     final product = widget.product;
-    final company = Catalog.companyFor(product);
+    final company = Catalog.companyFor(product, widget.companies);
 
     return MouseRegion(
       cursor: SystemMouseCursors.click,
@@ -566,19 +610,36 @@ class _ProductListTileState extends State<_ProductListTile> {
             children: [
               ClipRRect(
                 borderRadius: BorderRadius.circular(12),
-                child: Image.asset(
-                  product.imageAsset,
-                  width: 150,
-                  height: 150,
-                  fit: BoxFit.cover,
-                  cacheWidth: 400,
-                  errorBuilder: (context, error, stackTrace) => Container(
-                    width: 150,
-                    height: 150,
-                    color: Colors.grey.shade800,
-                    child: const Icon(Icons.image_not_supported_outlined, color: Colors.white38, size: 32),
-                  ),
-                ),
+                child: product.imageUrl.isNotEmpty
+                    ? Image.network(
+                        product.imageUrl,
+                        width: 150,
+                        height: 150,
+                        fit: BoxFit.cover,
+                        loadingBuilder: (context, child, progress) {
+                          if (progress == null) return child;
+                          return Container(
+                            width: 150,
+                            height: 150,
+                            color: Colors.grey.shade900,
+                            child: const Center(
+                              child: CircularProgressIndicator(color: _kAmber, strokeWidth: 2),
+                            ),
+                          );
+                        },
+                        errorBuilder: (context, error, stackTrace) => Container(
+                          width: 150,
+                          height: 150,
+                          color: Colors.grey.shade800,
+                          child: const Icon(Icons.image_not_supported_outlined, color: Colors.white38, size: 32),
+                        ),
+                      )
+                    : Container(
+                        width: 150,
+                        height: 150,
+                        color: Colors.grey.shade800,
+                        child: const Icon(Icons.image_not_supported_outlined, color: Colors.white38, size: 32),
+                      ),
               ),
               const SizedBox(width: 26),
               Expanded(
@@ -656,8 +717,9 @@ class _ProductListTileState extends State<_ProductListTile> {
 }
 class _ProductCard extends StatefulWidget {
   final Product product;
+  final List<Company> companies;
 
-  const _ProductCard({required this.product});
+  const _ProductCard({required this.product, required this.companies});
 
   @override
   State<_ProductCard> createState() => _ProductCardState();
@@ -697,7 +759,7 @@ class _ProductCardState extends State<_ProductCard> with SingleTickerProviderSta
   @override
   Widget build(BuildContext context) {
     final product = widget.product;
-    final company = Catalog.companyFor(product);
+    final company = Catalog.companyFor(product, widget.companies);
 
     return MouseRegion(
       cursor: SystemMouseCursors.click,
@@ -745,17 +807,29 @@ class _ProductCardState extends State<_ProductCard> with SingleTickerProviderSta
                         child: Stack(
                           fit: StackFit.expand,
                           children: [
-                            Image.asset(
-                              product.imageAsset,
-                              fit: BoxFit.cover,
-                              cacheWidth: 400,
-                              errorBuilder: (context, error, stackTrace) => Container(
-                                color: Colors.grey.shade800,
-                                child: const Center(
-                                  child: Icon(Icons.image_not_supported_outlined, color: Colors.white38),
-                                ),
-                              ),
-                            ),
+                            product.imageUrl.isNotEmpty
+                                ? Image.network(
+                                    product.imageUrl,
+                                    fit: BoxFit.cover,
+                                    loadingBuilder: (context, child, progress) {
+                                      if (progress == null) return child;
+                                      return const Center(
+                                        child: CircularProgressIndicator(color: _kAmber, strokeWidth: 2),
+                                      );
+                                    },
+                                    errorBuilder: (context, error, stackTrace) => Container(
+                                      color: Colors.grey.shade800,
+                                      child: const Center(
+                                        child: Icon(Icons.image_not_supported_outlined, color: Colors.white38),
+                                      ),
+                                    ),
+                                  )
+                                : Container(
+                                    color: Colors.grey.shade800,
+                                    child: const Center(
+                                      child: Icon(Icons.image_not_supported_outlined, color: Colors.white38),
+                                    ),
+                                  ),
                             AnimatedOpacity(
                               duration: const Duration(milliseconds: 200),
                               opacity: _isHovered ? 0.3 : 0.0,

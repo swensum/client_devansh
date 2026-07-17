@@ -1,10 +1,13 @@
 import 'package:devansh/components/footer.dart';
 import 'package:devansh/components/header.dart';
 import 'package:devansh/data/catalog.dart';
+import 'package:devansh/models/catalogmodels.dart';
+
 import 'package:devansh/productwidgets/categories.dart';
 import 'package:devansh/productwidgets/productsright.dart';
 import 'package:devansh/productwidgets/productview.dart';
-import 'package:flutter/material.dart';
+import 'package:devansh/services/catalogservice.dart';
+import 'package:flutter/material.dart' hide MaterialType;
 
 const double _kHeaderHeight = 100;
 const double _kBannerHeight = 100;
@@ -36,6 +39,7 @@ class _ProductsPageState extends State<ProductsPage> {
   bool _headerRevealed = false;
 
   final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
+  final CatalogService _catalogService = CatalogService();
 
   @override
   void initState() {
@@ -90,22 +94,88 @@ class _ProductsPageState extends State<ProductsPage> {
     return sorted;
   }
 
+  /// Safe lookup-by-id that returns null instead of throwing when the id
+  /// isn't found (e.g. a selected id that no longer exists in Firestore).
+  T? _findById<T>(List<T> list, String? id, String Function(T) idOf) {
+    if (id == null) return null;
+    for (final item in list) {
+      if (idOf(item) == id) return item;
+    }
+    return null;
+  }
+
   @override
   Widget build(BuildContext context) {
-    final category = _selectedCategoryId == null
-        ? null
-        : kCategories.firstWhere((c) => c.id == _selectedCategoryId);
-    final company = _selectedCompanyId == null
-        ? null
-        : kCompanies.firstWhere((c) => c.id == _selectedCompanyId);
-    final type = _selectedTypeId == null
-        ? null
-        : kProductTypes.firstWhere((t) => t.id == _selectedTypeId);
-    final material = _selectedMaterialId == null
-        ? null
-        : kMaterials.firstWhere((m) => m.id == _selectedMaterialId);
+    return StreamBuilder<List<Category>>(
+      stream: _catalogService.watchCategories(),
+      builder: (context, categorySnap) {
+        final categories = categorySnap.data ?? [];
+        return StreamBuilder<List<Company>>(
+          stream: _catalogService.watchCompanies(),
+          builder: (context, companySnap) {
+            final allCompanies = companySnap.data ?? [];
+            return StreamBuilder<List<ProductType>>(
+              stream: _catalogService.watchProductTypes(),
+              builder: (context, typeSnap) {
+                final allTypes = typeSnap.data ?? [];
+                return StreamBuilder<List<MaterialType>>(
+                  stream: _catalogService.watchMaterials(),
+                  builder: (context, materialSnap) {
+                    final allMaterials = materialSnap.data ?? [];
+                    return StreamBuilder<List<Product>>(
+                      stream: _catalogService.watchProducts(),
+                      builder: (context, productSnap) {
+                        final allProducts = productSnap.data ?? [];
+
+                        final stillLoading =
+                            categorySnap.connectionState == ConnectionState.waiting &&
+                                categories.isEmpty;
+
+                        if (stillLoading) {
+                          return const Scaffold(
+                            backgroundColor: Colors.black,
+                            body: Center(
+                              child: CircularProgressIndicator(color: _kAmber),
+                            ),
+                          );
+                        }
+
+                        return _buildPage(
+                          context,
+                          categories,
+                          allCompanies,
+                          allTypes,
+                          allMaterials,
+                          allProducts,
+                        );
+                      },
+                    );
+                  },
+                );
+              },
+            );
+          },
+        );
+      },
+    );
+  }
+
+  Widget _buildPage(
+    BuildContext context,
+    List<Category> categories,
+    List<Company> allCompanies,
+    List<ProductType> allTypes,
+    List<MaterialType> allMaterials,
+    List<Product> allProducts,
+  ) {
+    final category = _findById(categories, _selectedCategoryId, (c) => c.id);
+    final company = _findById(allCompanies, _selectedCompanyId, (c) => c.id);
+    final type = _findById(allTypes, _selectedTypeId, (t) => t.id);
+    final material = _findById(allMaterials, _selectedMaterialId, (m) => m.id);
+
     final products = _applySort(
       Catalog.filtered(
+        allProducts,
         categoryId: _selectedCategoryId,
         companyId: _selectedCompanyId,
         materialId: _selectedMaterialId,
@@ -113,8 +183,6 @@ class _ProductsPageState extends State<ProductsPage> {
       ),
     );
 
-    // Built once — reused both inline (wide screens) and inside the filter
-    // drawer (narrow screens), so selecting a filter behaves identically.
     final sidebar = CategorySidebar(
       selectedCategoryId: _selectedCategoryId,
       selectedCompanyId: _selectedCompanyId,

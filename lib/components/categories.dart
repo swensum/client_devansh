@@ -1,4 +1,5 @@
-import 'package:devansh/data/catalog.dart';
+import 'package:devansh/models/catalogmodels.dart';
+import 'package:devansh/services/catalogservice.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:visibility_detector/visibility_detector.dart';
@@ -12,6 +13,7 @@ class CategoriesSection extends StatefulWidget {
 
 class _CategoriesSectionState extends State<CategoriesSection> {
   bool _visible = false;
+  final CatalogService _catalogService = CatalogService();
 
   void _handleVisibility(VisibilityInfo info) {
     if (!_visible && info.visibleFraction > 0.2) {
@@ -21,8 +23,6 @@ class _CategoriesSectionState extends State<CategoriesSection> {
 
   @override
   Widget build(BuildContext context) {
-    final companies = kCompanies;
-
     return VisibilityDetector(
       key: const Key('categories-section-visibility'),
       onVisibilityChanged: _handleVisibility,
@@ -89,19 +89,40 @@ class _CategoriesSectionState extends State<CategoriesSection> {
                 ),
                 const SizedBox(height: 36),
 
-                Wrap(
-                  alignment: WrapAlignment.center,
-                  spacing: 24,
-                  runSpacing: 24,
-                  children: companies.asMap().entries.map((entry) {
-                    final i = entry.key;
-                    final company = entry.value;
-                    return _RevealOnVisible(
-                      visible: _visible,
-                      delay: Duration(milliseconds: 300 + (i * 80)),
-                      child: _CompanyLogoBox(company: company),
+                // Live companies from Firestore
+                StreamBuilder<List<Company>>(
+                  stream: _catalogService.watchCompanies(),
+                  builder: (context, snapshot) {
+                    if (!snapshot.hasData) {
+                      return const Padding(
+                        padding: EdgeInsets.symmetric(vertical: 24),
+                        child: CircularProgressIndicator(
+                          color: Color.fromRGBO(245, 171, 30, 1),
+                        ),
+                      );
+                    }
+
+                    final companies = snapshot.data!;
+
+                    if (companies.isEmpty) {
+                      return const SizedBox.shrink();
+                    }
+
+                    return Wrap(
+                      alignment: WrapAlignment.center,
+                      spacing: 24,
+                      runSpacing: 24,
+                      children: companies.asMap().entries.map((entry) {
+                        final i = entry.key;
+                        final company = entry.value;
+                        return _RevealOnVisible(
+                          visible: _visible,
+                          delay: Duration(milliseconds: 300 + (i * 80)),
+                          child: _CompanyLogoBox(company: company),
+                        );
+                      }).toList(),
                     );
-                  }).toList(),
+                  },
                 ),
 
                 const SizedBox(height: 36),
@@ -109,9 +130,7 @@ class _CategoriesSectionState extends State<CategoriesSection> {
                 // View All Button
                 _RevealOnVisible(
                   visible: _visible,
-                  delay: Duration(
-                    milliseconds: 300 + (companies.length * 80) + 100,
-                  ),
+                  delay: const Duration(milliseconds: 700),
                   child: const _ViewAllButton(),
                 ),
               ],
@@ -180,7 +199,7 @@ class _RevealOnVisibleState extends State<_RevealOnVisible> {
 }
 
 class _CompanyLogoBox extends StatefulWidget {
-  final Company company; // now the real catalog.dart Company
+  final Company company;
 
   const _CompanyLogoBox({required this.company});
 
@@ -193,7 +212,8 @@ class _CompanyLogoBoxState extends State<_CompanyLogoBox> {
 
   @override
   Widget build(BuildContext context) {
-    final logoAsset = widget.company.logoAsset; // nullable in catalog.dart
+   final logoAsset = widget.company.imageUrl;
+    final isNetworkImage = logoAsset != null && logoAsset.startsWith('http');
 
     return MouseRegion(
       cursor: SystemMouseCursors.click,
@@ -222,7 +242,8 @@ class _CompanyLogoBoxState extends State<_CompanyLogoBox> {
               ),
               boxShadow: [
                 BoxShadow(
-                  color: Colors.black.withValues(alpha: _isHovered ? 0.25 : 0.12),
+                  color:
+                      Colors.black.withValues(alpha: _isHovered ? 0.25 : 0.12),
                   blurRadius: _isHovered ? 16 : 8,
                   offset: const Offset(0, 4),
                 ),
@@ -239,19 +260,33 @@ class _CompanyLogoBoxState extends State<_CompanyLogoBox> {
                         color: Colors.white,
                       ),
                     )
-                  : Image.asset(
-                      logoAsset,
-                      fit: BoxFit.contain,
-                      errorBuilder: (context, error, stackTrace) => Text(
-                        widget.company.name,
-                        textAlign: TextAlign.center,
-                        style: const TextStyle(
-                          fontSize: 14,
-                          fontWeight: FontWeight.w600,
-                          color: Colors.white,
+                  : isNetworkImage
+                      ? Image.network(
+                          logoAsset,
+                          fit: BoxFit.contain,
+                          errorBuilder: (context, error, stackTrace) => Text(
+                            widget.company.name,
+                            textAlign: TextAlign.center,
+                            style: const TextStyle(
+                              fontSize: 14,
+                              fontWeight: FontWeight.w600,
+                              color: Colors.white,
+                            ),
+                          ),
+                        )
+                      : Image.asset(
+                          logoAsset,
+                          fit: BoxFit.contain,
+                          errorBuilder: (context, error, stackTrace) => Text(
+                            widget.company.name,
+                            textAlign: TextAlign.center,
+                            style: const TextStyle(
+                              fontSize: 14,
+                              fontWeight: FontWeight.w600,
+                              color: Colors.white,
+                            ),
+                          ),
                         ),
-                      ),
-                    ),
             ),
           ),
         ),
@@ -308,7 +343,7 @@ class _ViewAllButtonState extends State<_ViewAllButton> {
               const SizedBox(width: 8),
               AnimatedRotation(
                 duration: const Duration(milliseconds: 300),
-                turns: _isHovered ? 0.125 : 0.0, // rotates ~45 degrees clockwise
+                turns: _isHovered ? 0.125 : 0.0,
                 child: const Icon(
                   Icons.arrow_forward,
                   color: Color.fromRGBO(245, 171, 30, 1),

@@ -1,4 +1,5 @@
 import 'package:devansh/data/catalog.dart';
+import 'package:devansh/models/catalogmodels.dart';
 import 'package:devansh/productwidgets/productdetail.dart';
 import 'package:devansh/screen/homescreen.dart';
 
@@ -6,6 +7,8 @@ import 'package:devansh/screen/productscreen.dart'; // ProductsPage
 
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+
+final List<Product> kProducts = [];
 
 CustomTransitionPage<void> _slideFromRightPage({
   required LocalKey key,
