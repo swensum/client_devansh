@@ -1,4 +1,3 @@
-import 'package:devansh/data/catalog.dart';
 import 'package:devansh/models/catalogmodels.dart';
 import 'package:devansh/productwidgets/productdetail.dart';
 import 'package:devansh/screen/homescreen.dart';
