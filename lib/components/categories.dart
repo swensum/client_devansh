@@ -1,3 +1,4 @@
+
 import 'package:devansh/models/catalogmodels.dart';
 import 'package:devansh/services/catalogservice.dart';
 import 'package:flutter/material.dart';
@@ -212,7 +213,7 @@ class _CompanyLogoBoxState extends State<_CompanyLogoBox> {
 
   @override
   Widget build(BuildContext context) {
-   final logoAsset = widget.company.imageUrl;
+    final logoAsset = widget.company.imageUrl; 
     final isNetworkImage = logoAsset != null && logoAsset.startsWith('http');
 
     return MouseRegion(
@@ -264,6 +265,11 @@ class _CompanyLogoBoxState extends State<_CompanyLogoBox> {
                       ? Image.network(
                           logoAsset,
                           fit: BoxFit.contain,
+                          // Logos render at ~136px inside this box (180 minus
+                          // padding) — decoding at full source resolution for
+                          // every logo on every home page load was unnecessary
+                          // raster cost.
+                          cacheWidth: 280,
                           errorBuilder: (context, error, stackTrace) => Text(
                             widget.company.name,
                             textAlign: TextAlign.center,

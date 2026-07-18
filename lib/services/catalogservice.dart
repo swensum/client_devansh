@@ -2,13 +2,6 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 
 import 'package:devansh/models/catalogmodels.dart';
 
-
-/// ---------------------------------------------------------------------
-/// SERVICE
-/// Live Firestore streams — same collections your admin panel writes to:
-/// categories, companies, materials, productTypes, products
-/// ---------------------------------------------------------------------
-
 class CatalogService {
   final FirebaseFirestore _db = FirebaseFirestore.instance;
 
@@ -79,8 +72,9 @@ class CatalogService {
         .collection('products')
         .orderBy('createdAt', descending: true)
         .snapshots()
-        .map((snap) =>
-            snap.docs.map((d) => Product.fromMap(d.id, d.data())).toList());
+        .map((snap) {
+          return snap.docs.map((d) => Product.fromMap(d.id, d.data())).toList();
+        });
   }
 
   /// Products in a single category — mirrors Catalog.byCategory from before.
@@ -99,8 +93,9 @@ class CatalogService {
         .collection('products')
         .where('isTopProduct', isEqualTo: true)
         .snapshots()
-        .map((snap) =>
-            snap.docs.map((d) => Product.fromMap(d.id, d.data())).toList());
+        .map((snap) {
+          return snap.docs.map((d) => Product.fromMap(d.id, d.data())).toList();
+        });
   }
 
   /// One-time fetch of a single product (e.g. product detail page).
