@@ -5,12 +5,6 @@ import 'package:devansh/services/catalogservice.dart';
 import 'package:flutter/material.dart' hide MaterialType;
 
 const _kAmber = Color.fromRGBO(245, 171, 30, 1);
-
-/// ---------------------------------------------------------------------
-/// Loader: combines the 5 live Firestore streams this sidebar needs
-/// (categories, products, companies, materials, productTypes) so the
-/// actual sidebar UI below can stay focused on layout, not data-fetching.
-/// ---------------------------------------------------------------------
 typedef _SidebarDataBuilder = Widget Function(
   BuildContext context,
   List<Category> categories,

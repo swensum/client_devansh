@@ -6,6 +6,14 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:visibility_detector/visibility_detector.dart';
 
+String _optimizedImageUrl(String url, {int width = 400}) {
+  if (!url.contains('res.cloudinary.com') || !url.contains('/upload/')) {
+    return url;
+  }
+  if (url.contains('/upload/w_')) return url; // already transformed
+  return url.replaceFirst('/upload/', '/upload/w_$width,q_auto,f_auto/');
+}
+
 class TopProductsSection extends StatefulWidget {
   const TopProductsSection({super.key});
 
@@ -32,7 +40,9 @@ class _TopProductsSectionState extends State<TopProductsSection> {
   List<List<Product>> _pagesFor(List<Product> products) {
     final pages = <List<Product>>[];
     for (var i = 0; i < products.length; i += _perPage) {
-      final end = (i + _perPage > products.length) ? products.length : i + _perPage;
+      final end = (i + _perPage > products.length)
+          ? products.length
+          : i + _perPage;
       pages.add(products.sublist(i, end));
     }
     return pages;
@@ -76,9 +86,6 @@ class _TopProductsSectionState extends State<TopProductsSection> {
         if (products.isEmpty) return const SizedBox.shrink();
 
         final pages = _pagesFor(products);
-
-        // Guard against the page count shrinking (e.g. a product gets
-        // un-flagged as "top" while the user is viewing this page).
         if (_currentPage >= pages.length) {
           _currentPage = 0;
         }
@@ -92,12 +99,18 @@ class _TopProductsSectionState extends State<TopProductsSection> {
 
               return Container(
                 width: double.infinity,
-                padding: EdgeInsets.symmetric(horizontal: r.sectionHPadding, vertical: r.sectionVPadding),
+                padding: EdgeInsets.symmetric(
+                  horizontal: r.sectionHPadding,
+                  vertical: r.sectionVPadding,
+                ),
                 decoration: BoxDecoration(
                   gradient: LinearGradient(
                     begin: Alignment.topLeft,
                     end: Alignment.bottomRight,
-                    colors: [Colors.black.withValues(alpha: 0.9), Colors.black.withValues(alpha: 0.7)],
+                    colors: [
+                      Colors.black.withValues(alpha: 0.9),
+                      Colors.black.withValues(alpha: 0.7),
+                    ],
                   ),
                 ),
                 child: Center(
@@ -118,14 +131,20 @@ class _TopProductsSectionState extends State<TopProductsSection> {
                                   child: LayoutBuilder(
                                     builder: (context, constraints) {
                                       final availableWidth =
-                                          constraints.maxWidth - (r.gridPadding * 2);
-                                      final cardWidth = (availableWidth -
-                                              (r.crossAxisCount - 1) * r.gridSpacing) /
+                                          constraints.maxWidth -
+                                          (r.gridPadding * 2);
+                                      final cardWidth =
+                                          (availableWidth -
+                                              (r.crossAxisCount - 1) *
+                                                  r.gridSpacing) /
                                           r.crossAxisCount;
-                                      final cardHeight = cardWidth / r.childAspectRatio;
+                                      final cardHeight =
+                                          cardWidth / r.childAspectRatio;
 
-                                      final rows = (_perPage / r.crossAxisCount).ceil();
-                                      final estimatedHeight = rows * cardHeight +
+                                      final rows = (_perPage / r.crossAxisCount)
+                                          .ceil();
+                                      final estimatedHeight =
+                                          rows * cardHeight +
                                           (rows - 1) * r.gridSpacing +
                                           (r.gridPadding * 2);
 
@@ -133,30 +152,42 @@ class _TopProductsSectionState extends State<TopProductsSection> {
                                         height: estimatedHeight,
                                         child: PageView.builder(
                                           controller: _pageController,
-                                          physics: const NeverScrollableScrollPhysics(),
+                                          physics:
+                                              const NeverScrollableScrollPhysics(),
                                           itemCount: pages.length,
                                           allowImplicitScrolling: true,
-                                          onPageChanged: (index) =>
-                                              setState(() => _currentPage = index),
+                                          onPageChanged: (index) => setState(
+                                            () => _currentPage = index,
+                                          ),
                                           itemBuilder: (context, pageIndex) {
-                                            final pageProducts = pages[pageIndex];
+                                            final pageProducts =
+                                                pages[pageIndex];
                                             return RepaintBoundary(
                                               child: Padding(
-                                                padding: EdgeInsets.all(r.gridPadding),
+                                                padding: EdgeInsets.all(
+                                                  r.gridPadding,
+                                                ),
                                                 child: GridView.builder(
                                                   clipBehavior: Clip.none,
-                                                  physics: const NeverScrollableScrollPhysics(),
-                                                  itemCount: pageProducts.length,
+                                                  physics:
+                                                      const NeverScrollableScrollPhysics(),
+                                                  itemCount:
+                                                      pageProducts.length,
                                                   gridDelegate:
                                                       SliverGridDelegateWithFixedCrossAxisCount(
-                                                    crossAxisCount: r.crossAxisCount,
-                                                    crossAxisSpacing: r.gridSpacing,
-                                                    mainAxisSpacing: r.gridSpacing,
-                                                    childAspectRatio: r.childAspectRatio,
-                                                  ),
+                                                        crossAxisCount:
+                                                            r.crossAxisCount,
+                                                        crossAxisSpacing:
+                                                            r.gridSpacing,
+                                                        mainAxisSpacing:
+                                                            r.gridSpacing,
+                                                        childAspectRatio:
+                                                            r.childAspectRatio,
+                                                      ),
                                                   itemBuilder: (context, index) {
                                                     return _PremiumProductCard(
-                                                      product: pageProducts[index],
+                                                      product:
+                                                          pageProducts[index],
                                                       r: r,
                                                     );
                                                   },
@@ -178,15 +209,28 @@ class _TopProductsSectionState extends State<TopProductsSection> {
                                     children: List.generate(pages.length, (i) {
                                       final isActive = i == _currentPage;
                                       return AnimatedContainer(
-                                        duration: const Duration(milliseconds: 300),
-                                        margin: const EdgeInsets.symmetric(horizontal: 4),
+                                        duration: const Duration(
+                                          milliseconds: 300,
+                                        ),
+                                        margin: const EdgeInsets.symmetric(
+                                          horizontal: 4,
+                                        ),
                                         width: isActive ? 20 : 8,
                                         height: 8,
                                         decoration: BoxDecoration(
                                           color: isActive
-                                              ? const Color.fromRGBO(245, 171, 30, 1)
-                                              : Colors.white.withValues(alpha: 0.3),
-                                          borderRadius: BorderRadius.circular(4),
+                                              ? const Color.fromRGBO(
+                                                  245,
+                                                  171,
+                                                  30,
+                                                  1,
+                                                )
+                                              : Colors.white.withValues(
+                                                  alpha: 0.3,
+                                                ),
+                                          borderRadius: BorderRadius.circular(
+                                            4,
+                                          ),
                                         ),
                                       );
                                     }),
@@ -355,7 +399,11 @@ class _NavArrow extends StatelessWidget {
   final bool enabled;
   final VoidCallback onTap;
 
-  const _NavArrow({required this.icon, required this.enabled, required this.onTap});
+  const _NavArrow({
+    required this.icon,
+    required this.enabled,
+    required this.onTap,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -367,11 +415,16 @@ class _NavArrow extends StatelessWidget {
         decoration: BoxDecoration(
           shape: BoxShape.circle,
           color: const Color.fromRGBO(245, 171, 30, 0.15),
-          border: Border.all(color: const Color.fromRGBO(245, 171, 30, 0.4), width: 1.5),
+          border: Border.all(
+            color: const Color.fromRGBO(245, 171, 30, 0.4),
+            width: 1.5,
+          ),
         ),
         child: Icon(
           icon,
-          color: enabled ? const Color.fromRGBO(245, 171, 30, 1) : Colors.grey.shade600,
+          color: enabled
+              ? const Color.fromRGBO(245, 171, 30, 1)
+              : Colors.grey.shade600,
           size: 24,
         ),
       ),
@@ -492,231 +545,235 @@ class _PremiumProductCard extends StatefulWidget {
 
 class _PremiumProductCardState extends State<_PremiumProductCard>
     with SingleTickerProviderStateMixin {
-  bool _isHovered = false;
-  late final AnimationController _scaleController;
-  late final Animation<double> _scaleAnimation;
+  late final AnimationController _hoverController;
+  final Stopwatch _imageLoadStopwatch = Stopwatch();
+  bool _hasLoggedLoad = false; // DEBUG: remove once you're done profiling
 
   static const double _cardRadius = 12;
 
   @override
   void initState() {
     super.initState();
-    _scaleController = AnimationController(
+    _hoverController = AnimationController(
       vsync: this,
       duration: const Duration(milliseconds: 200),
     );
-    _scaleAnimation = Tween<double>(begin: 1.0, end: 1.03).animate(
-      CurvedAnimation(parent: _scaleController, curve: Curves.easeOut),
-    );
+    _imageLoadStopwatch.start();
   }
 
   @override
   void dispose() {
-    _scaleController.dispose();
+    _hoverController.dispose();
     super.dispose();
   }
-
   void _setHovered(bool value) {
-    if (_isHovered == value) return;
-    setState(() => _isHovered = value);
-    value ? _scaleController.forward() : _scaleController.reverse();
+    value ? _hoverController.forward() : _hoverController.reverse();
   }
 
   @override
   Widget build(BuildContext context) {
     final r = widget.r;
     final product = widget.product;
+    final imageUrl = _optimizedImageUrl(product.imageUrl, width: 400);
+
+    final staticImage = Image.network(
+      imageUrl,
+      fit: BoxFit.cover,
+      cacheWidth: 400,
+      loadingBuilder: (context, child, progress) {
+        if (progress == null) {
+          if (!_hasLoggedLoad) {
+            _hasLoggedLoad = true;
+          
+          }
+          return child;
+        }
+        return Center(
+          child: SizedBox(
+            width: 24,
+            height: 24,
+            child: CircularProgressIndicator(
+              strokeWidth: 2,
+              color: Colors.grey.shade400,
+              value: progress.expectedTotalBytes != null
+                  ? progress.cumulativeBytesLoaded / (progress.expectedTotalBytes ?? 1)
+                  : null,
+            ),
+          ),
+        );
+      },
+      errorBuilder: (context, error, stackTrace) => Center(
+        child: Icon(Icons.image_not_supported_outlined, color: Colors.grey.shade400, size: 40),
+      ),
+    );
 
     return MouseRegion(
       cursor: SystemMouseCursors.click,
       onEnter: (_) => _setHovered(true),
       onExit: (_) => _setHovered(false),
       child: GestureDetector(
-        onTap: () {
-          context.push('/product/${product.id}', extra: product);
-        },
+        onTap: () => context.push('/product/${product.id}', extra: product),
         child: RepaintBoundary(
-          child: ScaleTransition(
-            scale: _scaleAnimation,
-            child: Container(
-              decoration: BoxDecoration(
-                color: Colors.white.withValues(alpha: 0.12),
-                borderRadius: BorderRadius.circular(_cardRadius),
-                border: Border.all(
-                  color: _isHovered
-                      ? const Color.fromRGBO(245, 171, 30, 0.6)
-                      : Colors.white.withValues(alpha: 0.12),
-                  width: 1.5,
-                ),
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.black.withValues(alpha: _isHovered ? 0.15 : 0.06),
-                    blurRadius: _isHovered ? 20 : 8,
-                    offset: Offset(0, _isHovered ? 8 : 4),
-                    spreadRadius: _isHovered ? 2 : 0,
-                  ),
-                ],
-              ),
-              clipBehavior: Clip.antiAlias,
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Expanded(
-                    child: ClipRRect(
-                      borderRadius: const BorderRadius.only(
-                        topLeft: Radius.circular(_cardRadius),
-                        topRight: Radius.circular(_cardRadius),
+          child: AnimatedBuilder(
+            animation: _hoverController,
+            child: staticImage,
+            builder: (context, image) {
+              final t = _hoverController.value; 
+              return Transform.scale(
+                scale: 1.0 + (0.03 * t),
+                child: Container(
+                  decoration: BoxDecoration(
+                    color: Colors.white.withValues(alpha: 0.12),
+                    borderRadius: BorderRadius.circular(_cardRadius),
+                    border: Border.all(
+                      color: Color.lerp(
+                        Colors.white.withValues(alpha: 0.12),
+                        const Color.fromRGBO(245, 171, 30, 0.6),
+                        t,
+                      )!,
+                      width: 1.5,
+                    ),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black.withValues(alpha: 0.06 + (0.09 * t)),
+                        blurRadius: 8 + (12 * t),
+                        offset: Offset(0, 4 + (4 * t)),
+                        spreadRadius: 2 * t,
                       ),
-                      child: Container(
-                        width: double.infinity,
-                        color: Colors.grey.shade50,
-                        child: Stack(
-                          fit: StackFit.expand,
-                          children: [
-                            Image.network(
-                              product.imageUrl,
-                              fit: BoxFit.cover,
-                              loadingBuilder: (context, child, progress) {
-                                if (progress == null) return child;
-                                return Center(
-                                  child: SizedBox(
-                                    width: 24,
-                                    height: 24,
-                                    child: CircularProgressIndicator(
-                                      strokeWidth: 2,
-                                      color: Colors.grey.shade400,
-                                      value: progress.expectedTotalBytes != null
-                                          ? progress.cumulativeBytesLoaded /
-                                              (progress.expectedTotalBytes ?? 1)
-                                          : null,
+                    ],
+                  ),
+                  clipBehavior: Clip.antiAlias,
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Expanded(
+                        child: ClipRRect(
+                          borderRadius: const BorderRadius.only(
+                            topLeft: Radius.circular(_cardRadius),
+                            topRight: Radius.circular(_cardRadius),
+                          ),
+                          child: Container(
+                            width: double.infinity,
+                            color: Colors.grey.shade50,
+                            child: Stack(
+                              fit: StackFit.expand,
+                              children: [
+                                image!, // the static Image — untouched by hover
+                                Opacity(
+                                  opacity: 0.3 * t,
+                                  child: Container(
+                                    decoration: BoxDecoration(
+                                      gradient: LinearGradient(
+                                        begin: Alignment.topCenter,
+                                        end: Alignment.bottomCenter,
+                                        colors: [Colors.transparent, Colors.black.withValues(alpha: 0.7)],
+                                      ),
                                     ),
                                   ),
-                                );
-                              },
-                              errorBuilder: (context, error, stackTrace) => Center(
-                                child: Icon(
-                                  Icons.image_not_supported_outlined,
-                                  color: Colors.grey.shade400,
-                                  size: 40,
                                 ),
-                              ),
-                            ),
-                            AnimatedOpacity(
-                              duration: const Duration(milliseconds: 200),
-                              opacity: _isHovered ? 0.3 : 0.0,
-                              child: Container(
-                                decoration: BoxDecoration(
-                                  gradient: LinearGradient(
-                                    begin: Alignment.topCenter,
-                                    end: Alignment.bottomCenter,
-                                    colors: [Colors.transparent, Colors.black.withValues(alpha: 0.7)],
+                                Positioned(
+                                  top: 10,
+                                  right: 10,
+                                  child: Opacity(
+                                    opacity: t,
+                                    child: _buildQuickActionButton(Icons.favorite_border, Colors.white),
                                   ),
                                 ),
-                              ),
-                            ),
-                            Positioned(
-                              top: 10,
-                              right: 10,
-                              child: AnimatedOpacity(
-                                duration: const Duration(milliseconds: 200),
-                                opacity: _isHovered ? 1.0 : 0.0,
-                                child: _buildQuickActionButton(Icons.favorite_border, Colors.white),
-                              ),
-                            ),
-                            Positioned(
-                              top: 10,
-                              left: 10,
-                              child: Container(
-                                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                                decoration: BoxDecoration(
-                                  color: const Color.fromRGBO(245, 171, 30, 1),
-                                  borderRadius: BorderRadius.circular(20),
-                                ),
-                                child: const Text(
-                                  "BEST SELLER",
-                                  style: TextStyle(
-                                    fontSize: 9,
-                                    fontWeight: FontWeight.w700,
-                                    color: Colors.black,
-                                    letterSpacing: 0.5,
+                                Positioned(
+                                  top: 10,
+                                  left: 10,
+                                  child: Container(
+                                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                                    decoration: BoxDecoration(
+                                      color: const Color.fromRGBO(245, 171, 30, 1),
+                                      borderRadius: BorderRadius.circular(20),
+                                    ),
+                                    child: const Text(
+                                      "BEST SELLER",
+                                      style: TextStyle(
+                                        fontSize: 9,
+                                        fontWeight: FontWeight.w700,
+                                        color: Colors.black,
+                                        letterSpacing: 0.5,
+                                      ),
+                                    ),
                                   ),
                                 ),
-                              ),
+                              ],
                             ),
-                          ],
+                          ),
                         ),
                       ),
-                    ),
-                  ),
-                  Container(
-                    height: r.cardContentHeight,
-                    padding: const EdgeInsets.all(14),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        Column(
+                      Container(
+                        height: r.cardContentHeight,
+                        padding: const EdgeInsets.all(14),
+                        child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
                           children: [
-                            Text(
-                              product.name,
-                              maxLines: 2,
-                              overflow: TextOverflow.ellipsis,
-                              style: TextStyle(
-                                fontSize: r.cardTitleFont,
-                                fontWeight: FontWeight.w600,
-                                color: Colors.white,
-                                height: 1.3,
-                              ),
-                            ),
-                            const SizedBox(height: 4),
-                            Row(
+                            Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
-                                ...List.generate(
-                                  5,
-                                  (index) => Icon(
-                                    Icons.star,
-                                    size: 13,
-                                    color: index < 4
-                                        ? const Color.fromRGBO(245, 171, 30, 1)
-                                        : Colors.grey.shade300,
+                                Text(
+                                  product.name,
+                                  maxLines: 2,
+                                  overflow: TextOverflow.ellipsis,
+                                  style: TextStyle(
+                                    fontSize: r.cardTitleFont,
+                                    fontWeight: FontWeight.w600,
+                                    color: Colors.white,
+                                    height: 1.3,
                                   ),
                                 ),
-                                const SizedBox(width: 4),
-                                Text("(124)", style: TextStyle(fontSize: 11, color: Colors.grey.shade500)),
+                                const SizedBox(height: 4),
+                                Row(
+                                  children: [
+                                    ...List.generate(
+                                      5,
+                                      (index) => Icon(
+                                        Icons.star,
+                                        size: 13,
+                                        color: index < 4
+                                            ? const Color.fromRGBO(245, 171, 30, 1)
+                                            : Colors.grey.shade300,
+                                      ),
+                                    ),
+                                    const SizedBox(width: 4),
+                                    Text("(124)", style: TextStyle(fontSize: 11, color: Colors.grey.shade500)),
+                                  ],
+                                ),
+                              ],
+                            ),
+                            Row(
+                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                              children: [
+                                Text(
+                                  '\$${product.price.toStringAsFixed(2)}',
+                                  style: TextStyle(
+                                    fontSize: r.cardPriceFont,
+                                    fontWeight: FontWeight.bold,
+                                    color: const Color.fromRGBO(245, 171, 30, 1),
+                                  ),
+                                ),
+                                Opacity(
+                                  opacity: t,
+                                  child: _buildQuickActionButton(
+                                    Icons.shopping_bag_outlined,
+                                    Colors.black,
+                                    backgroundColor: const Color.fromRGBO(245, 171, 30, 1),
+                                    borderColor: Colors.transparent,
+                                  ),
+                                ),
                               ],
                             ),
                           ],
                         ),
-                        Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                          children: [
-                            Text(
-                              '\$${product.price.toStringAsFixed(2)}',
-                              style: TextStyle(
-                                fontSize: r.cardPriceFont,
-                                fontWeight: FontWeight.bold,
-                                color: const Color.fromRGBO(245, 171, 30, 1),
-                              ),
-                            ),
-                            AnimatedOpacity(
-                              duration: const Duration(milliseconds: 200),
-                              opacity: _isHovered ? 1.0 : 0.0,
-                              child: _buildQuickActionButton(
-                                Icons.shopping_bag_outlined,
-                                Colors.black,
-                                backgroundColor: const Color.fromRGBO(245, 171, 30, 1),
-                                borderColor: Colors.transparent,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ],
-                    ),
+                      ),
+                    ],
                   ),
-                ],
-              ),
-            ),
+                ),
+              );
+            },
           ),
         ),
       ),
@@ -740,6 +797,7 @@ class _PremiumProductCardState extends State<_PremiumProductCard>
     );
   }
 }
+
 
 class _ViewAllProductsButton extends StatefulWidget {
   const _ViewAllProductsButton();
@@ -765,22 +823,36 @@ class _ViewAllProductsButtonState extends State<_ViewAllProductsButton> {
           duration: const Duration(milliseconds: 200),
           padding: const EdgeInsets.symmetric(horizontal: 26, vertical: 12),
           decoration: BoxDecoration(
-            border: Border.all(color: Color.fromRGBO(245, 171, 30, _isHovered ? 1.0 : 0.6), width: 1.5),
+            border: Border.all(
+              color: Color.fromRGBO(245, 171, 30, _isHovered ? 1.0 : 0.6),
+              width: 1.5,
+            ),
             borderRadius: BorderRadius.circular(8),
-            color: _isHovered ? const Color.fromRGBO(245, 171, 30, 0.08) : Colors.transparent,
+            color: _isHovered
+                ? const Color.fromRGBO(245, 171, 30, 0.08)
+                : Colors.transparent,
           ),
           child: Row(
             mainAxisSize: MainAxisSize.min,
             children: [
               const Text(
                 "View All Products",
-                style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: Colors.white, letterSpacing: 0.3),
+                style: TextStyle(
+                  fontSize: 14,
+                  fontWeight: FontWeight.w600,
+                  color: Colors.white,
+                  letterSpacing: 0.3,
+                ),
               ),
               const SizedBox(width: 8),
               AnimatedRotation(
                 duration: const Duration(milliseconds: 300),
                 turns: _isHovered ? 0.125 : 0.0,
-                child: const Icon(Icons.arrow_forward, color: Color.fromRGBO(245, 171, 30, 1), size: 16),
+                child: const Icon(
+                  Icons.arrow_forward,
+                  color: Color.fromRGBO(245, 171, 30, 1),
+                  size: 16,
+                ),
               ),
             ],
           ),
