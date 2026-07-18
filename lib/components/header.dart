@@ -29,6 +29,15 @@ class _HeaderState extends State<Header> {
   int _openIndex = -1;
 
   final CatalogService _catalogService = CatalogService();
+  List<Category> _categories = [];
+  List<Product> _products = [];
+  List<ProductType> _types = [];
+  List<Company> _companies = [];
+
+  StreamSubscription<List<Category>>? _categoriesSub;
+  StreamSubscription<List<Product>>? _productsSub;
+  StreamSubscription<List<ProductType>>? _typesSub;
+  StreamSubscription<List<Company>>? _companiesSub;
 
   final Map<int, List<String>> _dropdownItems = {
     2: ["New Arrivals", "Best Sellers", "Special Offers", "Seasonal"],
@@ -47,6 +56,23 @@ class _HeaderState extends State<Header> {
   OverlayEntry? _mobileMenuOverlay;
   final GlobalKey<_MobileSidebarState> _mobileSidebarKey =
       GlobalKey<_MobileSidebarState>();
+
+  @override
+  void initState() {
+    super.initState();
+    _categoriesSub = _catalogService.watchCategories().listen((data) {
+      if (!_isDisposed) setState(() => _categories = data);
+    });
+    _productsSub = _catalogService.watchProducts().listen((data) {
+      if (!_isDisposed) setState(() => _products = data);
+    });
+    _typesSub = _catalogService.watchProductTypes().listen((data) {
+      if (!_isDisposed) setState(() => _types = data);
+    });
+    _companiesSub = _catalogService.watchCompanies().listen((data) {
+      if (!_isDisposed) setState(() => _companies = data);
+    });
+  }
 
   void _cancelClose() {
     _closeTimer?.cancel();
@@ -116,7 +142,10 @@ class _HeaderState extends State<Header> {
                             clipBehavior: Clip.antiAlias,
                             child: isShop
                                 ? _ShopDropdownContent(
-                                    catalogService: _catalogService,
+                                    categories: _categories,
+                                    products: _products,
+                                    types: _types,
+                                    companies: _companies,
                                     onNavigate: (route) {
                                       _closeDropdown();
                                       context.push(route);
@@ -172,14 +201,15 @@ class _HeaderState extends State<Header> {
       builder: (context) {
         return _MobileSidebar(
           key: _mobileSidebarKey,
-          catalogService: _catalogService,
+          categories: _categories,
+          products: _products,
+          types: _types,
+          companies: _companies,
           dropdownItems: _dropdownItems,
-          // Generic items (Collection / Pages) — no route, just closes + logs.
           onSelect: (item) {
             _mobileSidebarKey.currentState?.close();
             debugPrint('Selected: $item');
           },
-          // Shop items (categories, types, companies) — actually navigate.
           onNavigate: (route) {
             _mobileSidebarKey.currentState?.close();
             context.push(route);
@@ -205,6 +235,10 @@ class _HeaderState extends State<Header> {
   void dispose() {
     _isDisposed = true;
     _closeTimer?.cancel();
+    _categoriesSub?.cancel();
+    _productsSub?.cancel();
+    _typesSub?.cancel();
+    _companiesSub?.cancel();
     _removeOverlay();
     _removeMobileOverlay();
     super.dispose();
@@ -224,8 +258,6 @@ class _HeaderState extends State<Header> {
           color: const Color(0xFF1A1A1A),
           child: Row(
             children: [
-              // Logo — smaller once things get very narrow (this is your
-              // site's own logo, a local asset — unrelated to Firestore data)
               Image.asset(
                 'assets/logo.png',
                 height: isTight ? 40 : 50,
@@ -471,156 +503,79 @@ class _HeaderState extends State<Header> {
   }
 }
 
-/// ---------------------------------------------------------------------
-/// Shared loader: combines the 4 live Firestore streams the Shop dropdown
-/// needs (categories, products, productTypes, companies) so both the
-/// desktop dropdown and the mobile sidebar can reuse the same wiring
-/// instead of duplicating nested StreamBuilders.
-/// ---------------------------------------------------------------------
-typedef _CatalogDataBuilder = Widget Function(
-  BuildContext context,
-  List<Category> categories,
-  List<Product> products,
-  List<ProductType> types,
-  List<Company> companies,
-);
-
-class _CatalogDropdownData extends StatelessWidget {
-  final CatalogService catalogService;
-  final _CatalogDataBuilder builder;
-  final Widget Function(BuildContext context)? loadingBuilder;
-
-  const _CatalogDropdownData({
-    required this.catalogService,
-    required this.builder,
-    this.loadingBuilder,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return StreamBuilder<List<Category>>(
-      stream: catalogService.watchCategories(),
-      builder: (context, categorySnap) {
-        final categories = categorySnap.data ?? [];
-        return StreamBuilder<List<Product>>(
-          stream: catalogService.watchProducts(),
-          builder: (context, productSnap) {
-            final products = productSnap.data ?? [];
-            return StreamBuilder<List<ProductType>>(
-              stream: catalogService.watchProductTypes(),
-              builder: (context, typeSnap) {
-                final types = typeSnap.data ?? [];
-                return StreamBuilder<List<Company>>(
-                  stream: catalogService.watchCompanies(),
-                  builder: (context, companySnap) {
-                    final companies = companySnap.data ?? [];
-
-                    final stillLoading =
-                        categorySnap.connectionState == ConnectionState.waiting &&
-                            categories.isEmpty;
-
-                    if (stillLoading) {
-                      return loadingBuilder?.call(context) ??
-                          const Padding(
-                            padding: EdgeInsets.all(24),
-                            child: Center(
-                              child: SizedBox(
-                                width: 20,
-                                height: 20,
-                                child: CircularProgressIndicator(
-                                  strokeWidth: 2,
-                                  color: Color.fromRGBO(245, 171, 30, 1),
-                                ),
-                              ),
-                            ),
-                          );
-                    }
-
-                    return builder(context, categories, products, types, companies);
-                  },
-                );
-              },
-            );
-          },
-        );
-      },
-    );
-  }
-}
-
 class _ShopDropdownContent extends StatelessWidget {
+  final List<Category> categories;
+  final List<Product> products;
+  final List<ProductType> types;
+  final List<Company> companies;
   final void Function(String route) onNavigate;
-  final CatalogService catalogService;
 
   const _ShopDropdownContent({
+    required this.categories,
+    required this.products,
+    required this.types,
+    required this.companies,
     required this.onNavigate,
-    required this.catalogService,
   });
 
   @override
   Widget build(BuildContext context) {
-    return _CatalogDropdownData(
-      catalogService: catalogService,
-      builder: (context, categories, products, types, allCompanies) {
-        // Exclude generic/placeholder companies from the nav dropdown.
-        final companies = allCompanies
-            .where((c) => c.id != 'unknown' && c.id != 'others')
-            .toList();
+    // Exclude generic/placeholder companies from the nav dropdown.
+    final visibleCompanies =
+        companies.where((c) => c.id != 'unknown' && c.id != 'others').toList();
 
-        return IntrinsicHeight(
-          child: Row(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              Expanded(
-                child: _DropdownColumn(
-                  title: 'Categories',
-                  children: [
-                    for (final category in categories) ...[
-                      _DropdownColumnRow(
-                        item: _DropdownColumnItem(
-                          label: category.name,
-                          onTap: () =>
-                              onNavigate('/products?category=${category.id}'),
+    return IntrinsicHeight(
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Expanded(
+            child: _DropdownColumn(
+              title: 'Categories',
+              children: [
+                for (final category in categories) ...[
+                  _DropdownColumnRow(
+                    item: _DropdownColumnItem(
+                      label: category.name,
+                      onTap: () =>
+                          onNavigate('/products?category=${category.id}'),
+                    ),
+                  ),
+                  for (final type in Catalog.typesInCategory(
+                    products,
+                    types,
+                    category.id,
+                  ))
+                    _DropdownColumnRow(
+                      item: _DropdownColumnItem(
+                        label: '- ${type.name}',
+                        onTap: () => onNavigate(
+                          '/products?category=${category.id}&type=${type.id}',
                         ),
                       ),
-                      for (final type in Catalog.typesInCategory(
-                        products,
-                        types,
-                        category.id,
-                      ))
-                        _DropdownColumnRow(
-                          item: _DropdownColumnItem(
-                            label: '- ${type.name}',
-                            onTap: () => onNavigate(
-                              '/products?category=${category.id}&type=${type.id}',
-                            ),
-                          ),
-                          isSubItem: true,
-                        ),
-                    ],
-                  ],
-                ),
-              ),
-              Container(width: 1, color: Colors.white.withValues(alpha: 0.2)),
-              Expanded(
-                child: _DropdownColumn(
-                  title: 'Companies',
-                  children: [
-                    for (final company in companies)
-                      _DropdownColumnRow(
-                        item: _DropdownColumnItem(
-                          label: company.name,
-                          onTap: () =>
-                              onNavigate('/products?company=${company.id}'),
-                        ),
-                      ),
-                  ],
-                ),
-              ),
-            ],
+                      isSubItem: true,
+                    ),
+                ],
+              ],
+            ),
           ),
-        );
-      },
+          Container(width: 1, color: Colors.white.withValues(alpha: 0.2)),
+          Expanded(
+            child: _DropdownColumn(
+              title: 'Companies',
+              children: [
+                for (final company in visibleCompanies)
+                  _DropdownColumnRow(
+                    item: _DropdownColumnItem(
+                      label: company.name,
+                      onTap: () =>
+                          onNavigate('/products?company=${company.id}'),
+                    ),
+                  ),
+              ],
+            ),
+          ),
+        ],
+      ),
     );
   }
 }
@@ -788,7 +743,10 @@ class _DropdownListState extends State<_DropdownList> {
 }
 
 class _MobileSidebar extends StatefulWidget {
-  final CatalogService catalogService;
+  final List<Category> categories;
+  final List<Product> products;
+  final List<ProductType> types;
+  final List<Company> companies;
   final Map<int, List<String>> dropdownItems;
   final void Function(String item) onSelect;
   final void Function(String route) onNavigate;
@@ -796,7 +754,10 @@ class _MobileSidebar extends StatefulWidget {
 
   const _MobileSidebar({
     super.key,
-    required this.catalogService,
+    required this.categories,
+    required this.products,
+    required this.types,
+    required this.companies,
     required this.dropdownItems,
     required this.onSelect,
     required this.onNavigate,
@@ -933,7 +894,10 @@ class _MobileSidebarState extends State<_MobileSidebar>
                                 Expanded(
                                   child: SingleChildScrollView(
                                     child: _MobileNavMenu(
-                                      catalogService: widget.catalogService,
+                                      categories: widget.categories,
+                                      products: widget.products,
+                                      types: widget.types,
+                                      companies: widget.companies,
                                       dropdownItems: widget.dropdownItems,
                                       onSelect: widget.onSelect,
                                       onNavigate: widget.onNavigate,
@@ -958,13 +922,19 @@ class _MobileSidebarState extends State<_MobileSidebar>
 }
 
 class _MobileNavMenu extends StatelessWidget {
-  final CatalogService catalogService;
+  final List<Category> categories;
+  final List<Product> products;
+  final List<ProductType> types;
+  final List<Company> companies;
   final Map<int, List<String>> dropdownItems;
   final void Function(String item) onSelect;
   final void Function(String route) onNavigate;
 
   const _MobileNavMenu({
-    required this.catalogService,
+    required this.categories,
+    required this.products,
+    required this.types,
+    required this.companies,
     required this.dropdownItems,
     required this.onSelect,
     required this.onNavigate,
@@ -983,102 +953,84 @@ class _MobileNavMenu extends StatelessWidget {
 
         if (index == 1) {
           // "Shop" — mirrors desktop: categories (with nested types) + companies.
-          return _CatalogDropdownData(
-            catalogService: catalogService,
-            loadingBuilder: (context) => const Padding(
-              padding: EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-              child: SizedBox(
-                width: 18,
-                height: 18,
-                child: CircularProgressIndicator(
-                  strokeWidth: 2,
-                  color: Color.fromRGBO(245, 171, 30, 1),
-                ),
-              ),
-            ),
-            builder: (context, categories, products, types, allCompanies) {
-              final companies = allCompanies
-                  .where((c) => c.id != 'unknown' && c.id != 'others')
-                  .toList();
+          // Reads already-loaded data — no stream/loading state needed here.
+          final visibleCompanies = companies
+              .where((c) => c.id != 'unknown' && c.id != 'others')
+              .toList();
 
-              return ExpansionTile(
-                tilePadding: const EdgeInsets.symmetric(horizontal: 16),
-                iconColor: Colors.white,
-                collapsedIconColor: Colors.white70,
-                title: const Text(
-                  "Shop",
-                  style: TextStyle(color: Colors.white, fontSize: 14),
+          return ExpansionTile(
+            tilePadding: const EdgeInsets.symmetric(horizontal: 16),
+            iconColor: Colors.white,
+            collapsedIconColor: Colors.white70,
+            title: const Text(
+              "Shop",
+              style: TextStyle(color: Colors.white, fontSize: 14),
+            ),
+            children: [
+              for (final category in categories) ...[
+                ListTile(
+                  dense: true,
+                  contentPadding: const EdgeInsets.only(left: 32, right: 16),
+                  title: Text(
+                    category.name,
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontSize: 13.5,
+                      fontWeight: FontWeight.w500,
+                    ),
+                  ),
+                  onTap: () =>
+                      onNavigate('/products?category=${category.id}'),
                 ),
-                children: [
-                  for (final category in categories) ...[
-                    ListTile(
-                      dense: true,
-                      contentPadding:
-                          const EdgeInsets.only(left: 32, right: 16),
-                      title: Text(
-                        category.name,
-                        style: const TextStyle(
-                          color: Colors.white,
-                          fontSize: 13.5,
-                          fontWeight: FontWeight.w500,
-                        ),
-                      ),
-                      onTap: () =>
-                          onNavigate('/products?category=${category.id}'),
-                    ),
-                    for (final type in Catalog.typesInCategory(
-                      products,
-                      types,
-                      category.id,
-                    ))
-                      ListTile(
-                        dense: true,
-                        contentPadding:
-                            const EdgeInsets.only(left: 48, right: 16),
-                        title: Text(
-                          type.name,
-                          style: const TextStyle(
-                            color: Colors.white70,
-                            fontSize: 12.5,
-                          ),
-                        ),
-                        onTap: () => onNavigate(
-                          '/products?category=${category.id}&type=${type.id}',
-                        ),
-                      ),
-                  ],
-                  if (companies.isNotEmpty) ...[
-                    const Padding(
-                      padding: EdgeInsets.fromLTRB(32, 8, 16, 4),
-                      child: Text(
-                        "Companies",
-                        style: TextStyle(
-                          color: Color.fromRGBO(245, 171, 30, 1),
-                          fontSize: 12,
-                          fontWeight: FontWeight.w700,
-                          letterSpacing: 0.6,
-                        ),
+                for (final type in Catalog.typesInCategory(
+                  products,
+                  types,
+                  category.id,
+                ))
+                  ListTile(
+                    dense: true,
+                    contentPadding: const EdgeInsets.only(left: 48, right: 16),
+                    title: Text(
+                      type.name,
+                      style: const TextStyle(
+                        color: Colors.white70,
+                        fontSize: 12.5,
                       ),
                     ),
-                    for (final company in companies)
-                      ListTile(
-                        dense: true,
-                        contentPadding:
-                            const EdgeInsets.only(left: 32, right: 16),
-                        title: Text(
-                          company.name,
-                          style: const TextStyle(
-                            color: Colors.white70,
-                            fontSize: 13,
-                          ),
-                        ),
-                        onTap: () =>
-                            onNavigate('/products?company=${company.id}'),
+                    onTap: () => onNavigate(
+                      '/products?category=${category.id}&type=${type.id}',
+                    ),
+                  ),
+              ],
+              if (visibleCompanies.isNotEmpty) ...[
+                const Padding(
+                  padding: EdgeInsets.fromLTRB(32, 8, 16, 4),
+                  child: Text(
+                    "Companies",
+                    style: TextStyle(
+                      color: Color.fromRGBO(245, 171, 30, 1),
+                      fontSize: 12,
+                      fontWeight: FontWeight.w700,
+                      letterSpacing: 0.6,
+                    ),
+                  ),
+                ),
+                for (final company in visibleCompanies)
+                  ListTile(
+                    dense: true,
+                    contentPadding: const EdgeInsets.only(left: 32, right: 16),
+                    title: Text(
+                      company.name,
+                      style: const TextStyle(
+                        color: Colors.white70,
+                        fontSize: 13,
                       ),
-                  ],
-                ],
-              );
-            },
+                    ),
+                    onTap: () =>
+                        onNavigate('/products?company=${company.id}'),
+                  ),
+              ],
+            ],
           );
         }
 
