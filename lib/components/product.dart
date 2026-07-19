@@ -1,3 +1,4 @@
+import 'package:devansh/dialog/order.dart';
 import 'package:devansh/models/catalogmodels.dart';
 
 import 'package:devansh/services/catalogservice.dart';
@@ -744,28 +745,41 @@ class _PremiumProductCardState extends State<_PremiumProductCard>
                                 ),
                               ],
                             ),
-                            Row(
-                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                              children: [
-                                Text(
-                                  '\$${product.price.toStringAsFixed(2)}',
-                                  style: TextStyle(
-                                    fontSize: r.cardPriceFont,
-                                    fontWeight: FontWeight.bold,
-                                    color: const Color.fromRGBO(245, 171, 30, 1),
-                                  ),
-                                ),
-                                Opacity(
-                                  opacity: t,
-                                  child: _buildQuickActionButton(
-                                    Icons.shopping_bag_outlined,
-                                    Colors.black,
-                                    backgroundColor: const Color.fromRGBO(245, 171, 30, 1),
-                                    borderColor: Colors.transparent,
-                                  ),
-                                ),
-                              ],
-                            ),
+                           Row(
+  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+  children: [
+    Text(
+      '\$${product.price.toStringAsFixed(2)}',
+      style: TextStyle(
+        fontSize: r.cardPriceFont,
+        fontWeight: FontWeight.bold,
+        color: const Color.fromRGBO(245, 171, 30, 1),
+      ),
+    ),
+    Opacity(
+  opacity: t,
+  child: GestureDetector(
+    onTap: () async {
+      final catalogService = CatalogService();
+      final allProducts = await catalogService.watchProducts().first;
+      final related = allProducts
+          .where((p) => p.categoryId == product.categoryId && p.id != product.id)
+          .toList();
+
+      if (context.mounted) {
+        handleOrderTap(context, product, relatedProducts: related);
+      }
+    },
+    child: _buildQuickActionButton(
+      Icons.shopping_bag_outlined,
+      Colors.black,
+      backgroundColor: const Color.fromRGBO(245, 171, 30, 1),
+      borderColor: Colors.transparent,
+    ),
+  ),
+),
+  ],
+),
                           ],
                         ),
                       ),
