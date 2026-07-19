@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:devansh/models/catalogmodels.dart' hide MaterialType;
 
 const _kBg = Color(0xFF0A1929);
+const _kBgLight = Color(0xFF122A45);
 const _kSurface = Color(0xFF12233A);
 const _kAmber = Color.fromRGBO(245, 171, 30, 1);
 const _kGreen = Color(0xFF4CAF50);
@@ -148,33 +149,59 @@ class _OrderDialogState extends State<_OrderDialog> {
       backgroundColor: Colors.transparent,
       insetPadding: const EdgeInsets.all(20),
       child: ConstrainedBox(
-        constraints: const BoxConstraints(maxWidth: 820, maxHeight: 680),
+        constraints: const BoxConstraints(maxWidth: 840, maxHeight: 700),
         child: Container(
           decoration: BoxDecoration(
-            color: _kBg,
-            borderRadius: BorderRadius.circular(16),
-            border: Border.all(color: _kBorder),
+            gradient: const LinearGradient(
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+              colors: [_kBgLight, _kBg],
+            ),
+            borderRadius: BorderRadius.circular(20),
+            border: Border.all(color: Colors.white.withValues(alpha: 0.1)),
             boxShadow: const [
-              BoxShadow(color: Colors.black54, blurRadius: 30, offset: Offset(0, 12)),
+              BoxShadow(color: Colors.black87, blurRadius: 40, offset: Offset(0, 18)),
             ],
           ),
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
               // Header
-              Padding(
-                padding: const EdgeInsets.fromLTRB(24, 20, 16, 0),
+              Container(
+                padding: const EdgeInsets.fromLTRB(26, 22, 18, 18),
+                decoration: BoxDecoration(
+                  border: Border(
+                    bottom: BorderSide(color: Colors.white.withValues(alpha: 0.08)),
+                  ),
+                ),
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    const Text(
-                      'Place Order',
-                      style: TextStyle(color: Colors.white, fontSize: 22, fontWeight: FontWeight.bold),
+                    Row(
+                      children: [
+                        Container(
+                          width: 4,
+                          height: 22,
+                          decoration: BoxDecoration(
+                            color: _kAmber,
+                            borderRadius: BorderRadius.circular(2),
+                          ),
+                        ),
+                        const SizedBox(width: 12),
+                        const Text(
+                          'Place Order',
+                          style: TextStyle(color: Colors.white, fontSize: 22, fontWeight: FontWeight.bold),
+                        ),
+                      ],
                     ),
                     IconButton(
                       icon: const Icon(Icons.close, color: Colors.white54),
                       onPressed: () => Navigator.of(context).pop(),
                       splashRadius: 20,
+                      style: IconButton.styleFrom(
+                        backgroundColor: Colors.white.withValues(alpha: 0.06),
+                        shape: const CircleBorder(),
+                      ),
                     ),
                   ],
                 ),
@@ -182,7 +209,7 @@ class _OrderDialogState extends State<_OrderDialog> {
 
               Flexible(
                 child: SingleChildScrollView(
-                  padding: const EdgeInsets.fromLTRB(24, 10, 24, 0),
+                  padding: const EdgeInsets.fromLTRB(26, 22, 26, 0),
                   child: LayoutBuilder(
                     builder: (context, constraints) {
                       final isNarrow = constraints.maxWidth < _kStackBreakpoint;
@@ -191,7 +218,7 @@ class _OrderDialogState extends State<_OrderDialog> {
                         product: product,
                         relatedProducts: otherRelated,
                         onSelectRelated: _switchProduct,
-                        mainImageHeight: isNarrow ? 160 : 230,
+                        mainImageHeight: isNarrow ? 170 : 240,
                       );
 
                       final detailsColumn = _ProductDetailsPane(
@@ -207,7 +234,7 @@ class _OrderDialogState extends State<_OrderDialog> {
                           crossAxisAlignment: CrossAxisAlignment.stretch,
                           children: [
                             imageColumn,
-                            const SizedBox(height: 20),
+                            const SizedBox(height: 24),
                             detailsColumn,
                           ],
                         );
@@ -217,7 +244,7 @@ class _OrderDialogState extends State<_OrderDialog> {
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Expanded(flex: 4, child: imageColumn),
-                          const SizedBox(width: 24),
+                          const SizedBox(width: 28),
                           Expanded(flex: 5, child: detailsColumn),
                         ],
                       );
@@ -227,8 +254,13 @@ class _OrderDialogState extends State<_OrderDialog> {
               ),
 
               // Footer
-              Padding(
-                padding: const EdgeInsets.fromLTRB(24, 16, 24, 20),
+              Container(
+                padding: const EdgeInsets.fromLTRB(26, 18, 26, 22),
+                decoration: BoxDecoration(
+                  border: Border(
+                    top: BorderSide(color: Colors.white.withValues(alpha: 0.08)),
+                  ),
+                ),
                 child: SizedBox(
                   width: double.infinity,
                   child: ElevatedButton(
@@ -236,8 +268,12 @@ class _OrderDialogState extends State<_OrderDialog> {
                     style: ElevatedButton.styleFrom(
                       backgroundColor: _kAmber,
                       foregroundColor: Colors.black,
-                      padding: const EdgeInsets.symmetric(vertical: 15),
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                      padding: const EdgeInsets.symmetric(vertical: 16),
+                      elevation: 0,
+                      shadowColor: Colors.transparent,
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                    ).copyWith(
+                      overlayColor: WidgetStateProperty.all(Colors.black.withValues(alpha: 0.08)),
                     ),
                     child: _submitting
                         ? const SizedBox(
@@ -277,10 +313,17 @@ class _ProductImagePane extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        SizedBox(
+        Container(
           height: mainImageHeight,
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(14),
+            border: Border.all(color: Colors.white.withValues(alpha: 0.12)),
+            boxShadow: [
+              BoxShadow(color: Colors.black.withValues(alpha: 0.35), blurRadius: 18, offset: const Offset(0, 8)),
+            ],
+          ),
           child: ClipRRect(
-            borderRadius: BorderRadius.circular(12),
+            borderRadius: BorderRadius.circular(13),
             child: Container(
               width: double.infinity,
               color: Colors.grey.shade900,
@@ -312,36 +355,27 @@ class _ProductImagePane extends StatelessWidget {
         ),
 
         if (relatedProducts.isNotEmpty) ...[
-          const SizedBox(height: 12),
+          const SizedBox(height: 16),
+          Text(
+            'MORE IN THIS CATEGORY',
+            style: TextStyle(
+              color: Colors.white.withValues(alpha: 0.4),
+              fontSize: 11,
+              fontWeight: FontWeight.w700,
+              letterSpacing: 1.1,
+            ),
+          ),
+          const SizedBox(height: 10),
           SizedBox(
-            height: 84,
+            height: 88,
             child: ListView.separated(
               scrollDirection: Axis.horizontal,
               itemCount: relatedProducts.length,
               separatorBuilder: (context, index) => const SizedBox(width: 10),
               itemBuilder: (context, index) {
-                final related = relatedProducts[index];
-                return GestureDetector(
-                  onTap: () => onSelectRelated(related),
-                  child: ClipRRect(
-                    borderRadius: BorderRadius.circular(10),
-                    child: Container(
-                      width: 84,
-                      height: 84,
-                      color: Colors.grey.shade900,
-                      child: related.imageUrl.isNotEmpty
-                          ? Image.network(
-                              related.imageUrl,
-                              fit: BoxFit.cover,
-                              errorBuilder: (context, error, stackTrace) => const Icon(
-                                Icons.image_not_supported_outlined,
-                                color: Colors.white38,
-                                size: 24,
-                              ),
-                            )
-                          : const Icon(Icons.image_not_supported_outlined, color: Colors.white38, size: 24),
-                    ),
-                  ),
+                return _RelatedThumbnail(
+                  product: relatedProducts[index],
+                  onTap: () => onSelectRelated(relatedProducts[index]),
                 );
               },
             ),
@@ -352,8 +386,67 @@ class _ProductImagePane extends StatelessWidget {
   }
 }
 
-/// Right pane — name, description, the same spec grid style as the
-/// product detail page (no price), and a quantity stepper for the order.
+class _RelatedThumbnail extends StatefulWidget {
+  final Product product;
+  final VoidCallback onTap;
+
+  const _RelatedThumbnail({required this.product, required this.onTap});
+
+  @override
+  State<_RelatedThumbnail> createState() => _RelatedThumbnailState();
+}
+
+class _RelatedThumbnailState extends State<_RelatedThumbnail> {
+  bool _isHovered = false;
+
+  @override
+  Widget build(BuildContext context) {
+    final product = widget.product;
+
+    return MouseRegion(
+      cursor: SystemMouseCursors.click,
+      onEnter: (_) => setState(() => _isHovered = true),
+      onExit: (_) => setState(() => _isHovered = false),
+      child: GestureDetector(
+        onTap: widget.onTap,
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 180),
+          width: 84,
+          height: 84,
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(
+              color: _isHovered ? _kAmber : Colors.white.withValues(alpha: 0.14),
+              width: _isHovered ? 2 : 1.2,
+            ),
+            boxShadow: _isHovered
+                ? [BoxShadow(color: _kAmber.withValues(alpha: 0.25), blurRadius: 12, offset: const Offset(0, 4))]
+                : [],
+          ),
+          child: ClipRRect(
+            borderRadius: BorderRadius.circular(10.5),
+            child: Container(
+              color: Colors.grey.shade900,
+              child: product.imageUrl.isNotEmpty
+                  ? Image.network(
+                      product.imageUrl,
+                      fit: BoxFit.cover,
+                      errorBuilder: (context, error, stackTrace) => const Icon(
+                        Icons.image_not_supported_outlined,
+                        color: Colors.white38,
+                        size: 22,
+                      ),
+                    )
+                  : const Icon(Icons.image_not_supported_outlined, color: Colors.white38, size: 22),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+/// Right pane — name, description, spec card, and quantity stepper.
 class _ProductDetailsPane extends StatelessWidget {
   final Product product;
   final Map<String, String?> specs;
@@ -386,18 +479,26 @@ class _ProductDetailsPane extends StatelessWidget {
             product.description!,
             maxLines: 3,
             overflow: TextOverflow.ellipsis,
-            style: TextStyle(color: Colors.white.withValues(alpha: 0.7), fontSize: 15, height: 1.45),
+            style: TextStyle(color: Colors.white.withValues(alpha: 0.65), fontSize: 15, height: 1.45),
           ),
         ],
+
         if (specs.isNotEmpty) ...[
-          const SizedBox(height: 16),
+          const SizedBox(height: 22),
           Container(
             width: double.infinity,
-            padding: const EdgeInsets.all(18),
+            padding: const EdgeInsets.all(20),
             decoration: BoxDecoration(
-              color: Colors.white.withValues(alpha: 0.06),
-              borderRadius: BorderRadius.circular(12),
-              border: Border.all(color: Colors.white.withValues(alpha: 0.12)),
+              gradient: LinearGradient(
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+                colors: [
+                  Colors.white.withValues(alpha: 0.07),
+                  Colors.white.withValues(alpha: 0.03),
+                ],
+              ),
+              borderRadius: BorderRadius.circular(14),
+              border: Border.all(color: Colors.white.withValues(alpha: 0.1)),
             ),
             child: _DetailGrid(
               entries: [
@@ -412,50 +513,76 @@ class _ProductDetailsPane extends StatelessWidget {
           ),
         ],
 
-        const SizedBox(height: 20),
+        const SizedBox(height: 24),
         Text(
-          'Quantity / Pieces',
-          style: TextStyle(color: Colors.white.withValues(alpha: 0.75), fontSize: 14.5, fontWeight: FontWeight.w600),
+          'QUANTITY / PIECES',
+          style: TextStyle(
+            color: Colors.white.withValues(alpha: 0.45),
+            fontSize: 11,
+            fontWeight: FontWeight.w700,
+            letterSpacing: 1.1,
+          ),
         ),
         const SizedBox(height: 10),
-        Row(
-          children: [
-            _QtyButton(icon: Icons.remove, onTap: onDecrement),
-            Container(
-              width: 54,
-              alignment: Alignment.center,
-              padding: const EdgeInsets.symmetric(vertical: 10),
-              child: Text(
-                '$quantity',
-                style: const TextStyle(color: Colors.white, fontSize: 17, fontWeight: FontWeight.w600),
+        Container(
+          padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 6),
+          decoration: BoxDecoration(
+            color: Colors.white.withValues(alpha: 0.05),
+            borderRadius: BorderRadius.circular(10),
+            border: Border.all(color: Colors.white.withValues(alpha: 0.1)),
+          ),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              _QtyButton(icon: Icons.remove, onTap: onDecrement),
+              Container(
+                width: 56,
+                alignment: Alignment.center,
+                child: Text(
+                  '$quantity',
+                  style: const TextStyle(color: Colors.white, fontSize: 17, fontWeight: FontWeight.w700),
+                ),
               ),
-            ),
-            _QtyButton(icon: Icons.add, onTap: onIncrement),
-          ],
+              _QtyButton(icon: Icons.add, onTap: onIncrement),
+            ],
+          ),
         ),
       ],
     );
   }
 }
 
-class _QtyButton extends StatelessWidget {
+class _QtyButton extends StatefulWidget {
   final IconData icon;
   final VoidCallback onTap;
   const _QtyButton({required this.icon, required this.onTap});
 
   @override
+  State<_QtyButton> createState() => _QtyButtonState();
+}
+
+class _QtyButtonState extends State<_QtyButton> {
+  bool _isHovered = false;
+
+  @override
   Widget build(BuildContext context) {
-    return GestureDetector(
-      onTap: onTap,
-      child: Container(
-        width: 36,
-        height: 36,
-        decoration: BoxDecoration(
-          color: _kSurface,
-          borderRadius: BorderRadius.circular(6),
-          border: Border.all(color: _kBorder),
+    return MouseRegion(
+      cursor: SystemMouseCursors.click,
+      onEnter: (_) => setState(() => _isHovered = true),
+      onExit: (_) => setState(() => _isHovered = false),
+      child: GestureDetector(
+        onTap: widget.onTap,
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 150),
+          width: 36,
+          height: 36,
+          decoration: BoxDecoration(
+            color: _isHovered ? _kAmber.withValues(alpha: 0.15) : _kSurface,
+            borderRadius: BorderRadius.circular(8),
+            border: Border.all(color: _isHovered ? _kAmber.withValues(alpha: 0.6) : _kBorder),
+          ),
+          child: Icon(widget.icon, color: _isHovered ? _kAmber : Colors.white70, size: 18),
         ),
-        child: Icon(icon, color: Colors.white70, size: 18),
       ),
     );
   }
@@ -488,7 +615,7 @@ class _DetailGrid extends StatelessWidget {
       final right = i + 1 < entries.length ? entries[i + 1] : null;
       rows.add(
         Padding(
-          padding: const EdgeInsets.symmetric(vertical: 5),
+          padding: const EdgeInsets.symmetric(vertical: 6),
           child: Row(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
@@ -523,13 +650,13 @@ class _DetailLine extends StatelessWidget {
       text: TextSpan(
         children: [
           TextSpan(
-            text: '${entry.label} : ',
+            text: '${entry.label}\n',
             style: TextStyle(
-              color: Colors.grey.shade400,
-              fontSize: 15.5,
-              fontWeight: FontWeight.w500,
-              letterSpacing: 0.3,
-              height: 1.5,
+              color: Colors.white.withValues(alpha: 0.4),
+              fontSize: 11,
+              fontWeight: FontWeight.w700,
+              letterSpacing: 0.6,
+              height: 1.8,
             ),
           ),
           TextSpan(
@@ -537,9 +664,9 @@ class _DetailLine extends StatelessWidget {
             style: TextStyle(
               color: showGreen ? _kGreen : (entry.valueColor ?? const Color(0xFFF5F5F5)),
               fontSize: 15,
-              fontWeight: FontWeight.w500,
+              fontWeight: FontWeight.w600,
               letterSpacing: 0.2,
-              height: 1.5,
+              height: 1.4,
             ),
           ),
           if (showGreen)
