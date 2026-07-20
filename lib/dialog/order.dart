@@ -2,12 +2,14 @@ import 'package:flutter/material.dart';
 
 import 'package:devansh/models/catalogmodels.dart' hide MaterialType;
 
-const _kBg = Color(0xFF0A1929);
-const _kBgLight = Color(0xFF122A45);
+const _kBg = Color.fromARGB(255, 1, 4, 7);
+const _kBgDeep = Color(0xFF060F1D);
 const _kSurface = Color(0xFF12233A);
+const _kSurfaceRaised = Color(0xFF16304F);
 const _kAmber = Color.fromRGBO(245, 171, 30, 1);
 const _kGreen = Color(0xFF4CAF50);
 const _kBorder = Colors.white24;
+const _kBorderSubtle = Color.fromRGBO(245, 171, 30, 0.18);
 
 const double _kStackBreakpoint = 560;
 
@@ -37,6 +39,7 @@ Future<void> showOrderDialog(
   return showDialog(
     context: context,
     barrierDismissible: true,
+    barrierColor: Colors.black.withValues(alpha: 0.7),
     builder: (context) => _OrderDialog(
       product: product,
       company: company,
@@ -67,12 +70,6 @@ class _OrderDialogState extends State<_OrderDialog> {
   late Product _product;
   int _quantity = 1;
   bool _submitting = false;
-
-  // The full pool of products this dialog knows about — the product it
-  // was originally opened with, plus whatever related products were
-  // passed in. Whichever one is NOT currently shown as the main image
-  // shows up in the thumbnail strip, so switching back and forth always
-  // has something to show.
   late final List<Product> _allKnownProducts;
 
   @override
@@ -82,7 +79,7 @@ class _OrderDialogState extends State<_OrderDialog> {
 
     final seenIds = <String>{};
     _allKnownProducts = [widget.product, ...widget.relatedProducts]
-        .where((p) => seenIds.add(p.id)) // de-dupe by id
+        .where((p) => seenIds.add(p.id)) 
         .toList();
   }
 
@@ -101,16 +98,6 @@ class _OrderDialogState extends State<_OrderDialog> {
   Future<void> _submit() async {
     setState(() => _submitting = true);
 
-    // TODO: hook this up to Firestore once the backend is ready, e.g.:
-    // await FirebaseFirestore.instance.collection('orders').add({
-    //   'productId': _product.id,
-    //   'productName': _product.name,
-    //   'productImageUrl': _product.imageUrl,
-    //   'quantity': _quantity,
-    //   'status': 'pending',
-    //   'createdAt': FieldValue.serverTimestamp(),
-    // });
-
     await Future.delayed(const Duration(milliseconds: 600)); // placeholder
 
     if (!mounted) return;
@@ -120,7 +107,9 @@ class _OrderDialogState extends State<_OrderDialog> {
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: Text('Order request for "${_product.name}" submitted.'),
-        backgroundColor: _kSurface,
+        backgroundColor: _kSurfaceRaised,
+        behavior: SnackBarBehavior.floating,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
       ),
     );
   }
@@ -128,10 +117,6 @@ class _OrderDialogState extends State<_OrderDialog> {
   @override
   Widget build(BuildContext context) {
     final product = _product;
-
-    // Brand/Material only reliably correspond to the originally-passed
-    // product; if the dialog has switched to a related product, those
-    // two rows are omitted rather than shown incorrectly.
     final isOriginalProduct = product.id == widget.product.id;
 
     final specs = <String, String?>{
@@ -149,67 +134,75 @@ class _OrderDialogState extends State<_OrderDialog> {
       backgroundColor: Colors.transparent,
       insetPadding: const EdgeInsets.all(20),
       child: ConstrainedBox(
-        constraints: const BoxConstraints(maxWidth: 840, maxHeight: 700),
+        constraints: const BoxConstraints(maxWidth: 820, maxHeight: 680),
         child: Container(
           decoration: BoxDecoration(
+           
             gradient: const LinearGradient(
-              begin: Alignment.topLeft,
-              end: Alignment.bottomRight,
-              colors: [_kBgLight, _kBg],
+              begin: Alignment.topCenter,
+              end: Alignment.bottomCenter,
+              colors: [_kBg, _kBgDeep],
             ),
-            borderRadius: BorderRadius.circular(20),
-            border: Border.all(color: Colors.white.withValues(alpha: 0.1)),
-            boxShadow: const [
-              BoxShadow(color: Colors.black87, blurRadius: 40, offset: Offset(0, 18)),
+            borderRadius: BorderRadius.circular(16),
+            border: Border.all(color: _kBorderSubtle, width: 1.2),
+            boxShadow: [
+              // Deep ambient shadow for lift off the page…
+              const BoxShadow(color: Colors.black54, blurRadius: 36, offset: Offset(0, 16)),
+              // …plus a faint warm glow that nods to the brand's amber accent
+              // without shouting — a "premium moment" cue, used sparingly.
+              BoxShadow(color: _kAmber.withValues(alpha: 0.06), blurRadius: 60, spreadRadius: -10),
             ],
           ),
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
               // Header
-              Container(
-                padding: const EdgeInsets.fromLTRB(26, 22, 18, 18),
-                decoration: BoxDecoration(
-                  border: Border(
-                    bottom: BorderSide(color: Colors.white.withValues(alpha: 0.08)),
-                  ),
-                ),
+              Padding(
+                padding: const EdgeInsets.fromLTRB(24, 22, 16, 0),
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Row(
+                    Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
+                        const Text(
+                          'Place Order',
+                          style: TextStyle(
+                            color: Colors.white,
+                            fontSize: 22,
+                            fontWeight: FontWeight.bold,
+                            letterSpacing: 0.2,
+                          ),
+                        ),
+                        const SizedBox(height: 8),
+                        // Same gradient underline motif used on the home
+                        // page section headers — ties this dialog back to
+                        // the rest of the site's visual language.
                         Container(
-                          width: 4,
-                          height: 22,
+                          width: 42,
+                          height: 3,
                           decoration: BoxDecoration(
-                            color: _kAmber,
+                            gradient: LinearGradient(
+                              colors: [
+                                _kAmber.withValues(alpha: 0.5),
+                                _kAmber,
+                                _kAmber.withValues(alpha: 0.5),
+                              ],
+                            ),
                             borderRadius: BorderRadius.circular(2),
                           ),
                         ),
-                        const SizedBox(width: 12),
-                        const Text(
-                          'Place Order',
-                          style: TextStyle(color: Colors.white, fontSize: 22, fontWeight: FontWeight.bold),
-                        ),
                       ],
                     ),
-                    IconButton(
-                      icon: const Icon(Icons.close, color: Colors.white54),
-                      onPressed: () => Navigator.of(context).pop(),
-                      splashRadius: 20,
-                      style: IconButton.styleFrom(
-                        backgroundColor: Colors.white.withValues(alpha: 0.06),
-                        shape: const CircleBorder(),
-                      ),
-                    ),
+                    _CloseButton(onTap: () => Navigator.of(context).pop()),
                   ],
                 ),
               ),
 
               Flexible(
                 child: SingleChildScrollView(
-                  padding: const EdgeInsets.fromLTRB(26, 22, 26, 0),
+                  padding: const EdgeInsets.fromLTRB(24, 18, 24, 0),
                   child: LayoutBuilder(
                     builder: (context, constraints) {
                       final isNarrow = constraints.maxWidth < _kStackBreakpoint;
@@ -218,7 +211,7 @@ class _OrderDialogState extends State<_OrderDialog> {
                         product: product,
                         relatedProducts: otherRelated,
                         onSelectRelated: _switchProduct,
-                        mainImageHeight: isNarrow ? 170 : 240,
+                        mainImageHeight: isNarrow ? 160 : 230,
                       );
 
                       final detailsColumn = _ProductDetailsPane(
@@ -234,7 +227,7 @@ class _OrderDialogState extends State<_OrderDialog> {
                           crossAxisAlignment: CrossAxisAlignment.stretch,
                           children: [
                             imageColumn,
-                            const SizedBox(height: 24),
+                            const SizedBox(height: 20),
                             detailsColumn,
                           ],
                         );
@@ -244,7 +237,7 @@ class _OrderDialogState extends State<_OrderDialog> {
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Expanded(flex: 4, child: imageColumn),
-                          const SizedBox(width: 28),
+                          const SizedBox(width: 24),
                           Expanded(flex: 5, child: detailsColumn),
                         ],
                       );
@@ -253,13 +246,13 @@ class _OrderDialogState extends State<_OrderDialog> {
                 ),
               ),
 
-              // Footer
+              // Footer — separated from the scroll content with a hairline
+              // so it reads as a fixed action bar rather than floating text.
               Container(
-                padding: const EdgeInsets.fromLTRB(26, 18, 26, 22),
+                margin: const EdgeInsets.only(top: 16),
+                padding: const EdgeInsets.fromLTRB(24, 16, 24, 20),
                 decoration: BoxDecoration(
-                  border: Border(
-                    top: BorderSide(color: Colors.white.withValues(alpha: 0.08)),
-                  ),
+                  border: Border(top: BorderSide(color: Colors.white.withValues(alpha: 0.08))),
                 ),
                 child: SizedBox(
                   width: double.infinity,
@@ -268,12 +261,10 @@ class _OrderDialogState extends State<_OrderDialog> {
                     style: ElevatedButton.styleFrom(
                       backgroundColor: _kAmber,
                       foregroundColor: Colors.black,
-                      padding: const EdgeInsets.symmetric(vertical: 16),
+                      disabledBackgroundColor: _kAmber.withValues(alpha: 0.5),
+                      padding: const EdgeInsets.symmetric(vertical: 15),
                       elevation: 0,
-                      shadowColor: Colors.transparent,
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-                    ).copyWith(
-                      overlayColor: WidgetStateProperty.all(Colors.black.withValues(alpha: 0.08)),
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
                     ),
                     child: _submitting
                         ? const SizedBox(
@@ -286,6 +277,46 @@ class _OrderDialogState extends State<_OrderDialog> {
                 ),
               ),
             ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+/// Small extension so the amber glow shadow above reads as one clean
+/// expression instead of a nested function call.
+
+class _CloseButton extends StatefulWidget {
+  final VoidCallback onTap;
+  const _CloseButton({required this.onTap});
+
+  @override
+  State<_CloseButton> createState() => _CloseButtonState();
+}
+
+class _CloseButtonState extends State<_CloseButton> {
+  bool _isHovered = false;
+
+  @override
+  Widget build(BuildContext context) {
+    return MouseRegion(
+      cursor: SystemMouseCursors.click,
+      onEnter: (_) => setState(() => _isHovered = true),
+      onExit: (_) => setState(() => _isHovered = false),
+      child: GestureDetector(
+        onTap: widget.onTap,
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 150),
+          padding: const EdgeInsets.all(8),
+          decoration: BoxDecoration(
+            color: _isHovered ? Colors.white.withValues(alpha: 0.08) : Colors.transparent,
+            shape: BoxShape.circle,
+          ),
+          child: Icon(
+            Icons.close,
+            color: _isHovered ? Colors.white : Colors.white54,
+            size: 20,
           ),
         ),
       ),
@@ -316,14 +347,14 @@ class _ProductImagePane extends StatelessWidget {
         Container(
           height: mainImageHeight,
           decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(14),
-            border: Border.all(color: Colors.white.withValues(alpha: 0.12)),
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(color: _kBorderSubtle),
             boxShadow: [
-              BoxShadow(color: Colors.black.withValues(alpha: 0.35), blurRadius: 18, offset: const Offset(0, 8)),
+              BoxShadow(color: Colors.black.withValues(alpha: 0.3), blurRadius: 16, offset: const Offset(0, 6)),
             ],
           ),
           child: ClipRRect(
-            borderRadius: BorderRadius.circular(13),
+            borderRadius: BorderRadius.circular(11),
             child: Container(
               width: double.infinity,
               color: Colors.grey.shade900,
@@ -331,6 +362,7 @@ class _ProductImagePane extends StatelessWidget {
                   ? Image.network(
                       product.imageUrl,
                       fit: BoxFit.cover,
+                      cacheWidth: 700,
                       loadingBuilder: (context, child, progress) {
                         if (progress == null) return child;
                         return const Center(
@@ -355,27 +387,18 @@ class _ProductImagePane extends StatelessWidget {
         ),
 
         if (relatedProducts.isNotEmpty) ...[
-          const SizedBox(height: 16),
-          Text(
-            'MORE IN THIS CATEGORY',
-            style: TextStyle(
-              color: Colors.white.withValues(alpha: 0.4),
-              fontSize: 11,
-              fontWeight: FontWeight.w700,
-              letterSpacing: 1.1,
-            ),
-          ),
-          const SizedBox(height: 10),
+          const SizedBox(height: 12),
           SizedBox(
-            height: 88,
+            height: 84,
             child: ListView.separated(
               scrollDirection: Axis.horizontal,
               itemCount: relatedProducts.length,
               separatorBuilder: (context, index) => const SizedBox(width: 10),
               itemBuilder: (context, index) {
+                final related = relatedProducts[index];
                 return _RelatedThumbnail(
-                  product: relatedProducts[index],
-                  onTap: () => onSelectRelated(relatedProducts[index]),
+                  product: related,
+                  onTap: () => onSelectRelated(related),
                 );
               },
             ),
@@ -401,8 +424,7 @@ class _RelatedThumbnailState extends State<_RelatedThumbnail> {
 
   @override
   Widget build(BuildContext context) {
-    final product = widget.product;
-
+    final related = widget.product;
     return MouseRegion(
       cursor: SystemMouseCursors.click,
       onEnter: (_) => setState(() => _isHovered = true),
@@ -410,34 +432,32 @@ class _RelatedThumbnailState extends State<_RelatedThumbnail> {
       child: GestureDetector(
         onTap: widget.onTap,
         child: AnimatedContainer(
-          duration: const Duration(milliseconds: 180),
+          duration: const Duration(milliseconds: 150),
           width: 84,
           height: 84,
           decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(12),
+            borderRadius: BorderRadius.circular(10),
             border: Border.all(
-              color: _isHovered ? _kAmber : Colors.white.withValues(alpha: 0.14),
-              width: _isHovered ? 2 : 1.2,
+              color: _isHovered ? _kAmber.withValues(alpha: 0.7) : _kBorderSubtle,
+              width: _isHovered ? 1.5 : 1,
             ),
-            boxShadow: _isHovered
-                ? [BoxShadow(color: _kAmber.withValues(alpha: 0.25), blurRadius: 12, offset: const Offset(0, 4))]
-                : [],
           ),
           child: ClipRRect(
-            borderRadius: BorderRadius.circular(10.5),
+            borderRadius: BorderRadius.circular(9),
             child: Container(
               color: Colors.grey.shade900,
-              child: product.imageUrl.isNotEmpty
+              child: related.imageUrl.isNotEmpty
                   ? Image.network(
-                      product.imageUrl,
+                      related.imageUrl,
                       fit: BoxFit.cover,
+                      cacheWidth: 168,
                       errorBuilder: (context, error, stackTrace) => const Icon(
                         Icons.image_not_supported_outlined,
                         color: Colors.white38,
-                        size: 22,
+                        size: 24,
                       ),
                     )
-                  : const Icon(Icons.image_not_supported_outlined, color: Colors.white38, size: 22),
+                  : const Icon(Icons.image_not_supported_outlined, color: Colors.white38, size: 24),
             ),
           ),
         ),
@@ -446,7 +466,8 @@ class _RelatedThumbnailState extends State<_RelatedThumbnail> {
   }
 }
 
-/// Right pane — name, description, spec card, and quantity stepper.
+/// Right pane — name, description, the same spec grid style as the
+/// product detail page (no price), and a quantity stepper for the order.
 class _ProductDetailsPane extends StatelessWidget {
   final Product product;
   final Map<String, String?> specs;
@@ -479,26 +500,18 @@ class _ProductDetailsPane extends StatelessWidget {
             product.description!,
             maxLines: 3,
             overflow: TextOverflow.ellipsis,
-            style: TextStyle(color: Colors.white.withValues(alpha: 0.65), fontSize: 15, height: 1.45),
+            style: TextStyle(color: Colors.white.withValues(alpha: 0.7), fontSize: 15, height: 1.45),
           ),
         ],
-
         if (specs.isNotEmpty) ...[
-          const SizedBox(height: 22),
+          const SizedBox(height: 16),
           Container(
             width: double.infinity,
-            padding: const EdgeInsets.all(20),
+            padding: const EdgeInsets.all(18),
             decoration: BoxDecoration(
-              gradient: LinearGradient(
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
-                colors: [
-                  Colors.white.withValues(alpha: 0.07),
-                  Colors.white.withValues(alpha: 0.03),
-                ],
-              ),
-              borderRadius: BorderRadius.circular(14),
-              border: Border.all(color: Colors.white.withValues(alpha: 0.1)),
+              color: _kSurface.withValues(alpha: 0.5),
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(color: _kBorderSubtle),
             ),
             child: _DetailGrid(
               entries: [
@@ -513,39 +526,26 @@ class _ProductDetailsPane extends StatelessWidget {
           ),
         ],
 
-        const SizedBox(height: 24),
+        const SizedBox(height: 22),
         Text(
-          'QUANTITY / PIECES',
-          style: TextStyle(
-            color: Colors.white.withValues(alpha: 0.45),
-            fontSize: 11,
-            fontWeight: FontWeight.w700,
-            letterSpacing: 1.1,
-          ),
+          'Quantity / Pieces',
+          style: TextStyle(color: Colors.white.withValues(alpha: 0.75), fontSize: 14.5, fontWeight: FontWeight.w600),
         ),
         const SizedBox(height: 10),
-        Container(
-          padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 6),
-          decoration: BoxDecoration(
-            color: Colors.white.withValues(alpha: 0.05),
-            borderRadius: BorderRadius.circular(10),
-            border: Border.all(color: Colors.white.withValues(alpha: 0.1)),
-          ),
-          child: Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              _QtyButton(icon: Icons.remove, onTap: onDecrement),
-              Container(
-                width: 56,
-                alignment: Alignment.center,
-                child: Text(
-                  '$quantity',
-                  style: const TextStyle(color: Colors.white, fontSize: 17, fontWeight: FontWeight.w700),
-                ),
+        Row(
+          children: [
+            _QtyButton(icon: Icons.remove, onTap: onDecrement),
+            Container(
+              width: 54,
+              alignment: Alignment.center,
+              padding: const EdgeInsets.symmetric(vertical: 10),
+              child: Text(
+                '$quantity',
+                style: const TextStyle(color: Colors.white, fontSize: 17, fontWeight: FontWeight.w600),
               ),
-              _QtyButton(icon: Icons.add, onTap: onIncrement),
-            ],
-          ),
+            ),
+            _QtyButton(icon: Icons.add, onTap: onIncrement),
+          ],
         ),
       ],
     );
@@ -577,7 +577,7 @@ class _QtyButtonState extends State<_QtyButton> {
           width: 36,
           height: 36,
           decoration: BoxDecoration(
-            color: _isHovered ? _kAmber.withValues(alpha: 0.15) : _kSurface,
+            color: _isHovered ? _kSurfaceRaised : _kSurface,
             borderRadius: BorderRadius.circular(8),
             border: Border.all(color: _isHovered ? _kAmber.withValues(alpha: 0.6) : _kBorder),
           ),
@@ -615,7 +615,7 @@ class _DetailGrid extends StatelessWidget {
       final right = i + 1 < entries.length ? entries[i + 1] : null;
       rows.add(
         Padding(
-          padding: const EdgeInsets.symmetric(vertical: 6),
+          padding: const EdgeInsets.symmetric(vertical: 5),
           child: Row(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
@@ -650,13 +650,13 @@ class _DetailLine extends StatelessWidget {
       text: TextSpan(
         children: [
           TextSpan(
-            text: '${entry.label}\n',
+            text: '${entry.label} : ',
             style: TextStyle(
-              color: Colors.white.withValues(alpha: 0.4),
-              fontSize: 11,
-              fontWeight: FontWeight.w700,
-              letterSpacing: 0.6,
-              height: 1.8,
+              color: Colors.grey.shade400,
+              fontSize: 15.5,
+              fontWeight: FontWeight.w500,
+              letterSpacing: 0.3,
+              height: 1.5,
             ),
           ),
           TextSpan(
@@ -664,9 +664,9 @@ class _DetailLine extends StatelessWidget {
             style: TextStyle(
               color: showGreen ? _kGreen : (entry.valueColor ?? const Color(0xFFF5F5F5)),
               fontSize: 15,
-              fontWeight: FontWeight.w600,
+              fontWeight: FontWeight.w500,
               letterSpacing: 0.2,
-              height: 1.4,
+              height: 1.5,
             ),
           ),
           if (showGreen)
