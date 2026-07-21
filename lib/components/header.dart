@@ -323,18 +323,22 @@ class _HeaderState extends State<Header> {
                 child: Row(
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
-                    MouseRegion(
-                      cursor: SystemMouseCursors.click,
-                      onEnter: (_) =>
-                          setState(() => _hoveredPersonIcon = true),
-                      onExit: (_) =>
-                          setState(() => _hoveredPersonIcon = false),
-                      child: Icon(
-                        Icons.person,
-                        color: _hoveredPersonIcon
-                            ? const Color.fromRGBO(245, 171, 30, 1)
-                            : Colors.white,
-                        size: isTight ? 35 : 40,
+                    GestureDetector(
+                      onTap: () => context.push('/auth'),
+                      child: MouseRegion(
+
+                        cursor: SystemMouseCursors.click,
+                        onEnter: (_) =>
+                            setState(() => _hoveredPersonIcon = true),
+                        onExit: (_) =>
+                            setState(() => _hoveredPersonIcon = false),
+                        child: Icon(
+                          Icons.person,
+                          color: _hoveredPersonIcon
+                              ? const Color.fromRGBO(245, 171, 30, 1)
+                              : Colors.white,
+                          size: isTight ? 35 : 40,
+                        ),
                       ),
                     ),
                     if (!isCompact) ...[
@@ -343,20 +347,23 @@ class _HeaderState extends State<Header> {
                         mainAxisAlignment: MainAxisAlignment.center,
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          MouseRegion(
-                            cursor: SystemMouseCursors.click,
-                            onEnter: (_) =>
-                                setState(() => _hoveredAccount = true),
-                            onExit: (_) =>
-                                setState(() => _hoveredAccount = false),
-                            child: Text(
-                              "Account",
-                              style: TextStyle(
-                                color: _hoveredAccount
-                                    ? const Color.fromRGBO(245, 171, 30, 1)
-                                    : Colors.white,
-                                fontSize: 16,
-                                fontWeight: FontWeight.w500,
+                          GestureDetector(
+                      onTap: () => context.push('/auth'),
+                            child: MouseRegion(
+                              cursor: SystemMouseCursors.click,
+                              onEnter: (_) =>
+                                  setState(() => _hoveredAccount = true),
+                              onExit: (_) =>
+                                  setState(() => _hoveredAccount = false),
+                              child: Text(
+                                "Account",
+                                style: TextStyle(
+                                  color: _hoveredAccount
+                                      ? const Color.fromRGBO(245, 171, 30, 1)
+                                      : Colors.white,
+                                  fontSize: 16,
+                                  fontWeight: FontWeight.w500,
+                                ),
                               ),
                             ),
                           ),
@@ -381,8 +388,6 @@ class _HeaderState extends State<Header> {
 
               SizedBox(width: isTight ? 10 : 20),
 
-              // Order Icon — tap navigates to the Orders page; badge shows
-              // how many distinct items are currently queued.
               GestureDetector(
                 onTap: () => context.push('/orders'),
                 child: MouseRegion(
@@ -509,8 +514,10 @@ class _HeaderState extends State<Header> {
     );
   }
 
-  Widget _buildAuthLink(String title) {
-    return MouseRegion(
+ Widget _buildAuthLink(String title) {
+  return GestureDetector(
+    onTap: () => context.push('/auth'),
+    child: MouseRegion(
       cursor: SystemMouseCursors.click,
       onEnter: (_) {
         setState(() {
@@ -540,8 +547,9 @@ class _HeaderState extends State<Header> {
           fontSize: 11,
         ),
       ),
-    );
-  }
+    ),
+  );
+}
 }
 
 class _ShopDropdownContent extends StatelessWidget {

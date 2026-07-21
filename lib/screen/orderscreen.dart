@@ -43,8 +43,8 @@ class _OrdersPageState extends State<OrdersPage> {
     super.initState();
     final user = AuthService.instance.currentUser.value;
     if (user != null) {
-      _ownerNameController.text = user.name;
-      _phoneController.text = user.phone;
+      _ownerNameController.text = user.name!;
+      
     }
     _categoriesSub = _catalogService.watchCategories().listen((categories) {
       if (!mounted) return;
@@ -665,11 +665,8 @@ class _OrdersSummaryPane extends StatelessWidget {
       padding: EdgeInsets.all(r.cardPadding),
       decoration: BoxDecoration(
         color: _kSurface,
-        borderRadius: BorderRadius.circular(16),
+        borderRadius: BorderRadius.circular(14),
         border: Border.all(color: _kBorderSubtle),
-        boxShadow: [
-          BoxShadow(color: Colors.black.withValues(alpha: 0.4), blurRadius: 24, offset: const Offset(0, 10)),
-        ],
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -679,12 +676,13 @@ class _OrdersSummaryPane extends StatelessWidget {
             children: [
               _PaneHeading(
                 icon: Icons.shopping_bag_outlined,
-                label: 'Order Items${items.isNotEmpty ? ' (${items.length})' : ''}',
+                label: 'Order Items',
                 r: r,
               ),
+             
             ],
           ),
-          SizedBox(height: r.sectionGap * 0.8),
+          SizedBox(height: r.sectionGap * 0.7),
           if (items.isEmpty)
             Container(
               width: double.infinity,
@@ -701,7 +699,7 @@ class _OrdersSummaryPane extends StatelessWidget {
               shrinkWrap: true,
               physics: const NeverScrollableScrollPhysics(),
               itemCount: items.length,
-              separatorBuilder: (_, __) => Divider(color: Colors.white.withValues(alpha: 0.06), height: r.sectionGap),
+              separatorBuilder: (_, __) => Divider(color: Colors.white.withValues(alpha: 0.06), height: r.sectionGap * 0.75),
               itemBuilder: (context, index) => _OrderRow(
                 index: index,
                 item: items[index],
@@ -710,29 +708,21 @@ class _OrdersSummaryPane extends StatelessWidget {
                     items[index].product.categoryId,
               ),
             ),
-            SizedBox(height: r.sectionGap),
-            Divider(color: Colors.white.withValues(alpha: 0.1), height: 1),
-            SizedBox(height: r.sectionGap * 0.7),
-            Container(
-              padding: EdgeInsets.symmetric(horizontal: r.cardPadding * 0.7, vertical: r.cardPadding * 0.55),
-              decoration: BoxDecoration(
-                color: _kAmber.withValues(alpha: 0.08),
-                borderRadius: BorderRadius.circular(10),
-                border: Border.all(color: _kAmber.withValues(alpha: 0.25)),
-              ),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Text(
-                    'Total Quantity',
-                    style: TextStyle(color: Colors.white, fontSize: r.bodySize + 1, fontWeight: FontWeight.w700),
-                  ),
-                  Text(
-                    '$totalUnits ${totalUnits == 1 ? 'unit' : 'units'}',
-                    style: TextStyle(color: _kAmber, fontSize: r.sectionHeadingSize + 2, fontWeight: FontWeight.w800),
-                  ),
-                ],
-              ),
+            SizedBox(height: r.sectionGap * 0.6),
+            Divider(color: Colors.white.withValues(alpha: 0.08), height: 1),
+            SizedBox(height: r.sectionGap * 0.5),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Text(
+                  'Total quantity',
+                  style: TextStyle(color: Colors.white.withValues(alpha: 0.45), fontSize: r.labelSize),
+                ),
+                Text(
+                  '$totalUnits ${totalUnits == 1 ? 'unit' : 'units'}',
+                  style: TextStyle(color: Colors.white.withValues(alpha: 0.85), fontSize: r.bodySize, fontWeight: FontWeight.w600),
+                ),
+              ],
             ),
           ],
         ],
@@ -751,7 +741,7 @@ class _OrderRow extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final product = item.product;
-    final thumbSize = r.stacked ? 60.0 : 72.0;
+    final thumbSize = r.stacked ? 52.0 : 60.0;
 
     return Row(
       crossAxisAlignment: CrossAxisAlignment.center,
@@ -793,78 +783,20 @@ class _OrderRow extends StatelessWidget {
           ),
         ),
         const SizedBox(width: 12),
-        _QtyStepper(
-          quantity: item.quantity,
-          onIncrement: () => OrderCartService.instance.updateQuantity(index, item.quantity + 1),
-          onDecrement: () => OrderCartService.instance.updateQuantity(index, item.quantity - 1),
+        Container(
+          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+          decoration: BoxDecoration(
+            color: Colors.white.withValues(alpha: 0.04),
+            borderRadius: BorderRadius.circular(7),
+          ),
+          child: Text(
+            'x${item.quantity}',
+            style: TextStyle(color: Colors.white.withValues(alpha: 0.75), fontSize: r.labelSize, fontWeight: FontWeight.w600),
+          ),
         ),
-        const SizedBox(width: 12),
+        const SizedBox(width: 10),
         _RemoveButton(onTap: () => OrderCartService.instance.removeAt(index)),
       ],
-    );
-  }
-}
-
-class _QtyStepper extends StatelessWidget {
-  final int quantity;
-  final VoidCallback onIncrement;
-  final VoidCallback onDecrement;
-
-  const _QtyStepper({required this.quantity, required this.onIncrement, required this.onDecrement});
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 4),
-      decoration: BoxDecoration(
-        color: Colors.white.withValues(alpha: 0.03),
-        borderRadius: BorderRadius.circular(8),
-        border: Border.all(color: Colors.white.withValues(alpha: 0.08)),
-      ),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          _StepperButton(icon: Icons.remove, onTap: onDecrement),
-          SizedBox(
-            width: 30,
-            child: Text(
-              '$quantity',
-              textAlign: TextAlign.center,
-              style: const TextStyle(color: Colors.white, fontSize: 14, fontWeight: FontWeight.w600),
-            ),
-          ),
-          _StepperButton(icon: Icons.add, onTap: onIncrement),
-        ],
-      ),
-    );
-  }
-}
-
-class _StepperButton extends StatefulWidget {
-  final IconData icon;
-  final VoidCallback onTap;
-  const _StepperButton({required this.icon, required this.onTap});
-
-  @override
-  State<_StepperButton> createState() => _StepperButtonState();
-}
-
-class _StepperButtonState extends State<_StepperButton> {
-  bool _isHovered = false;
-
-  @override
-  Widget build(BuildContext context) {
-    return MouseRegion(
-      cursor: SystemMouseCursors.click,
-      onEnter: (_) => setState(() => _isHovered = true),
-      onExit: (_) => setState(() => _isHovered = false),
-      child: GestureDetector(
-        onTap: widget.onTap,
-        child: Padding(
-          padding: const EdgeInsets.symmetric(vertical: 9, horizontal: 7),
-          child: Icon(widget.icon, size: 15, color: _isHovered ? _kAmber : Colors.white54),
-        ),
-      ),
     );
   }
 }
@@ -898,8 +830,6 @@ class _RemoveButtonState extends State<_RemoveButton> {
   }
 }
 
-/// Terms checkbox + the final submit button, full width beneath both
-/// panes — clearly states why it's disabled rather than just graying out.
 class _TermsAndSubmit extends StatelessWidget {
   final _OrdersResponsive r;
   final bool termsAccepted;
