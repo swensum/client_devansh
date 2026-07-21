@@ -1,5 +1,6 @@
 import 'package:devansh/models/catalogmodels.dart';
 import 'package:devansh/productwidgets/productdetail.dart';
+import 'package:devansh/screen/authscreen.dart';
 import 'package:devansh/screen/homescreen.dart';
 import 'package:devansh/screen/orderscreen.dart';
 
@@ -61,6 +62,16 @@ final GoRouter appRouter = GoRouter(
     GoRoute(
   path: '/orders',
   builder: (context, state) => const OrdersPage(),
+),
+GoRoute(
+  path: '/auth',
+  name: 'auth',
+  pageBuilder: (context, state) {
+    return _slideFromRightPage(
+      key: state.pageKey,
+      child: const AuthScreen(),
+    );
+  },
 ),
     GoRoute(
       path: '/product/:id',
