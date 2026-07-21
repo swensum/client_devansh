@@ -1,8 +1,9 @@
+import 'package:devansh/services/orderservice.dart';
 import 'package:flutter/material.dart';
 
 import 'package:devansh/models/catalogmodels.dart' hide MaterialType;
 
-const _kBg = Color.fromARGB(255, 1, 4, 7);
+const _kBg = Color(0xFF0A1929);
 const _kBgDeep = Color(0xFF060F1D);
 const _kSurface = Color(0xFF12233A);
 const _kSurfaceRaised = Color(0xFF16304F);
@@ -70,6 +71,12 @@ class _OrderDialogState extends State<_OrderDialog> {
   late Product _product;
   int _quantity = 1;
   bool _submitting = false;
+
+  // The full pool of products this dialog knows about — the product it
+  // was originally opened with, plus whatever related products were
+  // passed in. Whichever one is NOT currently shown as the main image
+  // shows up in the thumbnail strip, so switching back and forth always
+  // has something to show.
   late final List<Product> _allKnownProducts;
 
   @override
@@ -79,7 +86,7 @@ class _OrderDialogState extends State<_OrderDialog> {
 
     final seenIds = <String>{};
     _allKnownProducts = [widget.product, ...widget.relatedProducts]
-        .where((p) => seenIds.add(p.id)) 
+        .where((p) => seenIds.add(p.id)) // de-dupe by id
         .toList();
   }
 
@@ -98,7 +105,12 @@ class _OrderDialogState extends State<_OrderDialog> {
   Future<void> _submit() async {
     setState(() => _submitting = true);
 
-    await Future.delayed(const Duration(milliseconds: 600)); // placeholder
+    // Queues this item into the shared pending-orders cart — shown as a
+    // count badge on the header's order icon, and reviewed/finalized on
+    // the Orders page (where user details are collected and the real
+    // Firestore write happens).
+    await Future.delayed(const Duration(milliseconds: 400));
+    OrderCartService.instance.addItem(_product, _quantity);
 
     if (!mounted) return;
     setState(() => _submitting = false);
@@ -106,7 +118,7 @@ class _OrderDialogState extends State<_OrderDialog> {
 
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
-        content: Text('Order request for "${_product.name}" submitted.'),
+        content: Text('"${_product.name}" added to your orders.'),
         backgroundColor: _kSurfaceRaised,
         behavior: SnackBarBehavior.floating,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
@@ -117,6 +129,10 @@ class _OrderDialogState extends State<_OrderDialog> {
   @override
   Widget build(BuildContext context) {
     final product = _product;
+
+    // Brand/Material only reliably correspond to the originally-passed
+    // product; if the dialog has switched to a related product, those
+    // two rows are omitted rather than shown incorrectly.
     final isOriginalProduct = product.id == widget.product.id;
 
     final specs = <String, String?>{
@@ -137,7 +153,8 @@ class _OrderDialogState extends State<_OrderDialog> {
         constraints: const BoxConstraints(maxWidth: 820, maxHeight: 680),
         child: Container(
           decoration: BoxDecoration(
-           
+            // Subtle top-to-bottom gradient instead of a flat fill — gives
+            // the dialog some depth without introducing a new color.
             gradient: const LinearGradient(
               begin: Alignment.topCenter,
               end: Alignment.bottomCenter,
@@ -324,8 +341,6 @@ class _CloseButtonState extends State<_CloseButton> {
   }
 }
 
-/// Left pane — the main product image, plus a horizontal strip of
-/// related-product thumbnails directly beneath it.
 class _ProductImagePane extends StatelessWidget {
   final Product product;
   final List<Product> relatedProducts;

@@ -4,6 +4,8 @@ import 'package:devansh/data/catalog.dart';
 
 import 'package:devansh/models/catalogmodels.dart';
 import 'package:devansh/services/catalogservice.dart';
+
+import 'package:devansh/services/orderservice.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
@@ -379,17 +381,56 @@ class _HeaderState extends State<Header> {
 
               SizedBox(width: isTight ? 10 : 20),
 
-              // Order Icon
-              MouseRegion(
-                cursor: SystemMouseCursors.click,
-                onEnter: (_) => setState(() => _hoveredOrder = true),
-                onExit: (_) => setState(() => _hoveredOrder = false),
-                child: Icon(
-                  Icons.receipt_long,
-                  color: _hoveredOrder
-                      ? const Color.fromRGBO(245, 171, 30, 1)
-                      : Colors.white,
-                  size: isTight ? 25 : 30,
+              // Order Icon — tap navigates to the Orders page; badge shows
+              // how many distinct items are currently queued.
+              GestureDetector(
+                onTap: () => context.push('/orders'),
+                child: MouseRegion(
+                  cursor: SystemMouseCursors.click,
+                  onEnter: (_) => setState(() => _hoveredOrder = true),
+                  onExit: (_) => setState(() => _hoveredOrder = false),
+                  child: ValueListenableBuilder<List<PendingOrderItem>>(
+                    valueListenable: OrderCartService.instance.items,
+                    builder: (context, pendingItems, _) {
+                      final count = pendingItems.length;
+                      return Stack(
+                        clipBehavior: Clip.none,
+                        children: [
+                          Icon(
+                            Icons.receipt_long,
+                            color: _hoveredOrder
+                                ? const Color.fromRGBO(245, 171, 30, 1)
+                                : Colors.white,
+                            size: isTight ? 25 : 30,
+                          ),
+                          if (count > 0)
+                            Positioned(
+                              right: -6,
+                              top: -6,
+                              child: Container(
+                                padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 1),
+                                constraints: const BoxConstraints(minWidth: 16, minHeight: 16),
+                                decoration: BoxDecoration(
+                                  color: const Color.fromRGBO(245, 171, 30, 1),
+                                  borderRadius: BorderRadius.circular(10),
+                                  border: Border.all(color: const Color(0xFF1A1A1A), width: 1.5),
+                                ),
+                                child: Text(
+                                  '$count',
+                                  textAlign: TextAlign.center,
+                                  style: const TextStyle(
+                                    color: Colors.black,
+                                    fontSize: 10,
+                                    fontWeight: FontWeight.w700,
+                                    height: 1.2,
+                                  ),
+                                ),
+                              ),
+                            ),
+                        ],
+                      );
+                    },
+                  ),
                 ),
               ),
               if (isNarrow) ...[
