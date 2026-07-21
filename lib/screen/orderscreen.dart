@@ -1,10 +1,12 @@
 import 'dart:async';
 
+import 'package:devansh/models/authmodel.dart';
 import 'package:devansh/services/authservice.dart';
 import 'package:devansh/services/orderservice.dart';
 import 'package:devansh/services/catalogservice.dart';
 import 'package:devansh/models/catalogmodels.dart';
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 
 const _kBg = Colors.black;
 const _kSurface = Color(0xFF141414);
@@ -41,11 +43,11 @@ class _OrdersPageState extends State<OrdersPage> {
   @override
   void initState() {
     super.initState();
-    final user = AuthService.instance.currentUser.value;
-    if (user != null) {
-      _ownerNameController.text = user.name!;
-      
+    final currentUser = AuthService.instance.currentUser.value;
+    if (currentUser != null && currentUser.name != null) {
+      _ownerNameController.text = currentUser.name!;
     }
+
     _categoriesSub = _catalogService.watchCategories().listen((categories) {
       if (!mounted) return;
       setState(() {
@@ -90,6 +92,13 @@ class _OrdersPageState extends State<OrdersPage> {
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
       ),
     );
+  }
+
+  void _goToSignIn(BuildContext context) {
+    // Send the user to the real auth screen; router redirect will bring
+    // them back here automatically once they're signed in (see appRouter's
+    // redirect using state.uri.queryParameters['redirect']).
+    context.push('/auth?redirect=${Uri.encodeComponent('/orders')}');
   }
 
   @override
@@ -145,7 +154,7 @@ class _OrdersPageState extends State<OrdersPage> {
                                             cityController: _cityController,
                                             taxIdController: _taxIdController,
                                             noteController: _noteController,
-                                            onSignIn: () => _showSignInSheet(context),
+                                            onSignIn: () => _goToSignIn(context),
                                             onChanged: () => setState(() {}),
                                           ),
                                           SizedBox(height: r.sectionGap),
@@ -173,7 +182,7 @@ class _OrdersPageState extends State<OrdersPage> {
                                               cityController: _cityController,
                                               taxIdController: _taxIdController,
                                               noteController: _noteController,
-                                              onSignIn: () => _showSignInSheet(context),
+                                              onSignIn: () => _goToSignIn(context),
                                               onChanged: () => setState(() {}),
                                             ),
                                           ),
@@ -216,13 +225,6 @@ class _OrdersPageState extends State<OrdersPage> {
       ),
     );
   }
-
-  void _showSignInSheet(BuildContext context) {
-    showDialog(
-      context: context,
-      builder: (context) => const _SignInDialog(),
-    );
-  }
 }
 
 /// Centralizes every size that scales with screen width, computed once
@@ -254,7 +256,6 @@ class _OrdersResponsive {
 
   factory _OrdersResponsive.of(double w) {
     if (w >= 1100) {
-      // Large desktop — generous padding, real two-column layout.
       return const _OrdersResponsive(
         stacked: false,
         pageHPadding: 56,
@@ -269,7 +270,6 @@ class _OrdersResponsive {
       );
     }
     if (w >= 820) {
-      // Small desktop / large tablet — still two columns, tighter.
       return const _OrdersResponsive(
         stacked: false,
         pageHPadding: 32,
@@ -284,7 +284,6 @@ class _OrdersResponsive {
       );
     }
     if (w >= 560) {
-      // Tablet — stacked.
       return const _OrdersResponsive(
         stacked: true,
         pageHPadding: 24,
@@ -298,7 +297,6 @@ class _OrdersResponsive {
         labelSize: 12.5,
       );
     }
-    // Mobile — stacked, tight.
     return const _OrdersResponsive(
       stacked: true,
       pageHPadding: 16,
@@ -679,7 +677,6 @@ class _OrdersSummaryPane extends StatelessWidget {
                 label: 'Order Items',
                 r: r,
               ),
-             
             ],
           ),
           SizedBox(height: r.sectionGap * 0.7),
@@ -920,90 +917,6 @@ class _TermsAndSubmit extends StatelessWidget {
             ),
           ),
         ],
-      ),
-    );
-  }
-}
-
-/// Minimal sign-in dialog. Placeholder for real authentication.
-class _SignInDialog extends StatefulWidget {
-  const _SignInDialog();
-
-  @override
-  State<_SignInDialog> createState() => _SignInDialogState();
-}
-
-class _SignInDialogState extends State<_SignInDialog> {
-  final _nameController = TextEditingController();
-  final _phoneController = TextEditingController();
-
-  @override
-  void dispose() {
-    _nameController.dispose();
-    _phoneController.dispose();
-    super.dispose();
-  }
-
-  void _continue() {
-    if (_nameController.text.trim().isEmpty || _phoneController.text.trim().isEmpty) return;
-    AuthService.instance.signIn(name: _nameController.text.trim(), phone: _phoneController.text.trim());
-    Navigator.of(context).pop();
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    const r = _OrdersResponsive(
-      stacked: true,
-      pageHPadding: 0,
-      pageVPadding: 0,
-      sectionGap: 14,
-      columnGap: 0,
-      cardPadding: 0,
-      titleSize: 20,
-      sectionHeadingSize: 16,
-      bodySize: 14,
-      labelSize: 12.5,
-    );
-
-    return Dialog(
-      backgroundColor: _kSurface,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(16),
-        side: const BorderSide(color: _kBorderSubtle),
-      ),
-      child: Padding(
-        padding: const EdgeInsets.all(26),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            const Text('Sign In', style: TextStyle(color: Colors.white, fontSize: 20, fontWeight: FontWeight.bold)),
-            const SizedBox(height: 5),
-            Text(
-              'Quick sign-in to place your order.',
-              style: TextStyle(color: Colors.white.withValues(alpha: 0.5), fontSize: 13),
-            ),
-            const SizedBox(height: 22),
-            _FormField(label: 'Full Name', controller: _nameController, r: r),
-            const SizedBox(height: 14),
-            _FormField(label: 'Phone Number', controller: _phoneController, keyboardType: TextInputType.phone, r: r),
-            const SizedBox(height: 24),
-            SizedBox(
-              width: double.infinity,
-              child: ElevatedButton(
-                onPressed: _continue,
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: _kAmber,
-                  foregroundColor: Colors.black,
-                  padding: const EdgeInsets.symmetric(vertical: 13),
-                  elevation: 0,
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(9)),
-                ),
-                child: const Text('Continue', style: TextStyle(fontWeight: FontWeight.w700)),
-              ),
-            ),
-          ],
-        ),
       ),
     );
   }
