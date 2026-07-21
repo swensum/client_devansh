@@ -1,6 +1,7 @@
 import 'package:devansh/models/catalogmodels.dart';
 import 'package:devansh/productwidgets/productdetail.dart';
 import 'package:devansh/screen/homescreen.dart';
+import 'package:devansh/screen/orderscreen.dart';
 
 import 'package:devansh/screen/productscreen.dart'; // ProductsPage
 
@@ -57,6 +58,10 @@ final GoRouter appRouter = GoRouter(
         );
       },
     ),
+    GoRoute(
+  path: '/orders',
+  builder: (context, state) => const OrdersPage(),
+),
     GoRoute(
       path: '/product/:id',
       name: 'productDetail',
