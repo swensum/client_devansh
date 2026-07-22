@@ -13,9 +13,6 @@ import 'package:go_router/go_router.dart';
 
 final List<Product> kProducts = [];
 
-/// Turns a Stream into a Listenable so GoRouter can react to it via
-/// `refreshListenable`. Every time FirebaseAuth's auth state changes
-/// (sign in / sign out), this notifies GoRouter to re-run `redirect`.
 class GoRouterRefreshStream extends ChangeNotifier {
   GoRouterRefreshStream(Stream<dynamic> stream) {
     notifyListeners();
@@ -34,8 +31,6 @@ class GoRouterRefreshStream extends ChangeNotifier {
 final GoRouterRefreshStream _authRefresh =
     GoRouterRefreshStream(FirebaseAuth.instance.authStateChanges());
 
-// Routes that require the user to be signed in. Add more paths here as
-// you build out account-only features (e.g. '/checkout', '/profile').
 const List<String> _protectedPaths = ['/orders'];
 
 CustomTransitionPage<void> _slideFromRightPage({
@@ -69,14 +64,10 @@ final GoRouter appRouter = GoRouter(
     final goingToAuth = state.matchedLocation == '/auth';
     final goingToProtected = _protectedPaths.contains(state.matchedLocation);
 
-    // Not logged in and trying to reach a protected page -> send to /auth,
-    // remembering where they wanted to go so we can send them back after.
     if (!loggedIn && goingToProtected) {
       return '/auth?redirect=${Uri.encodeComponent(state.matchedLocation)}';
     }
 
-    // Already logged in but sitting on /auth -> bounce to home (or wherever
-    // they originally tried to go, if we tagged it in the query string).
     if (loggedIn && goingToAuth) {
       final redirectTo = state.uri.queryParameters['redirect'];
       return (redirectTo != null && redirectTo.isNotEmpty) ? redirectTo : '/';

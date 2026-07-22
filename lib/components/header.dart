@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:html' as html;
 import 'dart:ui';
 import 'package:devansh/data/catalog.dart';
 
@@ -53,11 +54,12 @@ class _HeaderState extends State<Header> {
     2: LayerLink(),
     3: LayerLink(),
   };
-String _shortLabel(String value, {int maxChars = 8}) {
-  final trimmed = value.trim();
-  if (trimmed.length <= maxChars) return trimmed;
-  return '${trimmed.substring(0, maxChars)}...';
-}
+  String _shortLabel(String value, {int maxChars = 8}) {
+    final trimmed = value.trim();
+    if (trimmed.length <= maxChars) return trimmed;
+    return '${trimmed.substring(0, maxChars)}...';
+  }
+
   OverlayEntry? _overlayEntry;
   Timer? _closeTimer;
 
@@ -133,8 +135,9 @@ String _shortLabel(String value, {int maxChars = 8}) {
                           child: Container(
                             width: isShop ? 420 : 180,
                             decoration: BoxDecoration(
-                              color: Colors.white
-                                  .withValues(alpha: 0.15), // frosted glass tint
+                              color: Colors.white.withValues(
+                                alpha: 0.15,
+                              ), // frosted glass tint
                               borderRadius: BorderRadius.circular(8),
                               border: Border.all(
                                 color: Colors.white.withValues(alpha: 0.3),
@@ -240,6 +243,17 @@ String _shortLabel(String value, {int maxChars = 8}) {
     }
   }
 
+  /// Signs the user out, then hard-reloads the whole website (like pressing
+  /// F5). This guarantees every bit of in-memory state — cart, catalog
+  /// listeners, cached widgets, everything — is wiped clean, not just the
+  /// auth state.
+  Future<void> _handleSignOut() async {
+    await AuthService.instance.signOut();
+    html.window.location.reload();
+  }
+void _reloadHome() {
+  html.window.location.reload();
+}
   @override
   void dispose() {
     _isDisposed = true;
@@ -324,17 +338,19 @@ String _shortLabel(String value, {int maxChars = 8}) {
 
               SizedBox(width: isTight ? 10 : 40),
 
-             //account section
+              //account section
               // Account Section
               ValueListenableBuilder<AppUser?>(
                 valueListenable: AuthService.instance.currentUser,
                 builder: (context, user, _) {
                   final signedIn = user != null;
                   final accountLabel = signedIn
-    ? _shortLabel(
-        user.name?.isNotEmpty == true ? user.name! : (user.email ?? 'My Account'),
-      )
-    : 'Account';
+                      ? _shortLabel(
+                          user.name?.isNotEmpty == true
+                              ? user.name!
+                              : (user.email ?? 'My Account'),
+                        )
+                      : 'Account';
 
                   return SizedBox(
                     height: 80,
@@ -381,7 +397,11 @@ String _shortLabel(String value, {int maxChars = 8}) {
                                     style: TextStyle(
                                       color: _hoveredAccount
                                           ? const Color.fromRGBO(
-                                              245, 171, 30, 1)
+                                              245,
+                                              171,
+                                              30,
+                                              1,
+                                            )
                                           : Colors.white,
                                       fontSize: 16,
                                       fontWeight: FontWeight.w500,
@@ -397,28 +417,32 @@ String _shortLabel(String value, {int maxChars = 8}) {
                                     const Text(
                                       " | ",
                                       style: TextStyle(
-                                          color: Colors.white70, fontSize: 12),
+                                        color: Colors.white70,
+                                        fontSize: 12,
+                                      ),
                                     ),
                                     _buildAuthLink("Login"),
                                   ],
                                 )
                               else
                                 GestureDetector(
-                                  onTap: () async {
-                                    await AuthService.instance.signOut();
-                                  },
+                                  onTap: _handleSignOut,
                                   child: MouseRegion(
                                     cursor: SystemMouseCursors.click,
                                     onEnter: (_) =>
                                         setState(() => _hoveredSignOut = true),
-                                    onExit: (_) => setState(
-                                        () => _hoveredSignOut = false),
+                                    onExit: (_) =>
+                                        setState(() => _hoveredSignOut = false),
                                     child: Text(
                                       "Sign out",
                                       style: TextStyle(
                                         color: _hoveredSignOut
                                             ? const Color.fromRGBO(
-                                                245, 171, 30, 1)
+                                                245,
+                                                171,
+                                                30,
+                                                1,
+                                              )
                                             : Colors.white70,
                                         fontSize: 11,
                                       ),
@@ -461,12 +485,21 @@ String _shortLabel(String value, {int maxChars = 8}) {
                               right: -6,
                               top: -6,
                               child: Container(
-                                padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 1),
-                                constraints: const BoxConstraints(minWidth: 16, minHeight: 16),
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 5,
+                                  vertical: 1,
+                                ),
+                                constraints: const BoxConstraints(
+                                  minWidth: 16,
+                                  minHeight: 16,
+                                ),
                                 decoration: BoxDecoration(
                                   color: const Color.fromRGBO(245, 171, 30, 1),
                                   borderRadius: BorderRadius.circular(10),
-                                  border: Border.all(color: const Color(0xFF1A1A1A), width: 1.5),
+                                  border: Border.all(
+                                    color: const Color(0xFF1A1A1A),
+                                    width: 1.5,
+                                  ),
                                 ),
                                 child: Text(
                                   '$count',
@@ -517,8 +550,9 @@ String _shortLabel(String value, {int maxChars = 8}) {
     required int index,
   }) {
     final isHovered = _hoveredIndex == index;
-    final Color itemColor =
-        isHovered ? const Color.fromRGBO(245, 171, 30, 1) : Colors.white;
+    final Color itemColor = isHovered
+        ? const Color.fromRGBO(245, 171, 30, 1)
+        : Colors.white;
 
     Widget content = Row(
       mainAxisSize: MainAxisSize.min,
@@ -542,14 +576,17 @@ String _shortLabel(String value, {int maxChars = 8}) {
       ],
     );
 
-    if (!showArrow) {
-      return MouseRegion(
-        cursor: SystemMouseCursors.click,
-        onEnter: (_) => setState(() => _hoveredIndex = index),
-        onExit: (_) => setState(() => _hoveredIndex = -1),
-        child: content,
-      );
-    }
+   if (!showArrow) {
+  return MouseRegion(
+    cursor: SystemMouseCursors.click,
+    onEnter: (_) => setState(() => _hoveredIndex = index),
+    onExit: (_) => setState(() => _hoveredIndex = -1),
+    child: GestureDetector(
+      onTap: _reloadHome,
+      child: content,
+    ),
+  );
+}
 
     return CompositedTransformTarget(
       link: _layerLinks[index]!,
@@ -588,7 +625,8 @@ String _shortLabel(String value, {int maxChars = 8}) {
         child: Text(
           title,
           style: TextStyle(
-            color: (title == "Register" && _hoveredRegister) ||
+            color:
+                (title == "Register" && _hoveredRegister) ||
                     (title == "Login" && _hoveredLogin)
                 ? const Color.fromRGBO(245, 171, 30, 1)
                 : Colors.white70,
@@ -618,8 +656,9 @@ class _ShopDropdownContent extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     // Exclude generic/placeholder companies from the nav dropdown.
-    final visibleCompanies =
-        companies.where((c) => c.id != 'unknown' && c.id != 'others').toList();
+    final visibleCompanies = companies
+        .where((c) => c.id != 'unknown' && c.id != 'others')
+        .toList();
 
     return IntrinsicHeight(
       child: Row(
@@ -776,10 +815,7 @@ class _DropdownList extends StatefulWidget {
   final List<String> items;
   final void Function(String item) onSelect;
 
-  const _DropdownList({
-    required this.items,
-    required this.onSelect,
-  });
+  const _DropdownList({required this.items, required this.onSelect});
 
   @override
   State<_DropdownList> createState() => _DropdownListState();
@@ -805,10 +841,7 @@ class _DropdownListState extends State<_DropdownList> {
             onTap: () => widget.onSelect(item),
             child: Container(
               width: double.infinity,
-              padding: const EdgeInsets.symmetric(
-                horizontal: 16,
-                vertical: 12,
-              ),
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
               decoration: BoxDecoration(
                 color: isHovered
                     ? const Color.fromRGBO(245, 171, 30, 0.1)
@@ -945,8 +978,12 @@ class _MobileSidebarState extends State<_MobileSidebar>
                               children: [
                                 // Header with gold underline
                                 Padding(
-                                  padding:
-                                      const EdgeInsets.fromLTRB(16, 12, 8, 8),
+                                  padding: const EdgeInsets.fromLTRB(
+                                    16,
+                                    12,
+                                    8,
+                                    8,
+                                  ),
                                   child: Column(
                                     crossAxisAlignment:
                                         CrossAxisAlignment.start,
@@ -965,8 +1002,10 @@ class _MobileSidebarState extends State<_MobileSidebar>
                                           ),
                                           IconButton(
                                             onPressed: close,
-                                            icon: const Icon(Icons.close,
-                                                color: Colors.white),
+                                            icon: const Icon(
+                                              Icons.close,
+                                              color: Colors.white,
+                                            ),
                                             splashRadius: 20,
                                           ),
                                         ],
@@ -976,7 +1015,11 @@ class _MobileSidebarState extends State<_MobileSidebar>
                                         height: 2,
                                         width: 30,
                                         color: const Color.fromRGBO(
-                                            245, 171, 30, 1),
+                                          245,
+                                          171,
+                                          30,
+                                          1,
+                                        ),
                                       ),
                                     ],
                                   ),
@@ -1074,8 +1117,7 @@ class _MobileNavMenu extends StatelessWidget {
                       fontWeight: FontWeight.w500,
                     ),
                   ),
-                  onTap: () =>
-                      onNavigate('/products?category=${category.id}'),
+                  onTap: () => onNavigate('/products?category=${category.id}'),
                 ),
                 for (final type in Catalog.typesInCategory(
                   products,
@@ -1121,8 +1163,7 @@ class _MobileNavMenu extends StatelessWidget {
                         fontSize: 13,
                       ),
                     ),
-                    onTap: () =>
-                        onNavigate('/products?company=${company.id}'),
+                    onTap: () => onNavigate('/products?company=${company.id}'),
                   ),
               ],
             ],
@@ -1131,17 +1172,17 @@ class _MobileNavMenu extends StatelessWidget {
 
         final subItems = dropdownItems[index];
 
-        if (subItems == null) {
-          // "Home" – just a tappable row
-          return ListTile(
-            dense: true,
-            title: Text(
-              label,
-              style: const TextStyle(color: Colors.white, fontSize: 14),
-            ),
-            onTap: () => onSelect(label),
-          );
-        }
+       if (subItems == null) {
+  // "Home" – reload the whole site, just like the sign-out flow.
+  return ListTile(
+    dense: true,
+    title: Text(
+      label,
+      style: const TextStyle(color: Colors.white, fontSize: 14),
+    ),
+    onTap: () => html.window.location.reload(),
+  );
+}
 
         // "Collection" / "Pages" – generic sub-items, unchanged behavior.
         return ExpansionTile(
@@ -1159,10 +1200,7 @@ class _MobileNavMenu extends StatelessWidget {
                   contentPadding: const EdgeInsets.only(left: 32, right: 16),
                   title: Text(
                     item,
-                    style: const TextStyle(
-                      color: Colors.white70,
-                      fontSize: 13,
-                    ),
+                    style: const TextStyle(color: Colors.white70, fontSize: 13),
                   ),
                   onTap: () => onSelect(item),
                 ),
