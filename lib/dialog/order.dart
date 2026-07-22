@@ -612,8 +612,7 @@ class _DetailEntry {
   const _DetailEntry({
     required this.label,
     required this.value,
-    this.valueColor,
-    this.isAvailability = false,
+    this.isAvailability = false, this.valueColor,
   });
 }
 

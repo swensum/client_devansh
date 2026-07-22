@@ -696,7 +696,7 @@ class _OrdersSummaryPane extends StatelessWidget {
               shrinkWrap: true,
               physics: const NeverScrollableScrollPhysics(),
               itemCount: items.length,
-              separatorBuilder: (_, __) => Divider(color: Colors.white.withValues(alpha: 0.06), height: r.sectionGap * 0.75),
+              separatorBuilder: (_, _) => Divider(color: Colors.white.withValues(alpha: 0.06), height: r.sectionGap * 0.75),
               itemBuilder: (context, index) => _OrderRow(
                 index: index,
                 item: items[index],
