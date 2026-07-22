@@ -23,11 +23,21 @@ class _AuthScreenState extends State<AuthScreen> {
   bool _linkSent = false;
   String? _error;
 
+  // Set when the current URL is a Firebase sign-in link. We do NOT
+  // auto-complete sign-in — we wait for an explicit tap on "Complete
+  // Sign In" below. This protects against email security scanners
+  // (Gmail/Outlook link-safety bots) that pre-visit and execute links
+  // in emails, which would otherwise silently consume the one-time
+  // link before the real user clicks it.
+  String? _pendingLinkUrl;
+  String? _detectedEmail;
+  bool _completingLink = false;
+
   @override
   void initState() {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      _completeEmailLinkSignInIfPresent();
+      _detectEmailLink();
     });
   }
 
@@ -37,7 +47,7 @@ class _AuthScreenState extends State<AuthScreen> {
     super.dispose();
   }
 
-  Future<void> _completeEmailLinkSignInIfPresent() async {
+  Future<void> _detectEmailLink() async {
     final currentUrl = Uri.base.toString();
     final auth = AuthService.instance;
 
@@ -48,18 +58,56 @@ class _AuthScreenState extends State<AuthScreen> {
 
     if (email == null || email.isEmpty) {
       final uri = Uri.parse(currentUrl);
-      final emailFromUrl = uri.queryParameters['email'];
-
-      if (emailFromUrl != null && emailFromUrl.isNotEmpty) {
-        email = emailFromUrl;
-      } else {
-        if (!mounted) return;
-        email = await _promptForEmail();
-        if (email == null || email.isEmpty) return;
-      }
+      email = uri.queryParameters['email'];
     }
 
-    await _finishEmailLinkSignIn(email, currentUrl);
+    if (!mounted) return;
+    setState(() {
+      _pendingLinkUrl = currentUrl;
+      _detectedEmail = email;
+    });
+  }
+
+  Future<void> _completePendingLinkSignIn() async {
+    if (_pendingLinkUrl == null) return;
+
+    String? email = _detectedEmail;
+    if (email == null || email.isEmpty) {
+      email = await _promptForEmail();
+      if (email == null || email.isEmpty) return;
+    }
+
+    setState(() {
+      _completingLink = true;
+      _error = null;
+    });
+
+    try {
+      await AuthService.instance.signInWithEmailLink(email, _pendingLinkUrl!);
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.remove(_kPendingEmailKey);
+
+      if (!mounted) return;
+      context.go('/');
+    } on FirebaseAuthException catch (e) {
+      if (!mounted) return;
+      setState(() {
+        _pendingLinkUrl = null;
+        _error = e.code == 'invalid-action-code' || e.code == 'expired-action-code'
+            ? 'This sign-in link has already been used or has expired. '
+              'This can happen if your email provider auto-scans links for '
+              'safety. Please request a new one below.'
+            : e.message ?? 'That sign-in link is invalid or expired.';
+      });
+    } catch (e) {
+      if (!mounted) return;
+      setState(() {
+        _pendingLinkUrl = null;
+        _error = 'Something went wrong completing sign-in. Please request a new link.';
+      });
+    } finally {
+      if (mounted) setState(() => _completingLink = false);
+    }
   }
 
   Future<String?> _promptForEmail() async {
@@ -105,28 +153,7 @@ class _AuthScreenState extends State<AuthScreen> {
     );
   }
 
-  Future<void> _finishEmailLinkSignIn(String email, String link) async {
-    try {
-      await AuthService.instance.signInWithEmailLink(email, link);
-      final prefs = await SharedPreferences.getInstance();
-      await prefs.remove(_kPendingEmailKey);
-
-      if (!mounted) return;
-      setState(() {
-        _error = null;
-        _linkSent = false;
-      });
-      context.go('/'); // <-- add this line
-    } on FirebaseAuthException catch (e) {
-      if (!mounted) return;
-      setState(() => _error = e.message ?? 'That sign-in link is invalid or expired.');
-    } catch (e) {
-      if (!mounted) return;
-      setState(() => _error = 'Something went wrong completing sign-in.');
-    }
-  }
-
-   Future<void> _signInWithGoogle() async {
+  Future<void> _signInWithGoogle() async {
     setState(() {
       _googleLoading = true;
       _error = null;
@@ -134,7 +161,7 @@ class _AuthScreenState extends State<AuthScreen> {
     try {
       await AuthService.instance.signInWithGoogle();
       if (!mounted) return;
-      context.go('/'); // <-- add this line
+      context.go('/');
     } on FirebaseAuthException catch (e) {
       if (mounted) setState(() => _error = e.message ?? 'Google sign-in failed.');
     } catch (e) {
@@ -211,6 +238,71 @@ class _AuthScreenState extends State<AuthScreen> {
                   style: TextStyle(color: Colors.white.withValues(alpha: 0.55), fontSize: 14),
                 ),
                 const SizedBox(height: 32),
+
+                // --- Pending email-link confirmation card ---
+                if (_pendingLinkUrl != null) ...[
+                  Container(
+                    width: double.infinity,
+                    padding: const EdgeInsets.all(18),
+                    decoration: BoxDecoration(
+                      color: _kAmber.withValues(alpha: 0.08),
+                      borderRadius: BorderRadius.circular(10),
+                      border: Border.all(color: _kAmber.withValues(alpha: 0.25)),
+                    ),
+                    child: Column(
+                      children: [
+                        const Icon(Icons.link, color: _kAmber, size: 28),
+                        const SizedBox(height: 10),
+                        const Text(
+                          'Sign-in link detected',
+                          style: TextStyle(color: Colors.white, fontWeight: FontWeight.w700),
+                        ),
+                        const SizedBox(height: 6),
+                        Text(
+                          _detectedEmail != null
+                              ? 'Tap below to finish signing in as $_detectedEmail.'
+                              : 'Tap below to finish signing in.',
+                          textAlign: TextAlign.center,
+                          style: TextStyle(color: Colors.white.withValues(alpha: 0.6), fontSize: 13, height: 1.4),
+                        ),
+                        const SizedBox(height: 16),
+                        SizedBox(
+                          width: double.infinity,
+                          child: ElevatedButton(
+                            onPressed: _completingLink ? null : _completePendingLinkSignIn,
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: _kAmber,
+                              foregroundColor: Colors.black,
+                              padding: const EdgeInsets.symmetric(vertical: 13),
+                              elevation: 0,
+                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(9)),
+                            ),
+                            child: _completingLink
+                                ? const SizedBox(
+                                    width: 18,
+                                    height: 18,
+                                    child: CircularProgressIndicator(strokeWidth: 2, color: Colors.black),
+                                  )
+                                : const Text('Complete Sign In', style: TextStyle(fontWeight: FontWeight.w700)),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(height: 24),
+                  Row(
+                    children: [
+                      Expanded(child: Divider(color: Colors.white.withValues(alpha: 0.12))),
+                      Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 12),
+                        child: Text('or', style: TextStyle(color: Colors.white.withValues(alpha: 0.4), fontSize: 12)),
+                      ),
+                      Expanded(child: Divider(color: Colors.white.withValues(alpha: 0.12))),
+                    ],
+                  ),
+                  const SizedBox(height: 20),
+                ],
+
                 SizedBox(
                   width: double.infinity,
                   child: OutlinedButton.icon(
