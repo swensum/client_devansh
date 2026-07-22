@@ -2,12 +2,12 @@ import 'package:devansh/services/authservice.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 
 const _kBg = Colors.black;
 const _kSurface = Color(0xFF141414);
 const _kAmber = Color.fromRGBO(245, 171, 30, 1);
-const _kPendingEmailKey = 'auth_pending_email';
+
+enum _AuthMode { signIn, signUp }
 
 class AuthScreen extends StatefulWidget {
   const AuthScreen({super.key});
@@ -18,148 +18,185 @@ class AuthScreen extends StatefulWidget {
 
 class _AuthScreenState extends State<AuthScreen> {
   final _emailController = TextEditingController();
+  final _passwordController = TextEditingController();
+  final _confirmPasswordController = TextEditingController();
+
+  _AuthMode _mode = _AuthMode.signIn;
+  bool _obscurePassword = true;
+  bool _obscureConfirmPassword = true;
+  bool _rememberMe = true;
+
   bool _googleLoading = false;
-  bool _emailLoading = false;
-  bool _linkSent = false;
+  bool _submitLoading = false;
   String? _error;
 
-  // Set when the current URL is a Firebase sign-in link. We do NOT
-  // auto-complete sign-in — we wait for an explicit tap on "Complete
-  // Sign In" below. This protects against email security scanners
-  // (Gmail/Outlook link-safety bots) that pre-visit and execute links
-  // in emails, which would otherwise silently consume the one-time
-  // link before the real user clicks it.
-  String? _pendingLinkUrl;
-  String? _detectedEmail;
-  bool _completingLink = false;
+  // --- In-app "set new password" flow (reached via the reset-password
+  // email link, which points back into this app instead of Firebase's
+  // generic hosted page) ---
+  bool _isPasswordResetMode = false;
+  bool _resetVerifying = true;
+  String? _resetOobCode;
+  String? _resetEmail;
+  String? _resetError;
+  bool _resetSubmitting = false;
+  final _newPasswordController = TextEditingController();
+  final _confirmNewPasswordController = TextEditingController();
+  bool _obscureNewPassword = true;
+  bool _obscureConfirmNewPassword = true;
 
   @override
   void initState() {
     super.initState();
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      _detectEmailLink();
-    });
+    _checkForPasswordResetLink();
   }
 
   @override
   void dispose() {
     _emailController.dispose();
+    _passwordController.dispose();
+    _confirmPasswordController.dispose();
+    _newPasswordController.dispose();
+    _confirmNewPasswordController.dispose();
     super.dispose();
   }
 
-  Future<void> _detectEmailLink() async {
-    final currentUrl = Uri.base.toString();
-    final auth = AuthService.instance;
+  void _checkForPasswordResetLink() {
+    final params = Uri.base.queryParameters;
+    final mode = params['mode'];
+    final oobCode = params['oobCode'];
 
-    if (!auth.isSignInWithEmailLink(currentUrl)) return;
-
-    final prefs = await SharedPreferences.getInstance();
-    String? email = prefs.getString(_kPendingEmailKey);
-
-    if (email == null || email.isEmpty) {
-      final uri = Uri.parse(currentUrl);
-      email = uri.queryParameters['email'];
+    if (mode != 'resetPassword' || oobCode == null || oobCode.isEmpty) {
+      return;
     }
 
-    if (!mounted) return;
     setState(() {
-      _pendingLinkUrl = currentUrl;
-      _detectedEmail = email;
+      _isPasswordResetMode = true;
+      _resetOobCode = oobCode;
+      _resetVerifying = true;
     });
+
+    _verifyResetCode(oobCode);
   }
 
-  Future<void> _completePendingLinkSignIn() async {
-    if (_pendingLinkUrl == null) return;
-
-    String? email = _detectedEmail;
-    if (email == null || email.isEmpty) {
-      email = await _promptForEmail();
-      if (email == null || email.isEmpty) return;
-    }
-
-    setState(() {
-      _completingLink = true;
-      _error = null;
-    });
-
+  Future<void> _verifyResetCode(String code) async {
     try {
-      await AuthService.instance.signInWithEmailLink(email, _pendingLinkUrl!);
-      final prefs = await SharedPreferences.getInstance();
-      await prefs.remove(_kPendingEmailKey);
-
+      final email = await AuthService.instance.verifyPasswordResetCode(code);
       if (!mounted) return;
-      context.go('/');
+      setState(() {
+        _resetEmail = email;
+        _resetVerifying = false;
+      });
     } on FirebaseAuthException catch (e) {
       if (!mounted) return;
       setState(() {
-        _pendingLinkUrl = null;
-        _error = e.code == 'invalid-action-code' || e.code == 'expired-action-code'
-            ? 'This sign-in link has already been used or has expired. '
-              'This can happen if your email provider auto-scans links for '
-              'safety. Please request a new one below.'
-            : e.message ?? 'That sign-in link is invalid or expired.';
+        _resetError = e.code == 'expired-action-code'
+            ? 'This reset link has expired. Please request a new one.'
+            : e.code == 'invalid-action-code'
+                ? 'This reset link is invalid or has already been used.'
+                : (e.message ?? 'Could not verify this reset link.');
+        _resetVerifying = false;
       });
     } catch (e) {
       if (!mounted) return;
       setState(() {
-        _pendingLinkUrl = null;
-        _error = 'Something went wrong completing sign-in. Please request a new link.';
+        _resetError = 'Could not verify this reset link.';
+        _resetVerifying = false;
       });
-    } finally {
-      if (mounted) setState(() => _completingLink = false);
     }
   }
 
-  Future<String?> _promptForEmail() async {
-    final controller = TextEditingController();
-    return showDialog<String>(
-      context: context,
-      barrierDismissible: false,
-      builder: (context) => AlertDialog(
-        backgroundColor: _kSurface,
-        title: const Text('Confirm your email', style: TextStyle(color: Colors.white)),
-        content: TextField(
-          controller: controller,
-          autofocus: true,
-          keyboardType: TextInputType.emailAddress,
-          style: const TextStyle(color: Colors.white),
-          decoration: InputDecoration(
-            hintText: 'you@example.com',
-            hintStyle: TextStyle(color: Colors.white.withValues(alpha: 0.3)),
-            filled: true,
-            fillColor: Colors.white.withValues(alpha: 0.04),
-            border: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(9),
-              borderSide: BorderSide(color: Colors.white.withValues(alpha: 0.08)),
+  Future<void> _submitNewPassword() async {
+    if (_resetSubmitting) return;
+
+    final newPassword = _newPasswordController.text;
+    final confirm = _confirmNewPasswordController.text;
+
+    if (newPassword.length < 6) {
+      setState(() => _resetError = 'Password must be at least 6 characters.');
+      return;
+    }
+    if (newPassword != confirm) {
+      setState(() => _resetError = 'Passwords do not match.');
+      return;
+    }
+
+    setState(() {
+      _resetSubmitting = true;
+      _resetError = null;
+    });
+
+    try {
+      await AuthService.instance.confirmPasswordReset(_resetOobCode!, newPassword);
+      if (!mounted) return;
+
+      await showDialog<void>(
+        context: context,
+        builder: (context) => AlertDialog(
+          backgroundColor: _kSurface,
+          title: const Text('Password updated', style: TextStyle(color: Colors.white)),
+          content: Text(
+            'Your password has been changed. You can now sign in with your new password.',
+            style: TextStyle(color: Colors.white.withValues(alpha: 0.7), fontSize: 13.5),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: const Text('Continue', style: TextStyle(color: _kAmber, fontWeight: FontWeight.w700)),
             ),
-          ),
+          ],
         ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('Cancel', style: TextStyle(color: Colors.grey)),
-          ),
-          TextButton(
-            onPressed: () {
-              final email = controller.text.trim();
-              if (email.isNotEmpty && email.contains('@')) {
-                Navigator.pop(context, email);
-              }
-            },
-            child: const Text('Confirm', style: TextStyle(color: _kAmber)),
-          ),
-        ],
-      ),
-    );
+      );
+
+      if (!mounted) return;
+      setState(() {
+        _isPasswordResetMode = false;
+        _resetOobCode = null;
+        _resetEmail = null;
+        _newPasswordController.clear();
+        _confirmNewPasswordController.clear();
+        _mode = _AuthMode.signIn;
+      });
+      // Clean the reset params out of the address bar.
+      context.go('/auth');
+    } on FirebaseAuthException catch (e) {
+      if (!mounted) return;
+      setState(() => _resetError = e.message ?? 'Could not update your password.');
+    } catch (e) {
+      if (!mounted) return;
+      setState(() => _resetError = 'Could not update your password.');
+    } finally {
+      if (mounted) setState(() => _resetSubmitting = false);
+    }
+  }
+
+  void _switchMode(_AuthMode mode) {
+    setState(() {
+      _mode = mode;
+      _error = null;
+    });
   }
 
   Future<void> _signInWithGoogle() async {
+    if (_googleLoading) return;
     setState(() {
       _googleLoading = true;
       _error = null;
     });
     try {
       await AuthService.instance.signInWithGoogle();
+      if (!mounted) return;
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: const Text('Signed in successfully!'),
+          backgroundColor: _kSurface,
+          behavior: SnackBarBehavior.floating,
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+          duration: const Duration(seconds: 2),
+        ),
+      );
+
+      await Future.delayed(const Duration(milliseconds: 700));
       if (!mounted) return;
       context.go('/');
     } on FirebaseAuthException catch (e) {
@@ -171,142 +208,242 @@ class _AuthScreenState extends State<AuthScreen> {
     }
   }
 
-  Future<void> _sendEmailLink() async {
+  String? _validate() {
     final email = _emailController.text.trim();
+    final password = _passwordController.text;
+
     if (email.isEmpty || !email.contains('@')) {
-      setState(() => _error = 'Enter a valid email address.');
+      return 'Enter a valid email address.';
+    }
+    if (password.isEmpty || password.length < 6) {
+      return 'Password must be at least 6 characters.';
+    }
+    if (_mode == _AuthMode.signUp &&
+        password != _confirmPasswordController.text) {
+      return 'Passwords do not match.';
+    }
+    return null;
+  }
+
+  Future<void> _submit() async {
+    if (_submitLoading) return;
+
+    final validationError = _validate();
+    if (validationError != null) {
+      setState(() => _error = validationError);
       return;
     }
 
+    final email = _emailController.text.trim();
+    final password = _passwordController.text;
+    final wasSignIn = _mode == _AuthMode.signIn;
+
     setState(() {
-      _emailLoading = true;
+      _submitLoading = true;
       _error = null;
     });
 
     try {
-      final baseUrl = Uri.base;
-      final redirectUrl = baseUrl.replace(
-        queryParameters: {
-          ...baseUrl.queryParameters,
-          'email': email,
-        },
-      );
-
-      final actionCodeSettings = ActionCodeSettings(
-        url: redirectUrl.toString(),
-        handleCodeInApp: true,
-      );
-
-      await AuthService.instance.sendSignInLinkToEmail(email, actionCodeSettings);
-
-      final prefs = await SharedPreferences.getInstance();
-      await prefs.setString(_kPendingEmailKey, email);
-
+      if (wasSignIn) {
+        await AuthService.instance.signInWithEmailPassword(
+          email,
+          password,
+          rememberMe: _rememberMe,
+        );
+      } else {
+        await AuthService.instance.signUpWithEmailPassword(
+          email,
+          password,
+          rememberMe: _rememberMe,
+        );
+      }
       if (!mounted) return;
-      setState(() {
-        _linkSent = true;
-        _error = null;
-      });
+
+      // Confirm success before navigating away so the user actually sees it.
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(wasSignIn ? 'Signed in successfully!' : 'Account created successfully!'),
+          backgroundColor: _kSurface,
+          behavior: SnackBarBehavior.floating,
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+          duration: const Duration(seconds: 2),
+        ),
+      );
+
+      await Future.delayed(const Duration(milliseconds: 700));
+      if (!mounted) return;
+      context.go('/');
     } on FirebaseAuthException catch (e) {
-      if (mounted) setState(() => _error = e.message ?? 'Could not send sign-in link.');
+      if (!mounted) return;
+      setState(() => _error = _friendlyAuthError(e.code) ?? e.message);
     } catch (e) {
-      if (mounted) setState(() => _error = 'An error occurred. Please try again.');
+      if (!mounted) return;
+      setState(() => _error = 'Something went wrong. Please try again.');
     } finally {
-      if (mounted) setState(() => _emailLoading = false);
+      if (mounted) setState(() => _submitLoading = false);
     }
+  }
+
+  String? _friendlyAuthError(String code) {
+    switch (code) {
+      case 'user-not-found':
+        return 'No account found with that email. Try creating one instead.';
+      case 'wrong-password':
+      case 'invalid-credential':
+        return 'Incorrect email or password.';
+      case 'email-already-in-use':
+        return 'An account already exists with that email. Try signing in instead.';
+      case 'weak-password':
+        return 'That password is too weak. Use at least 6 characters.';
+      case 'invalid-email':
+        return 'That email address looks invalid.';
+      case 'too-many-requests':
+        return 'Too many attempts. Please wait a moment and try again.';
+      default:
+        return null;
+    }
+  }
+
+  Future<void> _showForgotPasswordDialog() async {
+    final controller = TextEditingController(text: _emailController.text.trim());
+    bool sending = false;
+    String? localError;
+
+    await showDialog<void>(
+      context: context,
+      builder: (context) {
+        return StatefulBuilder(
+          builder: (context, setDialogState) {
+            return AlertDialog(
+              backgroundColor: _kSurface,
+              title: const Text('Reset your password', style: TextStyle(color: Colors.white)),
+              content: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'Enter your account email. We\'ll send a link that opens right back '
+                    'here so you can set a new password.',
+                    style: TextStyle(color: Colors.white.withValues(alpha: 0.6), fontSize: 13),
+                  ),
+                  const SizedBox(height: 16),
+                  TextField(
+                    controller: controller,
+                    autofocus: true,
+                    keyboardType: TextInputType.emailAddress,
+                    style: const TextStyle(color: Colors.white),
+                    decoration: InputDecoration(
+                      hintText: 'you@example.com',
+                      hintStyle: TextStyle(color: Colors.white.withValues(alpha: 0.3)),
+                      filled: true,
+                      fillColor: Colors.white.withValues(alpha: 0.04),
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(9),
+                        borderSide: BorderSide(color: Colors.white.withValues(alpha: 0.08)),
+                      ),
+                    ),
+                  ),
+                  if (localError != null) ...[
+                    const SizedBox(height: 10),
+                    Text(localError!, style: const TextStyle(color: Colors.redAccent, fontSize: 12.5)),
+                  ],
+                ],
+              ),
+              actions: [
+                TextButton(
+                  onPressed: () => Navigator.pop(context),
+                  child: const Text('Close', style: TextStyle(color: Colors.grey)),
+                ),
+                TextButton(
+                  onPressed: () async {
+                    if (sending) return;
+                    final email = controller.text.trim();
+                    if (email.isEmpty || !email.contains('@')) {
+                      setDialogState(() => localError = 'Enter a valid email address.');
+                      return;
+                    }
+                    setDialogState(() {
+                      sending = true;
+                      localError = null;
+                    });
+                    try {
+                      await AuthService.instance.sendPasswordResetEmail(email);
+                      if (!context.mounted) return;
+                      Navigator.pop(context); // close the dialog — done.
+                      ScaffoldMessenger.of(this.context).showSnackBar(
+                        SnackBar(
+                          content: Text('Reset link sent to $email. Check your inbox (and spam folder).'),
+                          backgroundColor: _kSurface,
+                          behavior: SnackBarBehavior.floating,
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                        ),
+                      );
+                    } on FirebaseAuthException catch (e) {
+                      setDialogState(() {
+                        localError = e.code == 'user-not-found'
+                            ? 'No account found with that email.'
+                            : (e.message ?? 'Could not send reset email.');
+                        sending = false;
+                      });
+                    } catch (e) {
+                      setDialogState(() {
+                        localError = 'Could not send reset email.';
+                        sending = false;
+                      });
+                    }
+                  },
+                  child: sending
+                      ? const SizedBox(
+                          width: 16,
+                          height: 16,
+                          child: CircularProgressIndicator(strokeWidth: 2, color: _kAmber),
+                        )
+                      : const Text('Send Reset Link', style: TextStyle(color: _kAmber)),
+                ),
+              ],
+            );
+          },
+        );
+      },
+    );
   }
 
   @override
   Widget build(BuildContext context) {
+    if (_isPasswordResetMode) {
+      return _buildResetPasswordScreen();
+    }
+
+    final isSignIn = _mode == _AuthMode.signIn;
+
     return Scaffold(
       backgroundColor: _kBg,
       body: Center(
         child: ConstrainedBox(
           constraints: const BoxConstraints(maxWidth: 380),
-          child: Padding(
+          child: SingleChildScrollView(
             padding: const EdgeInsets.all(24),
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
-                const Text(
-                  'Sign in',
-                  style: TextStyle(color: Colors.white, fontSize: 26, fontWeight: FontWeight.bold),
+                Text(
+                  isSignIn ? 'Sign in' : 'Create account',
+                  style: const TextStyle(color: Colors.white, fontSize: 26, fontWeight: FontWeight.bold),
                 ),
                 const SizedBox(height: 8),
                 Text(
-                  'Sign in to place and track your orders',
+                  isSignIn
+                      ? 'Sign in to place and track your orders'
+                      : 'Create an account to get started',
                   style: TextStyle(color: Colors.white.withValues(alpha: 0.55), fontSize: 14),
                 ),
                 const SizedBox(height: 32),
 
-                // --- Pending email-link confirmation card ---
-                if (_pendingLinkUrl != null) ...[
-                  Container(
-                    width: double.infinity,
-                    padding: const EdgeInsets.all(18),
-                    decoration: BoxDecoration(
-                      color: _kAmber.withValues(alpha: 0.08),
-                      borderRadius: BorderRadius.circular(10),
-                      border: Border.all(color: _kAmber.withValues(alpha: 0.25)),
-                    ),
-                    child: Column(
-                      children: [
-                        const Icon(Icons.link, color: _kAmber, size: 28),
-                        const SizedBox(height: 10),
-                        const Text(
-                          'Sign-in link detected',
-                          style: TextStyle(color: Colors.white, fontWeight: FontWeight.w700),
-                        ),
-                        const SizedBox(height: 6),
-                        Text(
-                          _detectedEmail != null
-                              ? 'Tap below to finish signing in as $_detectedEmail.'
-                              : 'Tap below to finish signing in.',
-                          textAlign: TextAlign.center,
-                          style: TextStyle(color: Colors.white.withValues(alpha: 0.6), fontSize: 13, height: 1.4),
-                        ),
-                        const SizedBox(height: 16),
-                        SizedBox(
-                          width: double.infinity,
-                          child: ElevatedButton(
-                            onPressed: _completingLink ? null : _completePendingLinkSignIn,
-                            style: ElevatedButton.styleFrom(
-                              backgroundColor: _kAmber,
-                              foregroundColor: Colors.black,
-                              padding: const EdgeInsets.symmetric(vertical: 13),
-                              elevation: 0,
-                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(9)),
-                            ),
-                            child: _completingLink
-                                ? const SizedBox(
-                                    width: 18,
-                                    height: 18,
-                                    child: CircularProgressIndicator(strokeWidth: 2, color: Colors.black),
-                                  )
-                                : const Text('Complete Sign In', style: TextStyle(fontWeight: FontWeight.w700)),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                  const SizedBox(height: 24),
-                  Row(
-                    children: [
-                      Expanded(child: Divider(color: Colors.white.withValues(alpha: 0.12))),
-                      Padding(
-                        padding: const EdgeInsets.symmetric(horizontal: 12),
-                        child: Text('or', style: TextStyle(color: Colors.white.withValues(alpha: 0.4), fontSize: 12)),
-                      ),
-                      Expanded(child: Divider(color: Colors.white.withValues(alpha: 0.12))),
-                    ],
-                  ),
-                  const SizedBox(height: 20),
-                ],
-
+                // --- Google ---
                 SizedBox(
                   width: double.infinity,
                   child: OutlinedButton.icon(
-                    onPressed: _googleLoading ? null : _signInWithGoogle,
+                    onPressed: _signInWithGoogle,
                     icon: _googleLoading
                         ? const SizedBox(
                             width: 16,
@@ -323,6 +460,7 @@ class _AuthScreenState extends State<AuthScreen> {
                     ),
                   ),
                 ),
+
                 const SizedBox(height: 20),
                 Row(
                   children: [
@@ -335,94 +473,309 @@ class _AuthScreenState extends State<AuthScreen> {
                   ],
                 ),
                 const SizedBox(height: 20),
-                if (_linkSent) ...[
-                  Container(
-                    width: double.infinity,
-                    padding: const EdgeInsets.all(18),
-                    decoration: BoxDecoration(
-                      color: _kAmber.withValues(alpha: 0.08),
-                      borderRadius: BorderRadius.circular(10),
-                      border: Border.all(color: _kAmber.withValues(alpha: 0.25)),
-                    ),
-                    child: Column(
-                      children: [
-                        const Icon(Icons.mark_email_read_outlined, color: _kAmber, size: 28),
-                        const SizedBox(height: 10),
-                        const Text(
-                          'Check your inbox',
-                          style: TextStyle(color: Colors.white, fontWeight: FontWeight.w700),
-                        ),
-                        const SizedBox(height: 6),
-                        Text(
-                          'We sent a sign-in link to ${_emailController.text.trim()}. '
-                          'Open it on this device to finish signing in.',
-                          textAlign: TextAlign.center,
-                          style: TextStyle(color: Colors.white.withValues(alpha: 0.6), fontSize: 13, height: 1.4),
-                        ),
-                        const SizedBox(height: 16),
-                        TextButton(
-                          onPressed: () => setState(() => _linkSent = false),
-                          child: const Text('Try another email', style: TextStyle(color: _kAmber)),
-                        ),
-                      ],
+
+                // --- Email ---
+                TextField(
+                  controller: _emailController,
+                  keyboardType: TextInputType.emailAddress,
+                  style: const TextStyle(color: Colors.white),
+                  decoration: _fieldDecoration('you@example.com'),
+                ),
+                const SizedBox(height: 12),
+
+                // --- Password ---
+                TextField(
+                  controller: _passwordController,
+                  obscureText: _obscurePassword,
+                  style: const TextStyle(color: Colors.white),
+                  onSubmitted: (_) => _submit(),
+                  decoration: _fieldDecoration('Password').copyWith(
+                    suffixIcon: IconButton(
+                      icon: Icon(
+                        _obscurePassword ? Icons.visibility_off_outlined : Icons.visibility_outlined,
+                        color: Colors.white.withValues(alpha: 0.4),
+                        size: 20,
+                      ),
+                      onPressed: () => setState(() => _obscurePassword = !_obscurePassword),
                     ),
                   ),
-                ] else ...[
+                ),
+
+                // --- Confirm password (sign up only) ---
+                if (!isSignIn) ...[
+                  const SizedBox(height: 12),
                   TextField(
-                    controller: _emailController,
-                    keyboardType: TextInputType.emailAddress,
+                    controller: _confirmPasswordController,
+                    obscureText: _obscureConfirmPassword,
                     style: const TextStyle(color: Colors.white),
-                    onSubmitted: (_) => _sendEmailLink(),
-                    decoration: InputDecoration(
-                      hintText: 'you@example.com',
-                      hintStyle: TextStyle(color: Colors.white.withValues(alpha: 0.3)),
-                      filled: true,
-                      fillColor: Colors.white.withValues(alpha: 0.04),
-                      contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 13),
-                      border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(9),
-                        borderSide: BorderSide(color: Colors.white.withValues(alpha: 0.08)),
+                    onSubmitted: (_) => _submit(),
+                    decoration: _fieldDecoration('Confirm password').copyWith(
+                      suffixIcon: IconButton(
+                        icon: Icon(
+                          _obscureConfirmPassword ? Icons.visibility_off_outlined : Icons.visibility_outlined,
+                          color: Colors.white.withValues(alpha: 0.4),
+                          size: 20,
+                        ),
+                        onPressed: () =>
+                            setState(() => _obscureConfirmPassword = !_obscureConfirmPassword),
                       ),
-                      enabledBorder: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(9),
-                        borderSide: BorderSide(color: Colors.white.withValues(alpha: 0.08)),
-                      ),
-                      focusedBorder: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(9),
-                        borderSide: const BorderSide(color: _kAmber, width: 1.4),
-                      ),
-                    ),
-                  ),
-                  const SizedBox(height: 14),
-                  SizedBox(
-                    width: double.infinity,
-                    child: ElevatedButton(
-                      onPressed: _emailLoading ? null : _sendEmailLink,
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: _kAmber,
-                        foregroundColor: Colors.black,
-                        padding: const EdgeInsets.symmetric(vertical: 14),
-                        elevation: 0,
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(9)),
-                      ),
-                      child: _emailLoading
-                          ? const SizedBox(
-                              width: 18,
-                              height: 18,
-                              child: CircularProgressIndicator(strokeWidth: 2, color: Colors.black),
-                            )
-                          : const Text('Continue with Email', style: TextStyle(fontWeight: FontWeight.w700)),
                     ),
                   ),
                 ],
+
+                const SizedBox(height: 10),
+
+                // --- Remember me / Forgot password ---
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    InkWell(
+                      onTap: () => setState(() => _rememberMe = !_rememberMe),
+                      borderRadius: BorderRadius.circular(6),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          SizedBox(
+                            width: 20,
+                            height: 20,
+                            child: Checkbox(
+                              value: _rememberMe,
+                              onChanged: (v) => setState(() => _rememberMe = v ?? true),
+                              activeColor: _kAmber,
+                              checkColor: Colors.black,
+                              side: BorderSide(color: Colors.white.withValues(alpha: 0.3)),
+                            ),
+                          ),
+                          const SizedBox(width: 8),
+                          Text(
+                            'Remember me',
+                            style: TextStyle(color: Colors.white.withValues(alpha: 0.7), fontSize: 12.5),
+                          ),
+                        ],
+                      ),
+                    ),
+                    if (isSignIn)
+                      TextButton(
+                        onPressed: _showForgotPasswordDialog,
+                        style: TextButton.styleFrom(
+                          padding: EdgeInsets.zero,
+                          minimumSize: const Size(0, 0),
+                          tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                        ),
+                        child: const Text(
+                          'Forgot password?',
+                          style: TextStyle(color: _kAmber, fontSize: 12.5, fontWeight: FontWeight.w600),
+                        ),
+                      ),
+                  ],
+                ),
+
+                const SizedBox(height: 18),
+
+                // --- Submit ---
+                // onPressed stays non-null even while loading (guard is
+                // inside _submit itself) so the button keeps its solid
+                // amber color instead of Flutter's default disabled-grey
+                // fade — only the spinner shows loading state.
+                SizedBox(
+                  width: double.infinity,
+                  child: ElevatedButton(
+                    onPressed: _submit,
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: _kAmber,
+                      foregroundColor: Colors.black,
+                      padding: const EdgeInsets.symmetric(vertical: 14),
+                      elevation: 0,
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(9)),
+                    ),
+                    child: _submitLoading
+                        ? const SizedBox(
+                            width: 18,
+                            height: 18,
+                            child: CircularProgressIndicator(strokeWidth: 2, color: Colors.black),
+                          )
+                        : Text(
+                            isSignIn ? 'Sign In' : 'Create Account',
+                            style: const TextStyle(fontWeight: FontWeight.w700),
+                          ),
+                  ),
+                ),
+
                 if (_error != null) ...[
                   const SizedBox(height: 14),
                   Text(_error!, style: const TextStyle(color: Colors.redAccent, fontSize: 13), textAlign: TextAlign.center),
                 ],
+
+                const SizedBox(height: 20),
+
+                // --- Mode switch ---
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Text(
+                      isSignIn ? "Don't have an account? " : 'Already have an account? ',
+                      style: TextStyle(color: Colors.white.withValues(alpha: 0.55), fontSize: 13),
+                    ),
+                    GestureDetector(
+                      onTap: () => _switchMode(isSignIn ? _AuthMode.signUp : _AuthMode.signIn),
+                      child: Text(
+                        isSignIn ? 'Sign up' : 'Sign in',
+                        style: const TextStyle(color: _kAmber, fontSize: 13, fontWeight: FontWeight.w700),
+                      ),
+                    ),
+                  ],
+                ),
               ],
             ),
           ),
         ),
+      ),
+    );
+  }
+
+  Widget _buildResetPasswordScreen() {
+    return Scaffold(
+      backgroundColor: _kBg,
+      body: Center(
+        child: ConstrainedBox(
+          constraints: const BoxConstraints(maxWidth: 380),
+          child: Padding(
+            padding: const EdgeInsets.all(24),
+            child: _resetVerifying
+                ? const Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      CircularProgressIndicator(color: _kAmber),
+                      SizedBox(height: 16),
+                      Text('Verifying link…', style: TextStyle(color: Colors.white70, fontSize: 14)),
+                    ],
+                  )
+                : (_resetEmail == null)
+                    ? Column(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          const Icon(Icons.error_outline, color: Colors.redAccent, size: 40),
+                          const SizedBox(height: 16),
+                          Text(
+                            _resetError ?? 'This reset link is invalid.',
+                            textAlign: TextAlign.center,
+                            style: TextStyle(color: Colors.white.withValues(alpha: 0.7), fontSize: 14),
+                          ),
+                          const SizedBox(height: 20),
+                          TextButton(
+                            onPressed: () {
+                              setState(() {
+                                _isPasswordResetMode = false;
+                                _mode = _AuthMode.signIn;
+                              });
+                              context.go('/auth');
+                            },
+                            child: const Text('Back to sign in', style: TextStyle(color: _kAmber)),
+                          ),
+                        ],
+                      )
+                    : Column(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          const Text(
+                            'Set new password',
+                            style: TextStyle(color: Colors.white, fontSize: 24, fontWeight: FontWeight.bold),
+                          ),
+                          const SizedBox(height: 8),
+                          Text(
+                            'Choose a new password for $_resetEmail',
+                            textAlign: TextAlign.center,
+                            style: TextStyle(color: Colors.white.withValues(alpha: 0.55), fontSize: 13.5),
+                          ),
+                          const SizedBox(height: 28),
+                          TextField(
+                            controller: _newPasswordController,
+                            obscureText: _obscureNewPassword,
+                            style: const TextStyle(color: Colors.white),
+                            decoration: _fieldDecoration('New password').copyWith(
+                              suffixIcon: IconButton(
+                                icon: Icon(
+                                  _obscureNewPassword ? Icons.visibility_off_outlined : Icons.visibility_outlined,
+                                  color: Colors.white.withValues(alpha: 0.4),
+                                  size: 20,
+                                ),
+                                onPressed: () => setState(() => _obscureNewPassword = !_obscureNewPassword),
+                              ),
+                            ),
+                          ),
+                          const SizedBox(height: 12),
+                          TextField(
+                            controller: _confirmNewPasswordController,
+                            obscureText: _obscureConfirmNewPassword,
+                            style: const TextStyle(color: Colors.white),
+                            onSubmitted: (_) => _submitNewPassword(),
+                            decoration: _fieldDecoration('Confirm new password').copyWith(
+                              suffixIcon: IconButton(
+                                icon: Icon(
+                                  _obscureConfirmNewPassword ? Icons.visibility_off_outlined : Icons.visibility_outlined,
+                                  color: Colors.white.withValues(alpha: 0.4),
+                                  size: 20,
+                                ),
+                                onPressed: () =>
+                                    setState(() => _obscureConfirmNewPassword = !_obscureConfirmNewPassword),
+                              ),
+                            ),
+                          ),
+                          const SizedBox(height: 18),
+                          SizedBox(
+                            width: double.infinity,
+                            child: ElevatedButton(
+                              onPressed: _submitNewPassword,
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: _kAmber,
+                                foregroundColor: Colors.black,
+                                padding: const EdgeInsets.symmetric(vertical: 14),
+                                elevation: 0,
+                                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(9)),
+                              ),
+                              child: _resetSubmitting
+                                  ? const SizedBox(
+                                      width: 18,
+                                      height: 18,
+                                      child: CircularProgressIndicator(strokeWidth: 2, color: Colors.black),
+                                    )
+                                  : const Text('Update Password', style: TextStyle(fontWeight: FontWeight.w700)),
+                            ),
+                          ),
+                          if (_resetError != null) ...[
+                            const SizedBox(height: 14),
+                            Text(
+                              _resetError!,
+                              style: const TextStyle(color: Colors.redAccent, fontSize: 13),
+                              textAlign: TextAlign.center,
+                            ),
+                          ],
+                        ],
+                      ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  InputDecoration _fieldDecoration(String hint) {
+    return InputDecoration(
+      hintText: hint,
+      hintStyle: TextStyle(color: Colors.white.withValues(alpha: 0.3)),
+      filled: true,
+      fillColor: Colors.white.withValues(alpha: 0.04),
+      contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 13),
+      border: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(9),
+        borderSide: BorderSide(color: Colors.white.withValues(alpha: 0.08)),
+      ),
+      enabledBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(9),
+        borderSide: BorderSide(color: Colors.white.withValues(alpha: 0.08)),
+      ),
+      focusedBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(9),
+        borderSide: const BorderSide(color: _kAmber, width: 1.4),
       ),
     );
   }
