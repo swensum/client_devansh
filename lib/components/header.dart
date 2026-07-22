@@ -3,7 +3,9 @@ import 'dart:ui';
 import 'package:devansh/data/catalog.dart';
 
 import 'package:devansh/models/catalogmodels.dart';
+import 'package:devansh/models/authmodel.dart';
 import 'package:devansh/services/catalogservice.dart';
+import 'package:devansh/services/authservice.dart';
 
 import 'package:devansh/services/orderservice.dart';
 import 'package:flutter/material.dart';
@@ -25,6 +27,7 @@ class _HeaderState extends State<Header> {
   bool _hoveredAccount = false;
   bool _hoveredRegister = false;
   bool _hoveredLogin = false;
+  bool _hoveredSignOut = false;
   bool _hoveredOrder = false;
   bool _hoveredPersonIcon = false;
   bool _hoveredHamburger = false;
@@ -50,7 +53,11 @@ class _HeaderState extends State<Header> {
     2: LayerLink(),
     3: LayerLink(),
   };
-
+String _shortLabel(String value, {int maxChars = 8}) {
+  final trimmed = value.trim();
+  if (trimmed.length <= maxChars) return trimmed;
+  return '${trimmed.substring(0, maxChars)}...';
+}
   OverlayEntry? _overlayEntry;
   Timer? _closeTimer;
 
@@ -317,73 +324,114 @@ class _HeaderState extends State<Header> {
 
               SizedBox(width: isTight ? 10 : 40),
 
+             //account section
               // Account Section
-              SizedBox(
-                height: 80,
-                child: Row(
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
-                  children: [
-                    GestureDetector(
-                      onTap: () => context.push('/auth'),
-                      child: MouseRegion(
+              ValueListenableBuilder<AppUser?>(
+                valueListenable: AuthService.instance.currentUser,
+                builder: (context, user, _) {
+                  final signedIn = user != null;
+                  final accountLabel = signedIn
+    ? _shortLabel(
+        user.name?.isNotEmpty == true ? user.name! : (user.email ?? 'My Account'),
+      )
+    : 'Account';
 
-                        cursor: SystemMouseCursors.click,
-                        onEnter: (_) =>
-                            setState(() => _hoveredPersonIcon = true),
-                        onExit: (_) =>
-                            setState(() => _hoveredPersonIcon = false),
-                        child: Icon(
-                          Icons.person,
-                          color: _hoveredPersonIcon
-                              ? const Color.fromRGBO(245, 171, 30, 1)
-                              : Colors.white,
-                          size: isTight ? 35 : 40,
-                        ),
-                      ),
-                    ),
-                    if (!isCompact) ...[
-                      const SizedBox(width: 5),
-                      Column(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          GestureDetector(
-                      onTap: () => context.push('/auth'),
-                            child: MouseRegion(
-                              cursor: SystemMouseCursors.click,
-                              onEnter: (_) =>
-                                  setState(() => _hoveredAccount = true),
-                              onExit: (_) =>
-                                  setState(() => _hoveredAccount = false),
-                              child: Text(
-                                "Account",
-                                style: TextStyle(
-                                  color: _hoveredAccount
-                                      ? const Color.fromRGBO(245, 171, 30, 1)
-                                      : Colors.white,
-                                  fontSize: 16,
-                                  fontWeight: FontWeight.w500,
-                                ),
-                              ),
+                  return SizedBox(
+                    height: 80,
+                    child: Row(
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      children: [
+                        GestureDetector(
+                          onTap: () {
+                            if (!signedIn) context.push('/auth');
+                          },
+                          child: MouseRegion(
+                            cursor: SystemMouseCursors.click,
+                            onEnter: (_) =>
+                                setState(() => _hoveredPersonIcon = true),
+                            onExit: (_) =>
+                                setState(() => _hoveredPersonIcon = false),
+                            child: Icon(
+                              Icons.person,
+                              color: (_hoveredPersonIcon || signedIn)
+                                  ? const Color.fromRGBO(245, 171, 30, 1)
+                                  : Colors.white,
+                              size: isTight ? 35 : 40,
                             ),
                           ),
-                          const SizedBox(height: 0),
-                          Row(
+                        ),
+                        if (!isCompact) ...[
+                          const SizedBox(width: 5),
+                          Column(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              _buildAuthLink("Register"),
-                              const Text(
-                                " | ",
-                                style: TextStyle(
-                                    color: Colors.white70, fontSize: 12),
+                              GestureDetector(
+                                onTap: () {
+                                  if (!signedIn) context.push('/auth');
+                                },
+                                child: MouseRegion(
+                                  cursor: SystemMouseCursors.click,
+                                  onEnter: (_) =>
+                                      setState(() => _hoveredAccount = true),
+                                  onExit: (_) =>
+                                      setState(() => _hoveredAccount = false),
+                                  child: Text(
+                                    accountLabel,
+                                    style: TextStyle(
+                                      color: _hoveredAccount
+                                          ? const Color.fromRGBO(
+                                              245, 171, 30, 1)
+                                          : Colors.white,
+                                      fontSize: 16,
+                                      fontWeight: FontWeight.w500,
+                                    ),
+                                  ),
+                                ),
                               ),
-                              _buildAuthLink("Login"),
+                              const SizedBox(height: 0),
+                              if (!signedIn)
+                                Row(
+                                  children: [
+                                    _buildAuthLink("Register"),
+                                    const Text(
+                                      " | ",
+                                      style: TextStyle(
+                                          color: Colors.white70, fontSize: 12),
+                                    ),
+                                    _buildAuthLink("Login"),
+                                  ],
+                                )
+                              else
+                                GestureDetector(
+                                  onTap: () async {
+                                    await AuthService.instance.signOut();
+                                  },
+                                  child: MouseRegion(
+                                    cursor: SystemMouseCursors.click,
+                                    onEnter: (_) =>
+                                        setState(() => _hoveredSignOut = true),
+                                    onExit: (_) => setState(
+                                        () => _hoveredSignOut = false),
+                                    child: Text(
+                                      "Sign out",
+                                      style: TextStyle(
+                                        color: _hoveredSignOut
+                                            ? const Color.fromRGBO(
+                                                245, 171, 30, 1)
+                                            : Colors.white70,
+                                        fontSize: 11,
+                                      ),
+                                    ),
+                                  ),
+                                ),
                             ],
                           ),
                         ],
-                      ),
-                    ],
-                  ],
-                ),
+                      ],
+                    ),
+                  );
+                },
               ),
 
               SizedBox(width: isTight ? 10 : 20),
@@ -514,42 +562,42 @@ class _HeaderState extends State<Header> {
     );
   }
 
- Widget _buildAuthLink(String title) {
-  return GestureDetector(
-    onTap: () => context.push('/auth'),
-    child: MouseRegion(
-      cursor: SystemMouseCursors.click,
-      onEnter: (_) {
-        setState(() {
-          if (title == "Register") {
-            _hoveredRegister = true;
-          } else {
-            _hoveredLogin = true;
-          }
-        });
-      },
-      onExit: (_) {
-        setState(() {
-          if (title == "Register") {
-            _hoveredRegister = false;
-          } else {
-            _hoveredLogin = false;
-          }
-        });
-      },
-      child: Text(
-        title,
-        style: TextStyle(
-          color: (title == "Register" && _hoveredRegister) ||
-                  (title == "Login" && _hoveredLogin)
-              ? const Color.fromRGBO(245, 171, 30, 1)
-              : Colors.white70,
-          fontSize: 11,
+  Widget _buildAuthLink(String title) {
+    return GestureDetector(
+      onTap: () => context.push('/auth'),
+      child: MouseRegion(
+        cursor: SystemMouseCursors.click,
+        onEnter: (_) {
+          setState(() {
+            if (title == "Register") {
+              _hoveredRegister = true;
+            } else {
+              _hoveredLogin = true;
+            }
+          });
+        },
+        onExit: (_) {
+          setState(() {
+            if (title == "Register") {
+              _hoveredRegister = false;
+            } else {
+              _hoveredLogin = false;
+            }
+          });
+        },
+        child: Text(
+          title,
+          style: TextStyle(
+            color: (title == "Register" && _hoveredRegister) ||
+                    (title == "Login" && _hoveredLogin)
+                ? const Color.fromRGBO(245, 171, 30, 1)
+                : Colors.white70,
+            fontSize: 11,
+          ),
         ),
       ),
-    ),
-  );
-}
+    );
+  }
 }
 
 class _ShopDropdownContent extends StatelessWidget {
@@ -1001,8 +1049,6 @@ class _MobileNavMenu extends StatelessWidget {
         final label = entry.value;
 
         if (index == 1) {
-          // "Shop" — mirrors desktop: categories (with nested types) + companies.
-          // Reads already-loaded data — no stream/loading state needed here.
           final visibleCompanies = companies
               .where((c) => c.id != 'unknown' && c.id != 'others')
               .toList();
