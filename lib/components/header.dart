@@ -1,5 +1,5 @@
 import 'dart:async';
-import 'dart:html' as html;
+import 'package:web/web.dart' as web;
 import 'dart:ui';
 import 'package:devansh/data/catalog.dart';
 
@@ -249,10 +249,10 @@ class _HeaderState extends State<Header> {
   /// auth state.
   Future<void> _handleSignOut() async {
     await AuthService.instance.signOut();
-    html.window.location.reload();
+    web.window.location.reload();
   }
 void _reloadHome() {
-  html.window.location.reload();
+   web.window.location.reload();
 }
   @override
   void dispose() {
@@ -1180,7 +1180,7 @@ class _MobileNavMenu extends StatelessWidget {
       label,
       style: const TextStyle(color: Colors.white, fontSize: 14),
     ),
-    onTap: () => html.window.location.reload(),
+    onTap: () => web.window.location.reload(),
   );
 }
 

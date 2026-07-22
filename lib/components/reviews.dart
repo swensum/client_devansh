@@ -1,4 +1,6 @@
 import 'dart:async';
+import 'package:devansh/models/reviewmodel.dart';
+import 'package:devansh/services/reviewservice.dart';
 import 'package:flutter/material.dart';
 
 class ReviewsSection extends StatefulWidget {
@@ -8,91 +10,37 @@ class ReviewsSection extends StatefulWidget {
   State<ReviewsSection> createState() => _ReviewsSectionState();
 }
 
-class _Review {
-  final String name;
-  final String role;
-  final String message;
-  final int rating;
-
-  const _Review({
-    required this.name,
-    required this.role,
-    required this.message,
-    required this.rating,
-  });
-}
 
 class _ReviewsSectionState extends State<ReviewsSection> {
-  static const List<_Review> _reviews = [
-    _Review(
-      name: "Ramesh Karki",
-      role: "Interior Designer",
-      message:
-          "The build quality of these cabinet handles is outstanding. "
-          "Clients always compliment the finish after installation.",
-      rating: 5,
-    ),
-    _Review(
-      name: "Sita Sharma",
-      role: "Homeowner",
-      message:
-          "Ordered a full set of door fittings for our new house. "
-          "Everything arrived on time and matched perfectly.",
-      rating: 5,
-    ),
-    _Review(
-      name: "Anil Gurung",
-      role: "Contractor",
-      message:
-          "Reliable supplier for hardware on every project. "
-          "The soft-close hinges especially have held up really well.",
-      rating: 4,
-    ),
-    _Review(
-      name: "Priya Thapa",
-      role: "Homeowner",
-      message:
-          "Loved the matte black collection. Easy to install and "
-          "looks a lot more premium than the price suggests.",
-      rating: 5,
-    ),
-    _Review(
-      name: "Bikash Adhikari",
-      role: "Furniture Maker",
-      message:
-          "Consistent quality across every batch we've ordered. "
-          "It's become our go-to source for premium hardware.",
-      rating: 5,
-    ),
-  ];
+  final ReviewService _reviewService = ReviewService();
+  List<Review> _reviews = [];
+  StreamSubscription<List<Review>>? _reviewsSub;
 
   static const int _initialPage = 10000;
-
   late PageController _pageController;
   int _pageCounter = _initialPage;
   Timer? _autoScrollTimer;
-
-  // The breakpoint category the PageController was actually built for.
-  // A PageController's viewportFraction is fixed at construction time, so
-  // when the number of visible cards needs to change (screen resized,
-  // window rotated, etc) the controller itself has to be rebuilt — it's
-  // not something you can just react to with a plain rebuild.
   int _controllerVisibleCount = 1;
   bool _pendingRebuild = false;
 
   @override
   void initState() {
     super.initState();
-    // Start with a safe default; the real value is computed from actual
-    // layout width in build() via LayoutBuilder; this differs from
-    // reading platformDispatcher's physical size once in initState, which
-    // never updates again if the window is resized or rotated.
-    _pageController = PageController(
-      initialPage: _initialPage,
-      viewportFraction: 1,
-    );
+    _pageController = PageController(initialPage: _initialPage, viewportFraction: 1);
     _startAutoScroll();
+    _reviewsSub = _reviewService.watchReviews().listen((data) {
+      if (mounted) setState(() => _reviews = data);
+    });
   }
+
+  @override
+  void dispose() {
+    _autoScrollTimer?.cancel();
+    _pageController.dispose();
+    _reviewsSub?.cancel();
+    super.dispose();
+  }
+
 
   void _startAutoScroll() {
     _autoScrollTimer?.cancel();
@@ -122,9 +70,6 @@ class _ReviewsSectionState extends State<ReviewsSection> {
     _startAutoScroll();
   }
 
-  // Rebuilds the PageController with a new viewportFraction, preserving
-  // roughly the same scroll position, and only ever runs after the
-  // current frame so it never calls setState mid-build.
   void _rebuildControllerFor(int visibleCount) {
     if (_pendingRebuild || visibleCount == _controllerVisibleCount) return;
     _pendingRebuild = true;
@@ -143,22 +88,12 @@ class _ReviewsSectionState extends State<ReviewsSection> {
     });
   }
 
-  @override
-  void dispose() {
-    _autoScrollTimer?.cancel();
-    _pageController.dispose();
-    super.dispose();
-  }
 
   @override
   Widget build(BuildContext context) {
     return LayoutBuilder(
       builder: (context, constraints) {
         final r = _ReviewsResponsive.of(constraints.maxWidth);
-
-        // Schedule a controller rebuild if the breakpoint changed since
-        // the last build (e.g. window resized). Safe to call every
-        // build — it no-ops once the counts already match.
         _rebuildControllerFor(r.visibleCount);
 
         return Container(
@@ -225,36 +160,37 @@ class _ReviewsSectionState extends State<ReviewsSection> {
                         const SizedBox(width: 12),
                       ],
                       Expanded(
-                        child: SizedBox(
-                          height: r.cardHeight,
-                          // Only build the PageView once the controller
-                          // actually matches the current breakpoint —
-                          // otherwise viewportFraction and the card count
-                          // on screen would briefly mismatch during a
-                          // resize.
-                          child: _controllerVisibleCount == r.visibleCount
-                              ? PageView.builder(
-                                  controller: _pageController,
-                                  padEnds: false,
-                                  onPageChanged: (index) {
-                                    setState(() {
-                                      _pageCounter = index;
-                                    });
-                                  },
-                                  itemBuilder: (context, index) {
-                                    final review =
-                                        _reviews[index % _reviews.length];
-                                    return Padding(
-                                      padding: EdgeInsets.symmetric(
-                                        horizontal: r.cardHGap,
-                                      ),
-                                      child: _ReviewCard(review: review, r: r),
-                                    );
-                                  },
-                                )
-                              : const SizedBox.shrink(),
-                        ),
-                      ),
+  child: SizedBox(
+    height: r.cardHeight,
+    child: _reviews.isEmpty
+        ? const Center(
+            child: Text(
+              "No reviews yet.",
+              style: TextStyle(color: Colors.white54, fontSize: 14),
+            ),
+          )
+        : _controllerVisibleCount == r.visibleCount
+            ? PageView.builder(
+                controller: _pageController,
+                padEnds: false,
+                onPageChanged: (index) {
+                  setState(() {
+                    _pageCounter = index;
+                  });
+                },
+                itemBuilder: (context, index) {
+                  final review = _reviews[index % _reviews.length];
+                  return Padding(
+                    padding: EdgeInsets.symmetric(
+                      horizontal: r.cardHGap,
+                    ),
+                    child: _ReviewCard(review: review, r: r),
+                  );
+                },
+              )
+            : const SizedBox.shrink(),
+  ),
+),
                       if (r.showArrows) ...[
                         const SizedBox(width: 12),
                         _NavArrowButton(
@@ -274,13 +210,6 @@ class _ReviewsSectionState extends State<ReviewsSection> {
   }
 }
 
-/// Centralizes every breakpoint-dependent value for this section. The
-/// most important one is `visibleCount`, which used to be computed once
-/// in `initState` from the device's physical screen size and then never
-/// updated — meaning it ignored actual layout width (e.g. this section
-/// rendered in a side panel or split view) and never adjusted on resize
-/// or rotation. Here it's derived from the real available width on every
-/// build via LayoutBuilder instead.
 class _ReviewsResponsive {
   final int visibleCount;
   final double cardHeight;
@@ -419,7 +348,7 @@ class _NavArrowButtonState extends State<_NavArrowButton> {
 }
 
 class _ReviewCard extends StatefulWidget {
-  final _Review review;
+  final Review review;
   final _ReviewsResponsive r;
 
   const _ReviewCard({required this.review, required this.r});
