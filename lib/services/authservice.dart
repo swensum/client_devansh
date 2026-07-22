@@ -2,9 +2,6 @@ import 'package:devansh/models/authmodel.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/foundation.dart';
 
-/// Singleton wrapper around FirebaseAuth. Exposes a ValueNotifier<AppUser?>
-/// so widgets can listen with ValueListenableBuilder and rebuild
-/// automatically on sign-in/sign-out.
 class AuthService {
   AuthService._internal() {
     final currentFirebaseUser = _auth.currentUser;
@@ -25,12 +22,11 @@ class AuthService {
   final ValueNotifier<AppUser?> currentUser = ValueNotifier<AppUser?>(null);
 
   Stream<User?> get authStateChanges => _auth.authStateChanges();
-
-  // --- Google sign-in (popup, web) ---
-  Future<void> signInWithGoogle() {
-    return _auth.signInWithPopup(GoogleAuthProvider());
-  }
-
+Future<void> signInWithGoogle() {
+  final provider = GoogleAuthProvider()
+    ..setCustomParameters({'prompt': 'select_account'});
+  return _auth.signInWithPopup(provider);
+}
   // --- Passwordless email-link sign-in ---
   bool isSignInWithEmailLink(String link) => _auth.isSignInWithEmailLink(link);
 
