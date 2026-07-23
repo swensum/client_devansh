@@ -1,14 +1,18 @@
+import 'package:devansh/components/footer.dart';
+import 'package:devansh/components/header.dart';
 import 'package:flutter/material.dart';
 import 'package:visibility_detector/visibility_detector.dart';
 
-class ContactSection extends StatefulWidget {
-  const ContactSection({super.key});
+const double _kHeaderHeight = 100;
+
+class ContactPage extends StatefulWidget {
+  const ContactPage({super.key});
 
   @override
-  State<ContactSection> createState() => _ContactSectionState();
+  State<ContactPage> createState() => _ContactPageState();
 }
 
-class _ContactSectionState extends State<ContactSection> {
+class _ContactPageState extends State<ContactPage> {
   final _formKey = GlobalKey<FormState>();
   final _nameController = TextEditingController();
   final _emailController = TextEditingController();
@@ -65,6 +69,30 @@ class _ContactSectionState extends State<ContactSection> {
 
   @override
   Widget build(BuildContext context) {
+    return Scaffold(
+      body: Stack(
+        children: [
+          SingleChildScrollView(
+            child: Column(
+              children: [
+                const SizedBox(height: _kHeaderHeight), // reserve space
+                _buildContactBody(),
+                const Footer(),
+              ],
+            ),
+          ),
+          const Positioned(
+            top: 0,
+            left: 0,
+            right: 0,
+            child: Header(),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildContactBody() {
     return VisibilityDetector(
       key: const Key('contact-section-visibility'),
       onVisibilityChanged: _handleVisibility,
@@ -82,54 +110,31 @@ class _ContactSectionState extends State<ContactSection> {
         child: Center(
           child: ConstrainedBox(
             constraints: const BoxConstraints(maxWidth: 1100),
-            child: _RevealOnVisible(
-              visible: _visible,
-              delay: const Duration(milliseconds: 0),
-              child: Container(
-                width: double.infinity,
-                padding: const EdgeInsets.all(28),
-                decoration: BoxDecoration(
-                  color: Colors.white.withValues(alpha: 0.05),
-                  borderRadius: BorderRadius.circular(14),
-                  border: Border.all(color: Colors.white.withValues(alpha: 0.1)),
-                ),
-                child: LayoutBuilder(
-                  builder: (context, constraints) {
-                    final isWide = constraints.maxWidth > 800;
-                    final info = _buildContactInfo();
-                    final form = _buildForm();
+            child: LayoutBuilder(
+              builder: (context, constraints) {
+                final isWide = constraints.maxWidth > 800;
+                final info = _buildContactInfo();
+                final form = _buildForm();
 
-                    return isWide
-                        ? IntrinsicHeight(
-                            child: Row(
-                              crossAxisAlignment: CrossAxisAlignment.stretch,
-                              children: [
-                                Expanded(flex: 5, child: info),
-                                const SizedBox(width: 32),
-                                Container(
-                                  width: 1,
-                                  color: Colors.white.withValues(alpha: 0.1),
-                                ),
-                                const SizedBox(width: 32),
-                                Expanded(flex: 5, child: form),
-                              ],
-                            ),
-                          )
-                        : Column(
-                            children: [
-                              info,
-                              const SizedBox(height: 32),
-                              Container(
-                                height: 1,
-                                color: Colors.white.withValues(alpha: 0.1),
-                              ),
-                              const SizedBox(height: 32),
-                              form,
-                            ],
-                          );
-                  },
-                ),
-              ),
+                return isWide
+                    ? IntrinsicHeight(
+                        child: Row(
+                          crossAxisAlignment: CrossAxisAlignment.stretch,
+                          children: [
+                            Expanded(flex: 5, child: info),
+                            const SizedBox(width: 40),
+                            Expanded(flex: 5, child: form),
+                          ],
+                        ),
+                      )
+                    : Column(
+                        children: [
+                          info,
+                          const SizedBox(height: 40),
+                          form,
+                        ],
+                      );
+              },
             ),
           ),
         ),
@@ -138,11 +143,18 @@ class _ContactSectionState extends State<ContactSection> {
   }
 
   Widget _buildContactInfo() {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-      children: [
-        Column(
+    return _RevealOnVisible(
+      visible: _visible,
+      delay: const Duration(milliseconds: 0),
+      child: Container(
+        width: double.infinity,
+        padding: const EdgeInsets.all(28),
+        decoration: BoxDecoration(
+          color: Colors.white.withValues(alpha: 0.05),
+          borderRadius: BorderRadius.circular(14),
+          border: Border.all(color: Colors.white.withValues(alpha: 0.1)),
+        ),
+        child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             const Text(
@@ -169,33 +181,39 @@ class _ContactSectionState extends State<ContactSection> {
                 borderRadius: BorderRadius.circular(2),
               ),
             ),
+            const SizedBox(height: 32),
+
+            _infoBlock(
+              icon: Icons.phone_outlined,
+              lead: "Have any questions? Reach us by phone",
+              lines: const ["01-5156202", "9801889750", "9801889740"],
+            ),
+            const SizedBox(height: 22),
+
+            _infoBlock(
+              icon: Icons.email_outlined,
+              lead: "We're here for you !! Just get answers",
+              lines: const ["tradersnebha@gmail.com"],
+            ),
+            const SizedBox(height: 22),
+
+            _infoBlock(
+              icon: Icons.location_on_outlined,
+              lead: "Explore us by visiting our stores",
+              lines: const ["Pepsicola, Kathmandu, Nepal"],
+            ),
+            const SizedBox(height: 22),
+
+            _infoBlock(
+              icon: Icons.access_time_outlined,
+              lead: "We are open 6 days a week",
+              lines: const ["Sun-Fri (9:00 AM – 6:00 PM)"],
+            ),
+
+            const Spacer(),
           ],
         ),
-
-        _infoBlock(
-          icon: Icons.phone_outlined,
-          lead: "Have any questions? Reach us by phone",
-          lines: const ["01-5156202", "9801889750", "9801889740"],
-        ),
-
-        _infoBlock(
-          icon: Icons.email_outlined,
-          lead: "We're here for you !! Just get answers",
-          lines: const ["tradersnebha@gmail.com"],
-        ),
-
-        _infoBlock(
-          icon: Icons.location_on_outlined,
-          lead: "Explore us by visiting our stores",
-          lines: const ["Pepsicola, Kathmandu, Nepal"],
-        ),
-
-        _infoBlock(
-          icon: Icons.access_time_outlined,
-          lead: "We are open 6 days a week",
-          lines: const ["Sun-Fri (9:00 AM – 6:00 PM)"],
-        ),
-      ],
+      ),
     );
   }
 
@@ -221,7 +239,6 @@ class _ContactSectionState extends State<ContactSection> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // Question — the larger, more prominent line.
               Text(
                 lead,
                 style: const TextStyle(
@@ -232,9 +249,8 @@ class _ContactSectionState extends State<ContactSection> {
                 ),
               ),
               const SizedBox(height: 6),
-              // Answer — smaller, secondary detail line(s).
               Wrap(
-                spacing: 2,
+                spacing: 6,
                 runSpacing: 4,
                 children: [
                   for (int i = 0; i < lines.length; i++)
@@ -256,94 +272,94 @@ class _ContactSectionState extends State<ContactSection> {
   }
 
   Widget _buildForm() {
-  return _RevealOnVisible(
-    visible: _visible,
-    delay: const Duration(milliseconds: 150),
-    child: Container(
-      width: double.infinity,
-      padding: const EdgeInsets.all(28),
-      decoration: BoxDecoration(
-        color: Colors.white.withValues(alpha: 0.05),
-        borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: Colors.white.withValues(alpha: 0.1)),
-      ),
-      child: Form(
-        key: _formKey,
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            const Text(
-              "Contact us to find out more",
-              style: TextStyle(
-                fontSize: 20,
-                fontWeight: FontWeight.bold,
-                color: Colors.white,
+    return _RevealOnVisible(
+      visible: _visible,
+      delay: const Duration(milliseconds: 150),
+      child: Container(
+        width: double.infinity,
+        padding: const EdgeInsets.all(28),
+        decoration: BoxDecoration(
+          color: Colors.white.withValues(alpha: 0.05),
+          borderRadius: BorderRadius.circular(14),
+          border: Border.all(color: Colors.white.withValues(alpha: 0.1)),
+        ),
+        child: Form(
+          key: _formKey,
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const Text(
+                "Contact us to find out more",
+                style: TextStyle(
+                  fontSize: 20,
+                  fontWeight: FontWeight.bold,
+                  color: Colors.white,
+                ),
               ),
-            ),
-            const SizedBox(height: 20),
-            _buildField(
-              controller: _nameController,
-              label: "Your Name",
-              validator: (value) =>
-                  (value == null || value.trim().isEmpty) ? "Please enter your name" : null,
-            ),
-            const SizedBox(height: 18),
-          _buildField(
-            controller: _emailController,
-            label: "Email Address",
-            keyboardType: TextInputType.emailAddress,
-            validator: (value) {
-              if (value == null || value.trim().isEmpty) return "Please enter your email";
-              final emailRegex = RegExp(r'^[\w\.\-]+@[\w\-]+\.[\w\.\-]+$');
-              if (!emailRegex.hasMatch(value.trim())) return "Enter a valid email";
-              return null;
-            },
-          ),
-          const SizedBox(height: 18),
-          _buildField(
-            controller: _phoneController,
-            label: "Phone Number",
-            keyboardType: TextInputType.phone,
-            validator: (value) => (value == null || value.trim().isEmpty)
-                ? "Please enter your phone number"
-                : null,
-          ),
-          const SizedBox(height: 18),
-          _buildField(
-            controller: _addressController,
-            label: "Address",
-            validator: (value) =>
-                (value == null || value.trim().isEmpty) ? "Please enter your address" : null,
-          ),
-          const SizedBox(height: 18),
-          _buildField(
-            controller: _messageController,
-            label: "Your Message",
-            maxLines: 5,
-            validator: (value) =>
-                (value == null || value.trim().isEmpty) ? "Please enter a message" : null,
-          ),
-          const SizedBox(height: 24),
-          _buildSubmitButton(),
-          if (_submitted) ...[
-            const SizedBox(height: 14),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Icon(Icons.check_circle, color: _accent, size: 18),
-                const SizedBox(width: 8),
-                Text(
-                  "Thanks! Your message has been sent.",
-                  style: TextStyle(color: Colors.white.withValues(alpha: 0.85), fontSize: 13),
+              const SizedBox(height: 20),
+              _buildField(
+                controller: _nameController,
+                label: "Your Name",
+                validator: (value) =>
+                    (value == null || value.trim().isEmpty) ? "Please enter your name" : null,
+              ),
+              const SizedBox(height: 18),
+              _buildField(
+                controller: _emailController,
+                label: "Email Address",
+                keyboardType: TextInputType.emailAddress,
+                validator: (value) {
+                  if (value == null || value.trim().isEmpty) return "Please enter your email";
+                  final emailRegex = RegExp(r'^[\w\.\-]+@[\w\-]+\.[\w\.\-]+$');
+                  if (!emailRegex.hasMatch(value.trim())) return "Enter a valid email";
+                  return null;
+                },
+              ),
+              const SizedBox(height: 18),
+              _buildField(
+                controller: _phoneController,
+                label: "Phone Number",
+                keyboardType: TextInputType.phone,
+                validator: (value) => (value == null || value.trim().isEmpty)
+                    ? "Please enter your phone number"
+                    : null,
+              ),
+              const SizedBox(height: 18),
+              _buildField(
+                controller: _addressController,
+                label: "Address",
+                validator: (value) =>
+                    (value == null || value.trim().isEmpty) ? "Please enter your address" : null,
+              ),
+              const SizedBox(height: 18),
+              _buildField(
+                controller: _messageController,
+                label: "Your Message",
+                maxLines: 5,
+                validator: (value) =>
+                    (value == null || value.trim().isEmpty) ? "Please enter a message" : null,
+              ),
+              const SizedBox(height: 24),
+              _buildSubmitButton(),
+              if (_submitted) ...[
+                const SizedBox(height: 14),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Icon(Icons.check_circle, color: _accent, size: 18),
+                    const SizedBox(width: 8),
+                    Text(
+                      "Thanks! Your message has been sent.",
+                      style: TextStyle(color: Colors.white.withValues(alpha: 0.85), fontSize: 13),
+                    ),
+                  ],
                 ),
               ],
-            ),
-          ],
-        ],
+            ],
+          ),
+        ),
       ),
-      ),
-    ),
     );
   }
 

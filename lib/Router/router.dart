@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:devansh/models/catalogmodels.dart';
 import 'package:devansh/productwidgets/productdetail.dart';
 import 'package:devansh/screen/authscreen.dart';
+import 'package:devansh/screen/contactscreen.dart';
 import 'package:devansh/screen/homescreen.dart';
 import 'package:devansh/screen/orderscreen.dart';
 import 'package:devansh/screen/productscreen.dart'; // ProductsPage
@@ -113,6 +114,16 @@ final GoRouter appRouter = GoRouter(
         );
       },
     ),
+    GoRoute(
+  path: '/contact',
+  name: 'contact',
+  pageBuilder: (context, state) {
+    return _slideFromRightPage(
+      key: state.pageKey,
+      child: const ContactPage(),
+    );
+  },
+),
     GoRoute(
       path: '/product/:id',
       name: 'productDetail',

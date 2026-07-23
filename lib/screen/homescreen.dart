@@ -1,6 +1,6 @@
 import 'package:devansh/components/about.dart';
 import 'package:devansh/components/categories.dart';
-import 'package:devansh/components/contact.dart';
+
 import 'package:devansh/components/footer.dart';
 import 'package:devansh/components/header.dart';
 import 'package:devansh/components/product.dart';
@@ -54,7 +54,7 @@ class _HomePageState extends State<HomePage> {
                 const TopProductsSection(),
                 const _Divider(),
                 const ReviewsSection(),
-                const ContactSection(),
+                
                 const _Divider(),
                 const Footer(),
               ],
