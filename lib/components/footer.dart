@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 
 class Footer extends StatelessWidget {
   const Footer({super.key});
@@ -6,11 +7,11 @@ class Footer extends StatelessWidget {
   static const _accent = Color.fromRGBO(245, 171, 30, 1);
 
   static const List<_FooterLink> _quickLinks = [
-    _FooterLink(label: "Home"),
+    _FooterLink(label: "Home", route: "/"),
     _FooterLink(label: "About Us"),
-    _FooterLink(label: "Products"),
+    _FooterLink(label: "Products", route: "/products"),
     _FooterLink(label: "Reviews"),
-    _FooterLink(label: "Contact"),
+    _FooterLink(label: "Contact", route: "/contact"),
   ];
 
   static const List<_FooterLink> _categoryLinks = [
@@ -119,36 +120,36 @@ class Footer extends StatelessWidget {
   }
 
   Widget _buildBrandColumn() {
-  return Padding(
-    padding: const EdgeInsets.only(right: 20, bottom: 10),
-    child: Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        // ─── Logo instead of text ────────────────────────────────
-        Image.asset(
-          'assets/logo.png',          // <── your logo asset path
-          height: 60,                 // adjust as needed
-          fit: BoxFit.contain,
-        ),
-        const SizedBox(height: 14),
-        Text(
-          "Premium cabinet and door hardware crafted for modern homes "
-          "and everyday durability.",
-          style: TextStyle(fontSize: 13.5, height: 1.6, color: Colors.white.withValues(alpha: 0.6)),
-        ),
-        const SizedBox(height: 20),
-        Row(
-          children: _socials
-              .map((s) => Padding(
-                    padding: const EdgeInsets.only(right: 10),
-                    child: _SocialIcon(icon: s.icon),
-                  ))
-              .toList(),
-        ),
-      ],
-    ),
-  );
-}
+    return Padding(
+      padding: const EdgeInsets.only(right: 20, bottom: 10),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // ─── Logo instead of text ────────────────────────────────
+          Image.asset(
+            'assets/logo.png', // <── your logo asset path
+            height: 60, // adjust as needed
+            fit: BoxFit.contain,
+          ),
+          const SizedBox(height: 14),
+          Text(
+            "Premium cabinet and door hardware crafted for modern homes "
+            "and everyday durability.",
+            style: TextStyle(fontSize: 13.5, height: 1.6, color: Colors.white.withValues(alpha: 0.6)),
+          ),
+          const SizedBox(height: 20),
+          Row(
+            children: _socials
+                .map((s) => Padding(
+                      padding: const EdgeInsets.only(right: 10),
+                      child: _SocialIcon(icon: s.icon),
+                    ))
+                .toList(),
+          ),
+        ],
+      ),
+    );
+  }
 
   Widget _buildLinkColumn(String title, List<_FooterLink> links) {
     return Padding(
@@ -168,7 +169,7 @@ class Footer extends StatelessWidget {
           const SizedBox(height: 16),
           ...links.map((link) => Padding(
                 padding: const EdgeInsets.only(bottom: 12),
-                child: _FooterLinkText(label: link.label),
+                child: _FooterLinkText(label: link.label, route: link.route),
               )),
         ],
       ),
@@ -205,7 +206,8 @@ class Footer extends StatelessWidget {
 
 class _FooterLink {
   final String label;
-  const _FooterLink({required this.label});
+  final String? route;
+  const _FooterLink({required this.label, this.route});
 }
 
 class _SocialIconData {
@@ -215,7 +217,8 @@ class _SocialIconData {
 
 class _FooterLinkText extends StatefulWidget {
   final String label;
-  const _FooterLinkText({required this.label});
+  final String? route;
+  const _FooterLinkText({required this.label, this.route});
 
   @override
   State<_FooterLinkText> createState() => _FooterLinkTextState();
@@ -232,7 +235,9 @@ class _FooterLinkTextState extends State<_FooterLinkText> {
       onExit: (_) => setState(() => _isHovered = false),
       child: GestureDetector(
         onTap: () {
-          // Add navigation logic here
+          if (widget.route != null) {
+            context.push(widget.route!);
+          }
         },
         child: AnimatedDefaultTextStyle(
           duration: const Duration(milliseconds: 200),
