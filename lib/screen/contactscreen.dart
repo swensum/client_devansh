@@ -1,6 +1,7 @@
 
 import 'dart:ui_web' as ui_web;
 
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:devansh/components/footer.dart';
 import 'package:devansh/components/header.dart';
 import 'package:flutter/material.dart';
@@ -49,11 +50,20 @@ class _ContactPageState extends State<ContactPage> {
   }
 
   Future<void> _handleSubmit() async {
-    if (!_formKey.currentState!.validate()) return;
+  if (!_formKey.currentState!.validate()) return;
 
-    setState(() => _isSubmitting = true);
+  setState(() => _isSubmitting = true);
 
-    await Future.delayed(const Duration(seconds: 1));
+  try {
+    await FirebaseFirestore.instance.collection('contact_messages').add({
+      'name': _nameController.text.trim(),
+      'email': _emailController.text.trim(),
+      'phone': _phoneController.text.trim(),
+      'address': _addressController.text.trim(),
+      'message': _messageController.text.trim(),
+      'createdAt': FieldValue.serverTimestamp(),
+      'read': false, // admin panel can use this to flag unread messages
+    });
 
     if (!mounted) return;
     setState(() {
@@ -69,7 +79,15 @@ class _ContactPageState extends State<ContactPage> {
     Future.delayed(const Duration(seconds: 3), () {
       if (mounted) setState(() => _submitted = false);
     });
-  }
+  } catch (e) {
+  debugPrint('Contact submit error: $e');   // add this line
+  if (!mounted) return;
+  setState(() => _isSubmitting = false);
+  ScaffoldMessenger.of(context).showSnackBar(
+    const SnackBar(content: Text("Failed to send message. Please try again.")),
+  );
+}
+}
 
   @override
   Widget build(BuildContext context) {
@@ -192,7 +210,7 @@ class _ContactPageState extends State<ContactPage> {
             _infoBlock(
               icon: Icons.phone_outlined,
               lead: "Have any questions? Reach us by phone",
-              lines: const ["01-5156202", "9801889750", "9801889740"],
+              lines: const ["9857033614", "9857081383"],
             ),
             const SizedBox(height: 40),
 
@@ -206,14 +224,14 @@ class _ContactPageState extends State<ContactPage> {
             _infoBlock(
               icon: Icons.location_on_outlined,
               lead: "Explore us by visiting our stores",
-              lines: const ["Pepsicola, Kathmandu, Nepal"],
+              lines: const ["sukhanagar, butwal, Nepal"],
             ),
             const SizedBox(height: 40),
 
             _infoBlock(
               icon: Icons.access_time_outlined,
               lead: "We are open 6 days a week",
-              lines: const ["Sun-Fri (9:00 AM – 6:00 PM)"],
+              lines: const ["Sun-Fri (10:00 AM – 6:00 PM)"],
             ),
 
             const Spacer(),
