@@ -1,7 +1,11 @@
+
+import 'dart:ui_web' as ui_web;
+
 import 'package:devansh/components/footer.dart';
 import 'package:devansh/components/header.dart';
 import 'package:flutter/material.dart';
 import 'package:visibility_detector/visibility_detector.dart';
+import 'package:web/web.dart' as web;
 
 const double _kHeaderHeight = 100;
 
@@ -77,6 +81,8 @@ class _ContactPageState extends State<ContactPage> {
               children: [
                 const SizedBox(height: _kHeaderHeight), // reserve space
                 _buildContactBody(),
+                const _MapSection(),
+                const _Divider(),
                 const Footer(),
               ],
             ),
@@ -181,28 +187,28 @@ class _ContactPageState extends State<ContactPage> {
                 borderRadius: BorderRadius.circular(2),
               ),
             ),
-            const SizedBox(height: 32),
+            const SizedBox(height: 36),
 
             _infoBlock(
               icon: Icons.phone_outlined,
               lead: "Have any questions? Reach us by phone",
               lines: const ["01-5156202", "9801889750", "9801889740"],
             ),
-            const SizedBox(height: 22),
+            const SizedBox(height: 40),
 
             _infoBlock(
               icon: Icons.email_outlined,
               lead: "We're here for you !! Just get answers",
               lines: const ["tradersnebha@gmail.com"],
             ),
-            const SizedBox(height: 22),
+            const SizedBox(height: 40),
 
             _infoBlock(
               icon: Icons.location_on_outlined,
               lead: "Explore us by visiting our stores",
               lines: const ["Pepsicola, Kathmandu, Nepal"],
             ),
-            const SizedBox(height: 22),
+            const SizedBox(height: 40),
 
             _infoBlock(
               icon: Icons.access_time_outlined,
@@ -424,6 +430,103 @@ class _ContactPageState extends State<ContactPage> {
               "Send Message",
               style: TextStyle(fontSize: 15, fontWeight: FontWeight.w600),
             ),
+    );
+  }
+}
+
+class _Divider extends StatelessWidget {
+  const _Divider();
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: double.infinity,
+      height: 2,
+      color: const Color.fromRGBO(245, 171, 30, 1),
+    );
+  }
+}
+class _MapSection extends StatefulWidget {
+  const _MapSection();
+
+  @override
+  State<_MapSection> createState() => _MapSectionState();
+}
+
+class _MapSectionState extends State<_MapSection> {
+  static const _viewType = 'company-location-map';
+  static bool _factoryRegistered = false;
+static const _mapEmbedSrc =
+    'https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d940.724856269087!2d83.47113613039252!3d27.689691028367275!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x3996877946082bab%3A0x78a9b9e3b3448eb6!2sDevansh%20Suppliers!5e1!3m2!1sen!2snp!4v1784795275180!5m2!1sen!2snp';
+  static const _accent = Color.fromRGBO(245, 171, 30, 1);
+
+  @override
+  void initState() {
+    super.initState();
+    if (!_factoryRegistered) {
+      _factoryRegistered = true;
+      ui_web.platformViewRegistry.registerViewFactory(_viewType, (int viewId) {
+        final iframe = web.HTMLIFrameElement()
+          ..src = _mapEmbedSrc
+          ..style.border = 'none'
+          ..style.width = '100%'
+          ..style.height = '100%';
+        return iframe;
+      });
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: double.infinity,
+      color: Colors.black,
+      padding: const EdgeInsets.fromLTRB(30, 30, 30, 70),
+      child: Center(
+        child: ConstrainedBox(
+          constraints: const BoxConstraints(maxWidth: 1100),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const Text(
+                "Find Our Store",
+                style: TextStyle(
+                  fontSize: 24,
+                  fontWeight: FontWeight.bold,
+                  color: Colors.white,
+                  letterSpacing: 0.8,
+                ),
+              ),
+              const SizedBox(height: 10),
+              Container(
+                width: 60,
+                height: 3,
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(
+                    colors: [
+                      _accent.withValues(alpha: 0.5),
+                      _accent,
+                      _accent.withValues(alpha: 0.5),
+                    ],
+                  ),
+                  borderRadius: BorderRadius.circular(2),
+                ),
+              ),
+              const SizedBox(height: 24),
+              ClipRRect(
+                borderRadius: BorderRadius.circular(14),
+                child: Container(
+                  height: 400,
+                  decoration: BoxDecoration(
+                    border: Border.all(color: Colors.white.withValues(alpha: 0.1)),
+                  ),
+                  child: const HtmlElementView(viewType: _viewType),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
     );
   }
 }
