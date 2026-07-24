@@ -58,6 +58,11 @@ flutter:
     - assets/port3.png
     - assets/image1.png
     - assets/port.png
+    - assets/download.jpg
+    - assets/png/badge.png
+    - assets/png/door-handle.png
+    - assets/png/money.png
+    - assets/virtual-assistant.png
   uses-material-design: true
 
 
