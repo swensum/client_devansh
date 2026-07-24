@@ -7,8 +7,8 @@ class Footer extends StatelessWidget {
   static const _accent = Color.fromRGBO(245, 171, 30, 1);
 
   static const List<_FooterLink> _quickLinks = [
-    _FooterLink(label: "Home", route: "/"),
-    _FooterLink(label: "About Us"),
+  
+   _FooterLink(label: "About Us", route: "/about"),
     _FooterLink(label: "Products", route: "/products"),
     _FooterLink(label: "Reviews"),
     _FooterLink(label: "Contact", route: "/contact"),

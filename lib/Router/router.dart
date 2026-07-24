@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:devansh/models/catalogmodels.dart';
 import 'package:devansh/productwidgets/productdetail.dart';
+import 'package:devansh/screen/aboutscreen.dart';
 import 'package:devansh/screen/authscreen.dart';
 import 'package:devansh/screen/contactscreen.dart';
 import 'package:devansh/screen/homescreen.dart';
@@ -114,6 +115,13 @@ final GoRouter appRouter = GoRouter(
         );
       },
     ),
+    GoRoute(
+  path: '/about',
+  name: 'about',
+  pageBuilder: (context, state) {
+    return _slideFromRightPage(key: state.pageKey, child: const AboutPage());
+  },
+),
     GoRoute(
   path: '/contact',
   name: 'contact',
