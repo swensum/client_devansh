@@ -13,7 +13,7 @@ class AboutPage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.black,
+      
       body: Stack(
         children: [
           SingleChildScrollView(
@@ -23,6 +23,7 @@ class AboutPage extends StatelessWidget {
                 const _WelcomeSection(),
                 const _GallerySection(),
                 const StatsSection(),
+                const _FeaturesSection(),
                 const Footer(),
               ],
             ),
@@ -42,7 +43,7 @@ class _WelcomeSection extends StatelessWidget {
     return Container(
       width: double.infinity,
       color: Colors.black,
-      padding: const EdgeInsets.symmetric(horizontal: 30, vertical: 80),
+      padding: const EdgeInsets.symmetric(horizontal: 30, vertical: 125),
       child: Center(
         child: ConstrainedBox(
           constraints: const BoxConstraints(maxWidth: 1200),
@@ -120,7 +121,7 @@ class _WelcomeImage extends StatelessWidget {
                   ],
                 ),
                 child: Image.asset(
-                  'assets/port.jpg',
+                  'assets/download.jpg',
                   fit: BoxFit.cover,
                   width: double.infinity,
                   height: double.infinity,
@@ -215,7 +216,17 @@ class _GallerySection extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       width: double.infinity,
-      color: const Color(0xFF121212),
+     decoration: BoxDecoration(
+              gradient: LinearGradient(
+                begin: Alignment.centerLeft,
+                end: Alignment.centerRight,
+                colors: [
+                  Colors.black.withValues(alpha: 0.85),
+                  Colors.black.withValues(alpha: 0.6),
+                ],
+                stops: const [0.0, 0.65],
+              ),
+            ),
       padding: const EdgeInsets.symmetric(horizontal: 30, vertical: 80),
       child: Center(
         child: ConstrainedBox(
@@ -309,6 +320,153 @@ class _GalleryImage extends StatelessWidget {
       child: Container(
         color: bg ?? Colors.white10,
         child: Image.asset(asset, fit: fit, width: double.infinity, height: double.infinity),
+      ),
+    );
+  }
+
+}
+class _FeaturesSection extends StatelessWidget {
+  const _FeaturesSection();
+
+  static const List<_FeatureCardData> _features = [
+    _FeatureCardData(
+      iconAsset: 'assets/png/door-handle.png',
+      
+      title: "Genuine Products",
+      description:
+          "We provide you with top-quality, sustainable, and authentic products.",
+    ),
+    _FeatureCardData(
+      iconAsset: 'assets/png/badge.png',
+      title: "Verified Sellers",
+      description:
+          "We are verified suppliers certified by top global companies for our genuine products.",
+    ),
+    _FeatureCardData(
+      iconAsset: 'assets/png/money.png',
+      title: "Big Savings",
+      description:
+          "We present you with the best offers & deals on all our products and accessories.",
+    ),
+    _FeatureCardData(
+      iconAsset: 'assets/png/virtual-assistant.png',
+      title: "Excellent Supports",
+      description:
+          "We provide high-quality services for all our customers with personal assistance.",
+    ),
+  ];
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: double.infinity,
+      color: const Color(0xFF0D0D0D),
+      padding: const EdgeInsets.symmetric(horizontal: 30, vertical: 80),
+      child: Center(
+        child: ConstrainedBox(
+          constraints: const BoxConstraints(maxWidth: 1200),
+          child: LayoutBuilder(
+            builder: (context, constraints) {
+              final w = constraints.maxWidth;
+              final columns = w > 900 ? 4 : (w > 600 ? 2 : 1);
+              final cardWidth = (w - (columns - 1) * 24) / columns;
+
+              return Wrap(
+                spacing: 24,
+                runSpacing: 24,
+                children: _features
+                    .map((f) => SizedBox(
+                          width: cardWidth,
+                          child: _FeatureCard(data: f),
+                        ))
+                    .toList(),
+              );
+            },
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _FeatureCardData {
+  final String iconAsset;
+  final String title;
+  final String description;
+
+  const _FeatureCardData({
+    required this.iconAsset,
+    required this.title,
+    required this.description,
+  });
+}
+
+class _FeatureCard extends StatefulWidget {
+  final _FeatureCardData data;
+  const _FeatureCard({required this.data});
+
+  @override
+  State<_FeatureCard> createState() => _FeatureCardState();
+}
+class _FeatureCardState extends State<_FeatureCard> {
+  bool _hovered = false;
+
+  @override
+  Widget build(BuildContext context) {
+    return MouseRegion(
+      onEnter: (_) => setState(() => _hovered = true),
+      onExit: (_) => setState(() => _hovered = false),
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 200),
+        padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 36),
+        decoration: BoxDecoration(
+          color: Colors.white.withValues(alpha: _hovered ? 0.06 : 0.03),
+          borderRadius: BorderRadius.circular(14),
+          border: Border.all(
+            color: _hovered ? _gold.withValues(alpha: 0.5) : Colors.white.withValues(alpha: 0.08),
+          ),
+        ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            AnimatedRotation(
+              turns: _hovered ? 1.0 : 0.0,
+              duration: const Duration(milliseconds: 500),
+              curve: Curves.easeOutCubic,
+              child: SizedBox(
+                width: 64,
+                height: 64,
+                child: Image.asset(
+                  widget.data.iconAsset,
+                  fit: BoxFit.contain,
+                  errorBuilder: (context, error, stackTrace) {
+                    return const Icon(Icons.image_outlined, size: 40, color: _gold);
+                  },
+                ),
+              ),
+            ),
+            const SizedBox(height: 20),
+            Text(
+              widget.data.title,
+              textAlign: TextAlign.center,
+              style: const TextStyle(
+                fontSize: 17,
+                fontWeight: FontWeight.w600,
+                color: Colors.white,
+              ),
+            ),
+            const SizedBox(height: 10),
+            Text(
+              widget.data.description,
+              textAlign: TextAlign.center,
+              style: TextStyle(
+                fontSize: 13.5,
+                height: 1.5,
+                color: Colors.white.withValues(alpha: 0.7),
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
