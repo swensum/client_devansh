@@ -431,17 +431,25 @@ class _FeatureCardState extends State<_FeatureCard> {
       child: AnimatedContainer(
         duration: const Duration(milliseconds: 200),
         width: double.infinity,
-        height: double.infinity, // fills the fixed-size SizedBox from the parent
+        height: double.infinity,
         padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 32),
         decoration: BoxDecoration(
-          color: Colors.white.withValues(alpha: _hovered ? 0.06 : 0.03),
+          color: _hovered ? const Color(0xFF1E1E1E) : const Color(0xFF161616),
           borderRadius: BorderRadius.circular(14),
           border: Border.all(
-            color: _hovered ? _gold.withValues(alpha: 0.5) : Colors.white.withValues(alpha: 0.08),
+            color: _hovered ? _gold : Colors.white.withValues(alpha: 0.12),
+            width: _hovered ? 1.4 : 1,
           ),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withValues(alpha: _hovered ? 0.4 : 0.2),
+              blurRadius: _hovered ? 20 : 10,
+              offset: const Offset(0, 6),
+            ),
+          ],
         ),
         child: Column(
-          mainAxisAlignment: MainAxisAlignment.center, // centers content within the fixed height
+          mainAxisAlignment: MainAxisAlignment.center,
           children: [
             Container(
               width: 104,

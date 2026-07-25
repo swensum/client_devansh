@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:google_fonts/google_fonts.dart';
 
 class StatItem {
   final IconData icon;
@@ -43,7 +44,7 @@ class StatsSection extends StatelessWidget {
     return Container(
       width: double.infinity,
       color: Colors.black,
-      padding: const EdgeInsets.symmetric(horizontal: 40, vertical: 30),
+      padding: const EdgeInsets.symmetric(horizontal: 40, vertical: 50),
       child: LayoutBuilder(
         builder: (context, constraints) {
           
@@ -67,7 +68,6 @@ class StatsSection extends StatelessWidget {
     );
   }
 }
-
 class _StatTile extends StatelessWidget {
   final StatItem stat;
 
@@ -84,20 +84,22 @@ class _StatTile extends StatelessWidget {
           color: const Color.fromRGBO(245, 171, 30, 1),
         ),
         const SizedBox(height: 12),
-        Text(
-          stat.value,
-          style: const TextStyle(
-            fontSize: 28,
-            fontWeight: FontWeight.bold,
-            color: Colors.white,
-          ),
-        ),
+       Text(
+  stat.value,
+  style: GoogleFonts.getFont(
+    'Big Shoulders Display',
+    fontSize: 34,
+    fontWeight: FontWeight.w800,
+    color: Colors.white,
+    letterSpacing: 1.2,
+  ),
+),
         const SizedBox(height: 6),
         Text(
           stat.label,
           textAlign: TextAlign.center,
           style: TextStyle(
-            fontSize: 14,
+            fontSize: 16,
             color: Colors.white.withValues(alpha: 0.75),
           ),
         ),
