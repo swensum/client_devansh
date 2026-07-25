@@ -43,7 +43,7 @@ class _WelcomeSection extends StatelessWidget {
     return Container(
       width: double.infinity,
       color: Colors.black,
-      padding: const EdgeInsets.symmetric(horizontal: 30, vertical: 125),
+      padding: const EdgeInsets.symmetric(horizontal: 30, vertical: 90),
       child: Center(
         child: ConstrainedBox(
           constraints: const BoxConstraints(maxWidth: 1200),
@@ -83,10 +83,10 @@ class _WelcomeImage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final height = isWide ? 440.0 : 300.0;
+    final height = isWide ? 550.0 : 380.0;
 
     return SizedBox(
-      height: height + 24,
+      height: height + 40,
       child: Stack(
         children: [
           // Accent block offset behind the photo — the "modern" framing cue.
@@ -98,7 +98,7 @@ class _WelcomeImage extends StatelessWidget {
             child: Container(
               decoration: BoxDecoration(
                 color: _gold.withValues(alpha: 0.18),
-                borderRadius: BorderRadius.circular(18),
+                
                 border: Border.all(color: _gold.withValues(alpha: 0.4), width: 1.2),
               ),
             ),
@@ -109,7 +109,7 @@ class _WelcomeImage extends StatelessWidget {
             right: 24,
             bottom: 24,
             child: ClipRRect(
-              borderRadius: BorderRadius.circular(18),
+           
               child: Container(
                 decoration: BoxDecoration(
                   boxShadow: [
@@ -157,7 +157,7 @@ class _WelcomeText extends StatelessWidget {
         ),
         const SizedBox(height: 10),
         Text(
-          "Devansh Hardware",
+          "Devansh Suppliers",
           textAlign: isWide ? TextAlign.left : TextAlign.center,
           style: TextStyle(
             fontSize: isWide ? 40 : 30,
@@ -172,21 +172,32 @@ class _WelcomeText extends StatelessWidget {
           height: 4,
           decoration: BoxDecoration(color: _gold, borderRadius: BorderRadius.circular(2)),
         ),
-        const SizedBox(height: 24),
-        Text(
-          "For years, we've been delivering premium cabinet handles, door "
-          "fittings, mortice locks, aldrops, and architectural hardware that "
-          "blend exceptional durability with timeless design. Every product "
-          "is crafted with precision using high-quality materials to ensure "
-          "lasting performance, reliability, and elegance — for modern "
-          "homes, commercial spaces, and custom interiors alike.",
-          textAlign: isWide ? TextAlign.left : TextAlign.center,
-          style: TextStyle(
-            fontSize: 15.5,
-            height: 1.7,
-            color: Colors.white.withValues(alpha: 0.8),
-          ),
-        ),
+       const SizedBox(height: 24),
+
+Text(
+  "Namaste everyone from the DEVANSH family.\n"
+  "At Devansh Hardware, we are committed to providing premium-quality "
+  "hardware solutions that combine durability, functionality, and modern "
+  "design. Our carefully selected range includes cabinet handles, door "
+  "fittings, mortice locks, aldrops, tower bolts, hinges, and other "
+  "architectural hardware designed to meet the needs of both residential "
+  "and commercial projects.\n"
+  "We believe that quality products and dependable service go hand in hand. "
+  "Whether you are building a new space, renovating an existing one, or "
+  "working on a custom interior project, our goal is to provide reliable "
+  "products at competitive prices while helping you find the right solution "
+  "for your requirements.\n"
+  "Customer satisfaction is at the heart of everything we do. We take pride "
+  "in offering genuine products, trusted brands, and professional service "
+  "that you can rely on. Thank you for choosing Devansh Suppliers—we look "
+  "forward to being a part of your next project.",
+  textAlign: isWide ? TextAlign.left : TextAlign.center,
+  style: TextStyle(
+    fontSize: 15.5,
+    height: 1.8, // Slightly increased for better paragraph spacing
+    color: Colors.white.withValues(alpha: 0.85),
+  ),
+),
         const SizedBox(height: 28),
         Align(
           alignment: isWide ? Alignment.centerLeft : Alignment.center,
@@ -360,7 +371,7 @@ class _FeaturesSection extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       width: double.infinity,
-      color: const Color(0xFF0D0D0D),
+      color: Colors.black,
       padding: const EdgeInsets.symmetric(horizontal: 30, vertical: 80),
       child: Center(
         child: ConstrainedBox(
@@ -372,15 +383,16 @@ class _FeaturesSection extends StatelessWidget {
               final cardWidth = (w - (columns - 1) * 24) / columns;
 
               return Wrap(
-                spacing: 24,
-                runSpacing: 24,
-                children: _features
-                    .map((f) => SizedBox(
-                          width: cardWidth,
-                          child: _FeatureCard(data: f),
-                        ))
-                    .toList(),
-              );
+  spacing: 24,
+  runSpacing: 24,
+  children: _features
+      .map((f) => SizedBox(
+            width: cardWidth,
+            height: 380, // fixed height — keeps all 4 cards equal
+            child: _FeatureCard(data: f),
+          ))
+      .toList(),
+);
             },
           ),
         ),
@@ -418,7 +430,9 @@ class _FeatureCardState extends State<_FeatureCard> {
       onExit: (_) => setState(() => _hovered = false),
       child: AnimatedContainer(
         duration: const Duration(milliseconds: 200),
-        padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 36),
+        width: double.infinity,
+        height: double.infinity, // fills the fixed-size SizedBox from the parent
+        padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 32),
         decoration: BoxDecoration(
           color: Colors.white.withValues(alpha: _hovered ? 0.06 : 0.03),
           borderRadius: BorderRadius.circular(14),
@@ -427,40 +441,45 @@ class _FeatureCardState extends State<_FeatureCard> {
           ),
         ),
         child: Column(
-          mainAxisSize: MainAxisSize.min,
+          mainAxisAlignment: MainAxisAlignment.center, // centers content within the fixed height
           children: [
-            AnimatedRotation(
-              turns: _hovered ? 1.0 : 0.0,
-              duration: const Duration(milliseconds: 500),
-              curve: Curves.easeOutCubic,
-              child: SizedBox(
-                width: 64,
-                height: 64,
+            Container(
+              width: 104,
+              height: 104,
+              padding: const EdgeInsets.all(18),
+              decoration: const BoxDecoration(
+                color: Colors.white,
+                shape: BoxShape.circle,
+              ),
+              child: AnimatedRotation(
+                turns: _hovered ? 1.0 : 0.0,
+                duration: const Duration(milliseconds: 500),
+                curve: Curves.easeOutCubic,
                 child: Image.asset(
                   widget.data.iconAsset,
                   fit: BoxFit.contain,
                   errorBuilder: (context, error, stackTrace) {
-                    return const Icon(Icons.image_outlined, size: 40, color: _gold);
+                    return const Icon(Icons.image_outlined, size: 38, color: _gold);
                   },
                 ),
               ),
             ),
-            const SizedBox(height: 20),
+            const SizedBox(height: 24),
             Text(
               widget.data.title,
               textAlign: TextAlign.center,
               style: const TextStyle(
-                fontSize: 17,
+                fontSize: 22,
                 fontWeight: FontWeight.w600,
                 color: Colors.white,
               ),
             ),
-            const SizedBox(height: 10),
+            const SizedBox(height: 14),
             Text(
               widget.data.description,
               textAlign: TextAlign.center,
               style: TextStyle(
-                fontSize: 13.5,
+                fontSize: 18,
                 height: 1.5,
                 color: Colors.white.withValues(alpha: 0.7),
               ),

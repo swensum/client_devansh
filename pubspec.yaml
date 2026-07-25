@@ -62,7 +62,7 @@ flutter:
     - assets/png/badge.png
     - assets/png/door-handle.png
     - assets/png/money.png
-    - assets/virtual-assistant.png
+    - assets/png/virtual-assistant.png
   uses-material-design: true
 
 
