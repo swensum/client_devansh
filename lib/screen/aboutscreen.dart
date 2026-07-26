@@ -132,6 +132,37 @@ class _WelcomeImage extends StatelessWidget {
               ),
             ),
           ),
+
+          // "Since 2019" badge — a small accent block over the photo's
+          // bottom-left corner.
+          Positioned(
+            left: 10,
+            bottom: offset + 24,
+            child: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 12),
+              decoration: BoxDecoration(
+                color: _gold,
+                borderRadius: BorderRadius.circular(6),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withValues(alpha: 0.3),
+                    blurRadius: 4,
+                    offset: const Offset(2, 2),
+                  ),
+                ],
+              ),
+              child: const Text(
+                "SINCE 2019",
+                style: TextStyle(
+                  fontFamily: 'BrandonGrotesque',
+                  fontSize: 14,
+                  fontWeight: FontWeight.w900,
+                  letterSpacing: 1.5,
+                  color: Colors.black,
+                ),
+              ),
+            ),
+          ),
         ],
       ),
     );
@@ -246,33 +277,32 @@ class _GallerySection extends StatelessWidget {
       padding: const EdgeInsets.symmetric(horizontal: 30, vertical: 80),
       child: Center(
         child: ConstrainedBox(
-          constraints: const BoxConstraints(maxWidth: 1200),
+          constraints: const BoxConstraints(maxWidth: 1400),
           child: LayoutBuilder(
             builder: (context, constraints) {
               final isWide = constraints.maxWidth > 800;
 
               if (isWide) {
                 return SizedBox(
-                  height: 480,
+                  height: 500,
                   child: Row(
                     crossAxisAlignment: CrossAxisAlignment.stretch,
                     children: [
                       Expanded(
                         flex: 3,
-                        child: _GalleryImage(asset: 'assets/port2.png'),
+                        child: _GalleryImage(asset: 'assets/devansh.png'),
                       ),
                       const SizedBox(width: 16),
                       Expanded(
                         flex: 2,
                         child: Column(
                           children: [
-                            Expanded(child: _GalleryImage(asset: 'assets/port3.png')),
+                            Expanded(child: _GalleryImage(asset: 'assets/chimney.png')),
                             const SizedBox(height: 16),
                             Expanded(
                               child: _GalleryImage(
-                                asset: 'assets/logo.png',
-                                fit: BoxFit.contain,
-                                bg: Colors.black,
+                                asset: 'assets/basket.png',
+                               
                               ),
                             ),
                           ],
@@ -288,7 +318,7 @@ class _GallerySection extends StatelessWidget {
                   SizedBox(
                     height: 260,
                     width: double.infinity,
-                    child: _GalleryImage(asset: 'assets/port2.png'),
+                    child: _GalleryImage(asset: 'assets/devansh.png'),
                   ),
                   const SizedBox(height: 16),
                   Row(
@@ -296,7 +326,7 @@ class _GallerySection extends StatelessWidget {
                       Expanded(
                         child: SizedBox(
                           height: 140,
-                          child: _GalleryImage(asset: 'assets/port3.png'),
+                          child: _GalleryImage(asset: 'assets/chimney.png'),
                         ),
                       ),
                       const SizedBox(width: 16),
@@ -304,9 +334,8 @@ class _GallerySection extends StatelessWidget {
                         child: SizedBox(
                           height: 140,
                           child: _GalleryImage(
-                            asset: 'assets/logo.png',
-                            fit: BoxFit.contain,
-                            bg: Colors.black,
+                            asset: 'assets/basket.png',
+                           
                           ),
                         ),
                       ),
@@ -327,12 +356,13 @@ class _GalleryImage extends StatelessWidget {
   final BoxFit fit;
   final Color? bg;
 
+  // ignore: unused_element_parameter
   const _GalleryImage({required this.asset, this.fit = BoxFit.cover, this.bg});
 
   @override
   Widget build(BuildContext context) {
     return ClipRRect(
-      borderRadius: BorderRadius.circular(14),
+     
       child: Container(
         color: bg ?? Colors.white10,
         child: Image.asset(asset, fit: fit, width: double.infinity, height: double.infinity),
@@ -509,7 +539,6 @@ class _BrandsSection extends StatefulWidget {
   @override
   State<_BrandsSection> createState() => _BrandsSectionState();
 }
-
 class _BrandsSectionState extends State<_BrandsSection> {
   final CatalogService _catalogService = CatalogService();
   bool _visible = false;
@@ -527,24 +556,24 @@ class _BrandsSectionState extends State<_BrandsSection> {
       onVisibilityChanged: _handleVisibility,
       child: Container(
         width: double.infinity,
-       decoration: BoxDecoration(
-              gradient: LinearGradient(
-                begin: Alignment.centerLeft,
-                end: Alignment.centerRight,
-                colors: [
-                  Colors.black.withValues(alpha: 0.85),
-                  Colors.black.withValues(alpha: 0.6),
-                ],
-                stops: const [0.0, 0.65],
-              ),
-            ),
+        decoration: BoxDecoration(
+          gradient: LinearGradient(
+            begin: Alignment.centerLeft,
+            end: Alignment.centerRight,
+            colors: [
+              Colors.black.withValues(alpha: 0.85),
+              Colors.black.withValues(alpha: 0.6),
+            ],
+            stops: const [0.0, 0.65],
+          ),
+        ),
         padding: const EdgeInsets.symmetric(horizontal: 30, vertical: 50),
         child: Center(
           child: ConstrainedBox(
             constraints: const BoxConstraints(maxWidth: 1200),
             child: Column(
               children: [
-                Text(
+                const Text(
                   "Brands We Work With",
                   style: TextStyle(
                     fontSize: 30,
@@ -582,13 +611,26 @@ class _BrandsSectionState extends State<_BrandsSection> {
                     final companies = snapshot.data!;
                     if (companies.isEmpty) return const SizedBox.shrink();
 
-                    return Wrap(
-                      alignment: WrapAlignment.center,
-                      spacing: 20,
-                      runSpacing: 20,
-                      children: companies
-                          .map((company) => _BrandTile(company: company))
-                          .toList(),
+                    return LayoutBuilder(
+                      builder: (context, constraints) {
+                        const columns = 4;
+                        const spacing = 20.0;
+                        final w = constraints.maxWidth;
+                        final tileWidth = (w - (columns - 1) * spacing) / columns;
+
+                        return Wrap(
+                          alignment: WrapAlignment.center,
+                          spacing: spacing,
+                          runSpacing: spacing,
+                          children: companies
+                              .map((company) => SizedBox(
+                                    width: tileWidth,
+                                    height: tileWidth * 0.75, // keeps a consistent aspect ratio
+                                    child: _BrandTile(company: company),
+                                  ))
+                              .toList(),
+                        );
+                      },
                     );
                   },
                 ),
@@ -608,7 +650,6 @@ class _BrandTile extends StatefulWidget {
   @override
   State<_BrandTile> createState() => _BrandTileState();
 }
-
 class _BrandTileState extends State<_BrandTile> {
   bool _hovered = false;
 
@@ -621,65 +662,70 @@ class _BrandTileState extends State<_BrandTile> {
       cursor: SystemMouseCursors.click,
       onEnter: (_) => setState(() => _hovered = true),
       onExit: (_) => setState(() => _hovered = false),
-      child: AnimatedContainer(
-        duration: const Duration(milliseconds: 200),
-        width: 170,
-        height: 100,
-        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
-        decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.circular(10),
-          border: Border.all(
-            color: _hovered ? _gold : Colors.transparent,
-            width: 2,
-          ),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withValues(alpha: _hovered ? 0.3 : 0.15),
-              blurRadius: _hovered ? 16 : 8,
-              offset: const Offset(0, 4),
+      child: GestureDetector(
+        onTap: () {
+          context.push('/products?company=${widget.company.id}');
+        },
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 200),
+          width: double.infinity,
+          height: double.infinity,
+          padding: const EdgeInsets.symmetric(horizontal: 26, vertical: 22),
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(10),
+            border: Border.all(
+              color: _hovered ? _gold : Colors.transparent,
+              width: 2,
             ),
-          ],
-        ),
-        child: Center(
-          child: logoAsset == null
-              ? Text(
-                  widget.company.name,
-                  textAlign: TextAlign.center,
-                  style: const TextStyle(
-                    fontSize: 13,
-                    fontWeight: FontWeight.w600,
-                    color: Colors.black87,
-                  ),
-                )
-              : isNetworkImage
-                  ? Image.network(
-                      logoAsset,
-                      fit: BoxFit.contain,
-                      cacheWidth: 260,
-                      errorBuilder: (context, error, stackTrace) => Text(
-                        widget.company.name,
-                        textAlign: TextAlign.center,
-                        style: const TextStyle(
-                          fontSize: 13,
-                          fontWeight: FontWeight.w600,
-                          color: Colors.black87,
-                        ),
-                      ),
-                    )
-                  : Image.asset(
-                      logoAsset,
-                      fit: BoxFit.contain,
-                      errorBuilder: (context, error, stackTrace) => Text(
-                        widget.company.name,
-                        textAlign: TextAlign.center,
-                        style: const TextStyle(
-                          fontSize: 13,
-                          fontWeight: FontWeight.w600,
-                          color: Colors.black87,
-                        ),
-                      ),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withValues(alpha: _hovered ? 0.3 : 0.15),
+                blurRadius: _hovered ? 16 : 8,
+                offset: const Offset(0, 4),
+              ),
+            ],
+          ),
+          child: Center(
+            child: logoAsset == null
+                ? Text(
+                    widget.company.name,
+                    textAlign: TextAlign.center,
+                    style: const TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.w600,
+                      color: Colors.black87,
                     ),
+                  )
+                : isNetworkImage
+                    ? Image.network(
+                        logoAsset,
+                        fit: BoxFit.contain,
+                        cacheWidth: 320,
+                        errorBuilder: (context, error, stackTrace) => Text(
+                          widget.company.name,
+                          textAlign: TextAlign.center,
+                          style: const TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.w600,
+                            color: Colors.black87,
+                          ),
+                        ),
+                      )
+                    : Image.asset(
+                        logoAsset,
+                        fit: BoxFit.contain,
+                        errorBuilder: (context, error, stackTrace) => Text(
+                          widget.company.name,
+                          textAlign: TextAlign.center,
+                          style: const TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.w600,
+                            color: Colors.black87,
+                          ),
+                        ),
+                      ),
+          ),
         ),
       ),
     );
