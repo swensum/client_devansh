@@ -1,8 +1,12 @@
 import 'package:devansh/components/footer.dart';
 import 'package:devansh/components/header.dart';
 import 'package:devansh/components/stat.dart';
+import 'package:devansh/models/authmodel.dart';
 import 'package:devansh/models/catalogmodels.dart';
+import 'package:devansh/models/reviewmodel.dart';
+import 'package:devansh/services/authservice.dart';
 import 'package:devansh/services/catalogservice.dart';
+import 'package:devansh/services/reviewservice.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:visibility_detector/visibility_detector.dart';
@@ -16,7 +20,6 @@ class AboutPage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      
       body: Stack(
         children: [
           SingleChildScrollView(
@@ -27,7 +30,8 @@ class AboutPage extends StatelessWidget {
                 const _GallerySection(),
                 const StatsSection(),
                 const _FeaturesSection(),
-                 const _BrandsSection(),
+                const _BrandsSection(),
+                const _ReviewFormSection(),
                 const Footer(),
               ],
             ),
@@ -80,6 +84,7 @@ class _WelcomeSection extends StatelessWidget {
     );
   }
 }
+
 class _WelcomeImage extends StatelessWidget {
   final bool isWide;
   const _WelcomeImage({required this.isWide});
@@ -88,13 +93,12 @@ class _WelcomeImage extends StatelessWidget {
   Widget build(BuildContext context) {
     final height = isWide ? 550.0 : 380.0;
     const offset = 24.0;
-    const accentHeightReduction = 80.0; // how much shorter the gold block is vs the photo
+    const accentHeightReduction = 80.0;
 
     return SizedBox(
       height: height + offset,
       child: Stack(
         children: [
-          // Accent block — now shorter than the photo, not full height.
           Positioned(
             left: offset,
             top: offset,
@@ -112,29 +116,29 @@ class _WelcomeImage extends StatelessWidget {
             top: 0,
             right: offset,
             bottom: offset,
-            child: ClipRRect(
-              child: Container(
-                decoration: BoxDecoration(
-                  boxShadow: [
-                    BoxShadow(
-                      color: Colors.black.withValues(alpha: 0.5),
-                      blurRadius: 24,
-                      offset: const Offset(0, 12),
-                    ),
-                  ],
-                ),
-                child: Image.asset(
-                  'assets/decor.jpg',
-                  fit: BoxFit.cover,
-                  width: double.infinity,
-                  height: double.infinity,
-                ),
+            child: Container(
+              decoration: BoxDecoration(
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withValues(alpha: 0.5),
+                    blurRadius: 24,
+                    offset: const Offset(0, 12),
+                  ),
+                ],
+              ),
+              child: Image.asset(
+                'assets/decor.jpg',
+                fit: BoxFit.cover,
+                width: double.infinity,
+                height: double.infinity,
+                // Downsamples during decode instead of after — this is
+                // what was causing the visible lag on first paint, since
+                // the source photo is far larger than its ~550px display
+                // height.
+                cacheWidth: 700,
               ),
             ),
           ),
-
-          // "Since 2019" badge — a small accent block over the photo's
-          // bottom-left corner.
           Positioned(
             left: 10,
             bottom: offset + 24,
@@ -168,6 +172,7 @@ class _WelcomeImage extends StatelessWidget {
     );
   }
 }
+
 class _WelcomeText extends StatelessWidget {
   final bool isWide;
   const _WelcomeText({required this.isWide});
@@ -208,7 +213,6 @@ class _WelcomeText extends StatelessWidget {
           decoration: BoxDecoration(color: _gold, borderRadius: BorderRadius.circular(2)),
         ),
         const SizedBox(height: 24),
-
         Text(
           "Namaste everyone from the DEVANSH family.\n"
           "At Devansh Hardware, we are committed to providing premium-quality "
@@ -256,6 +260,7 @@ class _WelcomeText extends StatelessWidget {
     );
   }
 }
+
 class _GallerySection extends StatelessWidget {
   const _GallerySection();
 
@@ -263,17 +268,17 @@ class _GallerySection extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       width: double.infinity,
-     decoration: BoxDecoration(
-              gradient: LinearGradient(
-                begin: Alignment.centerLeft,
-                end: Alignment.centerRight,
-                colors: [
-                  Colors.black.withValues(alpha: 0.85),
-                  Colors.black.withValues(alpha: 0.6),
-                ],
-                stops: const [0.0, 0.65],
-              ),
-            ),
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          begin: Alignment.centerLeft,
+          end: Alignment.centerRight,
+          colors: [
+            Colors.black.withValues(alpha: 0.85),
+            Colors.black.withValues(alpha: 0.6),
+          ],
+          stops: const [0.0, 0.65],
+        ),
+      ),
       padding: const EdgeInsets.symmetric(horizontal: 30, vertical: 80),
       child: Center(
         child: ConstrainedBox(
@@ -288,10 +293,7 @@ class _GallerySection extends StatelessWidget {
                   child: Row(
                     crossAxisAlignment: CrossAxisAlignment.stretch,
                     children: [
-                      Expanded(
-                        flex: 3,
-                        child: _GalleryImage(asset: 'assets/devansh.png'),
-                      ),
+                      Expanded(flex: 3, child: _GalleryImage(asset: 'assets/devansh.png')),
                       const SizedBox(width: 16),
                       Expanded(
                         flex: 2,
@@ -299,12 +301,7 @@ class _GallerySection extends StatelessWidget {
                           children: [
                             Expanded(child: _GalleryImage(asset: 'assets/chimney.png')),
                             const SizedBox(height: 16),
-                            Expanded(
-                              child: _GalleryImage(
-                                asset: 'assets/basket.png',
-                               
-                              ),
-                            ),
+                            Expanded(child: _GalleryImage(asset: 'assets/basket.png')),
                           ],
                         ),
                       ),
@@ -333,10 +330,7 @@ class _GallerySection extends StatelessWidget {
                       Expanded(
                         child: SizedBox(
                           height: 140,
-                          child: _GalleryImage(
-                            asset: 'assets/basket.png',
-                           
-                          ),
+                          child: _GalleryImage(asset: 'assets/basket.png'),
                         ),
                       ),
                     ],
@@ -353,34 +347,31 @@ class _GallerySection extends StatelessWidget {
 
 class _GalleryImage extends StatelessWidget {
   final String asset;
-  final BoxFit fit;
-  final Color? bg;
-
-  // ignore: unused_element_parameter
-  const _GalleryImage({required this.asset, this.fit = BoxFit.cover, this.bg});
+  const _GalleryImage({required this.asset});
 
   @override
   Widget build(BuildContext context) {
-    return ClipRRect(
-     
-      child: Container(
-        color: bg ?? Colors.white10,
-        child: Image.asset(asset, fit: fit, width: double.infinity, height: double.infinity),
+    return Container(
+      color: Colors.white10,
+      child: Image.asset(
+        asset,
+        fit: BoxFit.cover,
+        width: double.infinity,
+        height: double.infinity,
+        cacheWidth: 700, // downsample large source photos during decode
       ),
     );
   }
-
 }
+
 class _FeaturesSection extends StatelessWidget {
   const _FeaturesSection();
 
   static const List<_FeatureCardData> _features = [
     _FeatureCardData(
       iconAsset: 'assets/png/door-handle.png',
-      
       title: "Genuine Products",
-      description:
-          "We provide you with top-quality, sustainable, and authentic products.",
+      description: "We provide you with top-quality, sustainable, and authentic products.",
     ),
     _FeatureCardData(
       iconAsset: 'assets/png/badge.png',
@@ -391,14 +382,12 @@ class _FeaturesSection extends StatelessWidget {
     _FeatureCardData(
       iconAsset: 'assets/png/money.png',
       title: "Big Savings",
-      description:
-          "We present you with the best offers & deals on all our products and accessories.",
+      description: "We present you with the best offers & deals on all our products and accessories.",
     ),
     _FeatureCardData(
       iconAsset: 'assets/png/virtual-assistant.png',
       title: "Excellent Supports",
-      description:
-          "We provide high-quality services for all our customers with personal assistance.",
+      description: "We provide high-quality services for all our customers with personal assistance.",
     ),
   ];
 
@@ -418,16 +407,12 @@ class _FeaturesSection extends StatelessWidget {
               final cardWidth = (w - (columns - 1) * 24) / columns;
 
               return Wrap(
-  spacing: 24,
-  runSpacing: 24,
-  children: _features
-      .map((f) => SizedBox(
-            width: cardWidth,
-            height: 380, // fixed height — keeps all 4 cards equal
-            child: _FeatureCard(data: f),
-          ))
-      .toList(),
-);
+                spacing: 24,
+                runSpacing: 24,
+                children: _features
+                    .map((f) => SizedBox(width: cardWidth, height: 380, child: _FeatureCard(data: f)))
+                    .toList(),
+              );
             },
           ),
         ),
@@ -455,6 +440,7 @@ class _FeatureCard extends StatefulWidget {
   @override
   State<_FeatureCard> createState() => _FeatureCardState();
 }
+
 class _FeatureCardState extends State<_FeatureCard> {
   bool _hovered = false;
 
@@ -490,10 +476,7 @@ class _FeatureCardState extends State<_FeatureCard> {
               width: 104,
               height: 104,
               padding: const EdgeInsets.all(18),
-              decoration: const BoxDecoration(
-                color: Colors.white,
-                shape: BoxShape.circle,
-              ),
+              decoration: const BoxDecoration(color: Colors.white, shape: BoxShape.circle),
               child: AnimatedRotation(
                 turns: _hovered ? 1.0 : 0.0,
                 duration: const Duration(milliseconds: 500),
@@ -501,9 +484,8 @@ class _FeatureCardState extends State<_FeatureCard> {
                 child: Image.asset(
                   widget.data.iconAsset,
                   fit: BoxFit.contain,
-                  errorBuilder: (context, error, stackTrace) {
-                    return const Icon(Icons.image_outlined, size: 38, color: _gold);
-                  },
+                  errorBuilder: (context, error, stackTrace) =>
+                      const Icon(Icons.image_outlined, size: 38, color: _gold),
                 ),
               ),
             ),
@@ -511,21 +493,13 @@ class _FeatureCardState extends State<_FeatureCard> {
             Text(
               widget.data.title,
               textAlign: TextAlign.center,
-              style: const TextStyle(
-                fontSize: 22,
-                fontWeight: FontWeight.w600,
-                color: Colors.white,
-              ),
+              style: const TextStyle(fontSize: 22, fontWeight: FontWeight.w600, color: Colors.white),
             ),
             const SizedBox(height: 14),
             Text(
               widget.data.description,
               textAlign: TextAlign.center,
-              style: TextStyle(
-                fontSize: 18,
-                height: 1.5,
-                color: Colors.white.withValues(alpha: 0.7),
-              ),
+              style: TextStyle(fontSize: 18, height: 1.5, color: Colors.white.withValues(alpha: 0.7)),
             ),
           ],
         ),
@@ -533,12 +507,14 @@ class _FeatureCardState extends State<_FeatureCard> {
     );
   }
 }
+
 class _BrandsSection extends StatefulWidget {
   const _BrandsSection();
 
   @override
   State<_BrandsSection> createState() => _BrandsSectionState();
 }
+
 class _BrandsSectionState extends State<_BrandsSection> {
   final CatalogService _catalogService = CatalogService();
   bool _visible = false;
@@ -560,10 +536,7 @@ class _BrandsSectionState extends State<_BrandsSection> {
           gradient: LinearGradient(
             begin: Alignment.centerLeft,
             end: Alignment.centerRight,
-            colors: [
-              Colors.black.withValues(alpha: 0.85),
-              Colors.black.withValues(alpha: 0.6),
-            ],
+            colors: [Colors.black.withValues(alpha: 0.85), Colors.black.withValues(alpha: 0.6)],
             stops: const [0.0, 0.65],
           ),
         ),
@@ -586,10 +559,7 @@ class _BrandsSectionState extends State<_BrandsSection> {
                 Container(
                   width: 60,
                   height: 3,
-                  decoration: BoxDecoration(
-                    color: _gold,
-                    borderRadius: BorderRadius.circular(2),
-                  ),
+                  decoration: BoxDecoration(color: _gold, borderRadius: BorderRadius.circular(2)),
                 ),
                 const SizedBox(height: 12),
                 Text(
@@ -625,7 +595,7 @@ class _BrandsSectionState extends State<_BrandsSection> {
                           children: companies
                               .map((company) => SizedBox(
                                     width: tileWidth,
-                                    height: tileWidth * 0.75, // keeps a consistent aspect ratio
+                                    height: tileWidth * 0.75,
                                     child: _BrandTile(company: company),
                                   ))
                               .toList(),
@@ -650,6 +620,7 @@ class _BrandTile extends StatefulWidget {
   @override
   State<_BrandTile> createState() => _BrandTileState();
 }
+
 class _BrandTileState extends State<_BrandTile> {
   bool _hovered = false;
 
@@ -663,9 +634,7 @@ class _BrandTileState extends State<_BrandTile> {
       onEnter: (_) => setState(() => _hovered = true),
       onExit: (_) => setState(() => _hovered = false),
       child: GestureDetector(
-        onTap: () {
-          context.push('/products?company=${widget.company.id}');
-        },
+        onTap: () => context.push('/products?company=${widget.company.id}'),
         child: AnimatedContainer(
           duration: const Duration(milliseconds: 200),
           width: double.infinity,
@@ -674,10 +643,7 @@ class _BrandTileState extends State<_BrandTile> {
           decoration: BoxDecoration(
             color: Colors.white,
             borderRadius: BorderRadius.circular(10),
-            border: Border.all(
-              color: _hovered ? _gold : Colors.transparent,
-              width: 2,
-            ),
+            border: Border.all(color: _hovered ? _gold : Colors.transparent, width: 2),
             boxShadow: [
               BoxShadow(
                 color: Colors.black.withValues(alpha: _hovered ? 0.3 : 0.15),
@@ -691,11 +657,7 @@ class _BrandTileState extends State<_BrandTile> {
                 ? Text(
                     widget.company.name,
                     textAlign: TextAlign.center,
-                    style: const TextStyle(
-                      fontSize: 16,
-                      fontWeight: FontWeight.w600,
-                      color: Colors.black87,
-                    ),
+                    style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600, color: Colors.black87),
                   )
                 : isNetworkImage
                     ? Image.network(
@@ -705,11 +667,7 @@ class _BrandTileState extends State<_BrandTile> {
                         errorBuilder: (context, error, stackTrace) => Text(
                           widget.company.name,
                           textAlign: TextAlign.center,
-                          style: const TextStyle(
-                            fontSize: 16,
-                            fontWeight: FontWeight.w600,
-                            color: Colors.black87,
-                          ),
+                          style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600, color: Colors.black87),
                         ),
                       )
                     : Image.asset(
@@ -718,16 +676,311 @@ class _BrandTileState extends State<_BrandTile> {
                         errorBuilder: (context, error, stackTrace) => Text(
                           widget.company.name,
                           textAlign: TextAlign.center,
-                          style: const TextStyle(
-                            fontSize: 16,
-                            fontWeight: FontWeight.w600,
-                            color: Colors.black87,
-                          ),
+                          style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600, color: Colors.black87),
                         ),
                       ),
           ),
         ),
       ),
+    );
+  }
+}
+
+class _ReviewFormSection extends StatefulWidget {
+  const _ReviewFormSection();
+
+  @override
+  State<_ReviewFormSection> createState() => _ReviewFormSectionState();
+}
+
+class _ReviewFormSectionState extends State<_ReviewFormSection> {
+  final _formKey = GlobalKey<FormState>();
+  final _roleController = TextEditingController();
+  final _messageController = TextEditingController();
+  final _reviewService = ReviewService();
+
+  int _rating = 0;
+  bool _isSubmitting = false;
+  bool _submitted = false;
+
+  @override
+  void dispose() {
+    _roleController.dispose();
+    _messageController.dispose();
+    super.dispose();
+  }
+
+  Future<void> _handleSubmit(AppUser user) async {
+    if (!_formKey.currentState!.validate()) return;
+    if (_rating == 0) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text("Please select a star rating.")),
+      );
+      return;
+    }
+
+    setState(() => _isSubmitting = true);
+
+    try {
+      await _reviewService.submitReview(
+        Review(
+          id: '',
+          name: user.name?.isNotEmpty == true ? user.name! : (user.email ?? 'Customer'),
+          role: _roleController.text.trim().isEmpty ? "Customer" : _roleController.text.trim(),
+          message: _messageController.text.trim(),
+          rating: _rating,
+          photoUrl: user.photoUrl,
+        ),
+        user.uid, // one review per uid — overwrites any previous one
+      );
+
+      if (!mounted) return;
+      setState(() {
+        _isSubmitting = false;
+        _submitted = true;
+        _rating = 0;
+      });
+      _roleController.clear();
+      _messageController.clear();
+
+      Future.delayed(const Duration(seconds: 3), () {
+        if (mounted) setState(() => _submitted = false);
+      });
+    } catch (e) {
+      if (!mounted) return;
+      setState(() => _isSubmitting = false);
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text("Failed to submit review. Please try again.")),
+      );
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: double.infinity,
+      color: const Color(0xFF0D0D0D),
+      padding: const EdgeInsets.symmetric(horizontal: 30, vertical: 80),
+      child: Center(
+        child: ConstrainedBox(
+          constraints: const BoxConstraints(maxWidth: 700),
+          child: Column(
+            children: [
+              const Text(
+                "Share Your Experience",
+                style: TextStyle(fontSize: 28, fontWeight: FontWeight.bold, color: Colors.white),
+              ),
+              const SizedBox(height: 10),
+              Container(
+                width: 60,
+                height: 3,
+                decoration: BoxDecoration(color: _gold, borderRadius: BorderRadius.circular(2)),
+              ),
+              const SizedBox(height: 12),
+              Text(
+                "Tell other customers what you think of our products and service.",
+                textAlign: TextAlign.center,
+                style: TextStyle(fontSize: 14.5, color: Colors.white.withValues(alpha: 0.65)),
+              ),
+              const SizedBox(height: 32),
+              ValueListenableBuilder<AppUser?>(
+                valueListenable: AuthService.instance.currentUser,
+                builder: (context, user, _) {
+                  if (user == null) {
+                    return _signInPrompt(context);
+                  }
+                  return _formCard(user);
+                },
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _signInPrompt(BuildContext context) {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(28),
+      decoration: BoxDecoration(
+        color: Colors.white.withValues(alpha: 0.04),
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(color: Colors.white.withValues(alpha: 0.1)),
+      ),
+      child: Column(
+        children: [
+          Icon(Icons.lock_outline, color: _gold, size: 32),
+          const SizedBox(height: 14),
+          Text(
+            "Sign in to leave a review",
+            style: const TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.w600),
+          ),
+          const SizedBox(height: 8),
+          Text(
+            "We ask you to sign in so every review comes from a real customer.",
+            textAlign: TextAlign.center,
+            style: TextStyle(color: Colors.white.withValues(alpha: 0.6), fontSize: 13),
+          ),
+          const SizedBox(height: 20),
+          ElevatedButton(
+            onPressed: () => context.push('/auth'),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: _gold,
+              foregroundColor: Colors.black,
+              padding: const EdgeInsets.symmetric(horizontal: 26, vertical: 14),
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+            ),
+            child: const Text("Sign In", style: TextStyle(fontWeight: FontWeight.w600)),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _formCard(AppUser user) {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(28),
+      decoration: BoxDecoration(
+        color: Colors.white.withValues(alpha: 0.04),
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(color: Colors.white.withValues(alpha: 0.1)),
+      ),
+      child: Form(
+        key: _formKey,
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Row(
+              children: [
+                CircleAvatar(
+                  radius: 20,
+                  backgroundColor: _gold,
+                  backgroundImage: user.photoUrl != null ? NetworkImage(user.photoUrl!) : null,
+                  child: user.photoUrl == null
+                      ? Text(
+                          (user.name?.isNotEmpty == true ? user.name![0] : "?").toUpperCase(),
+                          style: const TextStyle(color: Colors.black, fontWeight: FontWeight.bold),
+                        )
+                      : null,
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Text(
+                    user.name?.isNotEmpty == true ? user.name! : (user.email ?? 'Customer'),
+                    style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w600, fontSize: 15),
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 20),
+            _buildField(
+              controller: _roleController,
+              label: "Role / Occupation (optional)",
+            ),
+            const SizedBox(height: 16),
+            _buildField(
+              controller: _messageController,
+              label: "Your Review",
+              maxLines: 4,
+              validator: (v) => (v == null || v.trim().isEmpty) ? "Please enter a review" : null,
+            ),
+            const SizedBox(height: 20),
+            _buildStarPicker(),
+            const SizedBox(height: 24),
+            ElevatedButton(
+              onPressed: _isSubmitting ? null : () => _handleSubmit(user),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: _gold,
+                foregroundColor: Colors.black,
+                padding: const EdgeInsets.symmetric(vertical: 16),
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+              ),
+              child: _isSubmitting
+                  ? const SizedBox(
+                      width: 20,
+                      height: 20,
+                      child: CircularProgressIndicator(strokeWidth: 2, color: Colors.black),
+                    )
+                  : const Text("Submit Review", style: TextStyle(fontWeight: FontWeight.w600, fontSize: 15)),
+            ),
+            if (_submitted) ...[
+              const SizedBox(height: 14),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  const Icon(Icons.check_circle, color: _gold, size: 18),
+                  const SizedBox(width: 8),
+                  Text(
+                    "Thanks! Your review has been submitted.",
+                    style: TextStyle(color: Colors.white.withValues(alpha: 0.85), fontSize: 13),
+                  ),
+                ],
+              ),
+            ],
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildField({
+    required TextEditingController controller,
+    required String label,
+    String? Function(String?)? validator,
+    int maxLines = 1,
+  }) {
+    return TextFormField(
+      controller: controller,
+      validator: validator,
+      maxLines: maxLines,
+      style: const TextStyle(color: Colors.white, fontSize: 14),
+      cursorColor: _gold,
+      decoration: InputDecoration(
+        labelText: label,
+        alignLabelWithHint: true,
+        labelStyle: TextStyle(color: Colors.white.withValues(alpha: 0.6)),
+        filled: true,
+        fillColor: Colors.white.withValues(alpha: 0.04),
+        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+        border: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(8),
+          borderSide: BorderSide(color: Colors.white.withValues(alpha: 0.15)),
+        ),
+        enabledBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(8),
+          borderSide: BorderSide(color: Colors.white.withValues(alpha: 0.15)),
+        ),
+        focusedBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(8),
+          borderSide: const BorderSide(color: _gold, width: 1.5),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildStarPicker() {
+    return Column(
+      children: [
+        const Align(
+          alignment: Alignment.centerLeft,
+          child: Text("Your Rating", style: TextStyle(color: Colors.white70, fontSize: 13)),
+        ),
+        const SizedBox(height: 8),
+        Row(
+          children: List.generate(5, (i) {
+            final starIndex = i + 1;
+            return GestureDetector(
+              onTap: () => setState(() => _rating = starIndex),
+              child: Padding(
+                padding: const EdgeInsets.only(right: 6),
+                child: Icon(Icons.star, size: 28, color: starIndex <= _rating ? _gold : Colors.white24),
+              ),
+            );
+          }),
+        ),
+      ],
     );
   }
 }

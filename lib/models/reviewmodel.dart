@@ -6,6 +6,7 @@ class Review {
   final String role;
   final String message;
   final int rating;
+  final String? photoUrl;
   final DateTime? createdAt;
 
   const Review({
@@ -14,6 +15,7 @@ class Review {
     required this.role,
     required this.message,
     required this.rating,
+    this.photoUrl,
     this.createdAt,
   });
 
@@ -25,6 +27,7 @@ class Review {
       role: (data['role'] as String?) ?? '',
       message: (data['message'] as String?) ?? '',
       rating: (data['rating'] as num?)?.toInt() ?? 5,
+      photoUrl: data['photoUrl'] as String?,
       createdAt: (data['createdAt'] as Timestamp?)?.toDate(),
     );
   }
@@ -34,7 +37,8 @@ class Review {
     'role': role,
     'message': message,
     'rating': rating,
+    'photoUrl': photoUrl,
     'createdAt': FieldValue.serverTimestamp(),
-    'approved': false, // see note on moderation below
+    'approved': false,
   };
 }

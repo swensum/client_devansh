@@ -10,7 +10,6 @@ class ReviewsSection extends StatefulWidget {
   State<ReviewsSection> createState() => _ReviewsSectionState();
 }
 
-
 class _ReviewsSectionState extends State<ReviewsSection> {
   final ReviewService _reviewService = ReviewService();
   List<Review> _reviews = [];
@@ -26,11 +25,23 @@ class _ReviewsSectionState extends State<ReviewsSection> {
   @override
   void initState() {
     super.initState();
-    _pageController = PageController(initialPage: _initialPage, viewportFraction: 1);
+    _pageController = PageController(
+      initialPage: _initialPage,
+      viewportFraction: 1,
+    );
     _startAutoScroll();
-    _reviewsSub = _reviewService.watchReviews().listen((data) {
-      if (mounted) setState(() => _reviews = data);
-    });
+    _reviewsSub = _reviewService.watchReviews().listen(
+  (data) {
+    debugPrint('✅ ReviewsSection received ${data.length} reviews');
+    if (mounted) {
+      setState(() => _reviews = data);
+      _startAutoScroll(); // re-evaluate now that we know the count
+    }
+  },
+  onError: (error, stack) {
+    debugPrint('🔥 ReviewsSection stream error: $error');
+  },
+);
   }
 
   @override
@@ -41,13 +52,13 @@ class _ReviewsSectionState extends State<ReviewsSection> {
     super.dispose();
   }
 
-
   void _startAutoScroll() {
-    _autoScrollTimer?.cancel();
-    _autoScrollTimer = Timer.periodic(const Duration(seconds: 4), (timer) {
-      _goToPage(_pageCounter + 1);
-    });
-  }
+  _autoScrollTimer?.cancel();
+  if (_reviews.length <= 1) return; // nothing to rotate
+  _autoScrollTimer = Timer.periodic(const Duration(seconds: 4), (timer) {
+    _goToPage(_pageCounter + 1);
+  });
+}
 
   void _goToPage(int page) {
     if (!_pageController.hasClients) return;
@@ -87,7 +98,6 @@ class _ReviewsSectionState extends State<ReviewsSection> {
       _pendingRebuild = false;
     });
   }
-
 
   @override
   Widget build(BuildContext context) {
@@ -169,26 +179,31 @@ class _ReviewsSectionState extends State<ReviewsSection> {
               style: TextStyle(color: Colors.white54, fontSize: 14),
             ),
           )
-        : _controllerVisibleCount == r.visibleCount
-            ? PageView.builder(
-                controller: _pageController,
-                padEnds: false,
-                onPageChanged: (index) {
-                  setState(() {
-                    _pageCounter = index;
-                  });
-                },
-                itemBuilder: (context, index) {
-                  final review = _reviews[index % _reviews.length];
-                  return Padding(
-                    padding: EdgeInsets.symmetric(
-                      horizontal: r.cardHGap,
-                    ),
-                    child: _ReviewCard(review: review, r: r),
-                  );
-                },
+        : _reviews.length <= 1
+            ? Center(
+                child: ConstrainedBox(
+                  constraints: const BoxConstraints(maxWidth: 380),
+                  child: _ReviewCard(review: _reviews.first, r: r),
+                ),
               )
-            : const SizedBox.shrink(),
+            : _controllerVisibleCount == r.visibleCount
+                ? PageView.builder(
+                    controller: _pageController,
+                    padEnds: false,
+                    onPageChanged: (index) {
+                      setState(() {
+                        _pageCounter = index;
+                      });
+                    },
+                    itemBuilder: (context, index) {
+                      final review = _reviews[index % _reviews.length];
+                      return Padding(
+                        padding: EdgeInsets.symmetric(horizontal: r.cardHGap),
+                        child: _ReviewCard(review: review, r: r),
+                      );
+                    },
+                  )
+                : const SizedBox.shrink(),
   ),
 ),
                       if (r.showArrows) ...[
@@ -435,14 +450,19 @@ class _ReviewCardState extends State<_ReviewCard> {
                 CircleAvatar(
                   radius: 18,
                   backgroundColor: const Color.fromRGBO(245, 171, 30, 1),
-                  child: Text(
-                    initial,
-                    style: const TextStyle(
-                      color: Colors.black,
-                      fontWeight: FontWeight.bold,
-                      fontSize: 14,
-                    ),
-                  ),
+                  backgroundImage: widget.review.photoUrl != null
+                      ? NetworkImage(widget.review.photoUrl!)
+                      : null,
+                  child: widget.review.photoUrl == null
+                      ? Text(
+                          initial,
+                          style: const TextStyle(
+                            color: Colors.black,
+                            fontWeight: FontWeight.bold,
+                            fontSize: 14,
+                          ),
+                        )
+                      : null,
                 ),
                 const SizedBox(width: 10),
                 Expanded(
