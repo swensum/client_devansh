@@ -40,7 +40,7 @@ dependencies:
   web: ^1.1.1
   flutter_web_plugins:
     sdk: flutter
-  google_fonts: ^8.2.0
+  
 dev_dependencies:
   flutter_test:
     sdk: flutter
@@ -59,11 +59,19 @@ flutter:
     - assets/port3.png
     - assets/image1.png
     - assets/port.png
+    - assets/decor.jpg
     - assets/download.jpg
     - assets/png/badge.png
     - assets/png/door-handle.png
     - assets/png/money.png
     - assets/png/virtual-assistant.png
+  fonts:
+    - family: BrandonGrotesque
+      fonts:
+        - asset: assets/font/HvDTrial_Brandon_Grotesque_black-BF64a625c944b08.otf
+          weight: 900  
+        - asset: assets/font/HvDTrial_Brandon_Grotesque_regular-BF64a625c9311e1.otf
+          weight: 400 
   uses-material-design: true
 
 

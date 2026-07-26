@@ -1,8 +1,11 @@
 import 'package:devansh/components/footer.dart';
 import 'package:devansh/components/header.dart';
 import 'package:devansh/components/stat.dart';
+import 'package:devansh/models/catalogmodels.dart';
+import 'package:devansh/services/catalogservice.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'package:visibility_detector/visibility_detector.dart';
 
 const double _kHeaderHeight = 100;
 const _gold = Color.fromRGBO(245, 171, 30, 1);
@@ -24,6 +27,7 @@ class AboutPage extends StatelessWidget {
                 const _GallerySection(),
                 const StatsSection(),
                 const _FeaturesSection(),
+                 const _BrandsSection(),
                 const Footer(),
               ],
             ),
@@ -46,7 +50,7 @@ class _WelcomeSection extends StatelessWidget {
       padding: const EdgeInsets.symmetric(horizontal: 30, vertical: 90),
       child: Center(
         child: ConstrainedBox(
-          constraints: const BoxConstraints(maxWidth: 1200),
+          constraints: const BoxConstraints(maxWidth: 1300),
           child: LayoutBuilder(
             builder: (context, constraints) {
               final isWide = constraints.maxWidth > 800;
@@ -76,7 +80,6 @@ class _WelcomeSection extends StatelessWidget {
     );
   }
 }
-
 class _WelcomeImage extends StatelessWidget {
   final bool isWide;
   const _WelcomeImage({required this.isWide});
@@ -84,21 +87,22 @@ class _WelcomeImage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final height = isWide ? 550.0 : 380.0;
+    const offset = 24.0;
+    const accentHeightReduction = 80.0; // how much shorter the gold block is vs the photo
 
     return SizedBox(
-      height: height + 40,
+      height: height + offset,
       child: Stack(
         children: [
-          // Accent block offset behind the photo — the "modern" framing cue.
+          // Accent block — now shorter than the photo, not full height.
           Positioned(
-            left: 24,
-            top: 24,
+            left: offset,
+            top: offset,
             right: 0,
-            bottom: 0,
+            bottom: accentHeightReduction,
             child: Container(
               decoration: BoxDecoration(
-                color: _gold.withValues(alpha: 0.18),
-                
+                color: _gold,
                 border: Border.all(color: _gold.withValues(alpha: 0.4), width: 1.2),
               ),
             ),
@@ -106,10 +110,9 @@ class _WelcomeImage extends StatelessWidget {
           Positioned(
             left: 0,
             top: 0,
-            right: 24,
-            bottom: 24,
+            right: offset,
+            bottom: offset,
             child: ClipRRect(
-           
               child: Container(
                 decoration: BoxDecoration(
                   boxShadow: [
@@ -121,7 +124,7 @@ class _WelcomeImage extends StatelessWidget {
                   ],
                 ),
                 child: Image.asset(
-                  'assets/download.jpg',
+                  'assets/decor.jpg',
                   fit: BoxFit.cover,
                   width: double.infinity,
                   height: double.infinity,
@@ -134,7 +137,6 @@ class _WelcomeImage extends StatelessWidget {
     );
   }
 }
-
 class _WelcomeText extends StatelessWidget {
   final bool isWide;
   const _WelcomeText({required this.isWide});
@@ -149,6 +151,7 @@ class _WelcomeText extends StatelessWidget {
           "WELCOME TO",
           textAlign: isWide ? TextAlign.left : TextAlign.center,
           style: TextStyle(
+            fontFamily: 'BrandonGrotesque',
             fontSize: 13,
             letterSpacing: 3,
             fontWeight: FontWeight.w600,
@@ -160,8 +163,9 @@ class _WelcomeText extends StatelessWidget {
           "Devansh Suppliers",
           textAlign: isWide ? TextAlign.left : TextAlign.center,
           style: TextStyle(
+            fontFamily: 'BrandonGrotesque',
             fontSize: isWide ? 40 : 30,
-            fontWeight: FontWeight.bold,
+            fontWeight: FontWeight.w900,
             color: Colors.white,
             height: 1.1,
           ),
@@ -172,32 +176,34 @@ class _WelcomeText extends StatelessWidget {
           height: 4,
           decoration: BoxDecoration(color: _gold, borderRadius: BorderRadius.circular(2)),
         ),
-       const SizedBox(height: 24),
+        const SizedBox(height: 24),
 
-Text(
-  "Namaste everyone from the DEVANSH family.\n"
-  "At Devansh Hardware, we are committed to providing premium-quality "
-  "hardware solutions that combine durability, functionality, and modern "
-  "design. Our carefully selected range includes cabinet handles, door "
-  "fittings, mortice locks, aldrops, tower bolts, hinges, and other "
-  "architectural hardware designed to meet the needs of both residential "
-  "and commercial projects.\n"
-  "We believe that quality products and dependable service go hand in hand. "
-  "Whether you are building a new space, renovating an existing one, or "
-  "working on a custom interior project, our goal is to provide reliable "
-  "products at competitive prices while helping you find the right solution "
-  "for your requirements.\n"
-  "Customer satisfaction is at the heart of everything we do. We take pride "
-  "in offering genuine products, trusted brands, and professional service "
-  "that you can rely on. Thank you for choosing Devansh Suppliers—we look "
-  "forward to being a part of your next project.",
-  textAlign: isWide ? TextAlign.left : TextAlign.center,
-  style: TextStyle(
-    fontSize: 15.5,
-    height: 1.8, // Slightly increased for better paragraph spacing
-    color: Colors.white.withValues(alpha: 0.85),
-  ),
-),
+        Text(
+          "Namaste everyone from the DEVANSH family.\n"
+          "At Devansh Hardware, we are committed to providing premium-quality "
+          "hardware solutions that combine durability, functionality, and modern "
+          "design. Our carefully selected range includes cabinet handles, door "
+          "fittings, mortice locks, aldrops, tower bolts, hinges, and other "
+          "architectural hardware designed to meet the needs of both residential "
+          "and commercial projects.\n"
+          "We believe that quality products and dependable service go hand in hand. "
+          "Whether you are building a new space, renovating an existing one, or "
+          "working on a custom interior project, our goal is to provide reliable "
+          "products at competitive prices while helping you find the right solution "
+          "for your requirements.\n"
+          "Customer satisfaction is at the heart of everything we do. We take pride "
+          "in offering genuine products, trusted brands, and professional service "
+          "that you can rely on. Thank you for choosing Devansh Suppliers—we look "
+          "forward to being a part of your next project.",
+          textAlign: isWide ? TextAlign.left : TextAlign.center,
+          style: TextStyle(
+            fontFamily: 'BrandonGrotesque',
+            fontWeight: FontWeight.w400,
+            fontSize: 15.5,
+            height: 1.8,
+            color: Colors.white.withValues(alpha: 0.85),
+          ),
+        ),
         const SizedBox(height: 28),
         Align(
           alignment: isWide ? Alignment.centerLeft : Alignment.center,
@@ -219,7 +225,6 @@ Text(
     );
   }
 }
-
 class _GallerySection extends StatelessWidget {
   const _GallerySection();
 
@@ -375,7 +380,7 @@ class _FeaturesSection extends StatelessWidget {
       padding: const EdgeInsets.symmetric(horizontal: 30, vertical: 80),
       child: Center(
         child: ConstrainedBox(
-          constraints: const BoxConstraints(maxWidth: 1200),
+          constraints: const BoxConstraints(maxWidth: 1300),
           child: LayoutBuilder(
             builder: (context, constraints) {
               final w = constraints.maxWidth;
@@ -493,6 +498,188 @@ class _FeatureCardState extends State<_FeatureCard> {
               ),
             ),
           ],
+        ),
+      ),
+    );
+  }
+}
+class _BrandsSection extends StatefulWidget {
+  const _BrandsSection();
+
+  @override
+  State<_BrandsSection> createState() => _BrandsSectionState();
+}
+
+class _BrandsSectionState extends State<_BrandsSection> {
+  final CatalogService _catalogService = CatalogService();
+  bool _visible = false;
+
+  void _handleVisibility(VisibilityInfo info) {
+    if (!_visible && info.visibleFraction > 0.2) {
+      setState(() => _visible = true);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return VisibilityDetector(
+      key: const Key('about-brands-visibility'),
+      onVisibilityChanged: _handleVisibility,
+      child: Container(
+        width: double.infinity,
+       decoration: BoxDecoration(
+              gradient: LinearGradient(
+                begin: Alignment.centerLeft,
+                end: Alignment.centerRight,
+                colors: [
+                  Colors.black.withValues(alpha: 0.85),
+                  Colors.black.withValues(alpha: 0.6),
+                ],
+                stops: const [0.0, 0.65],
+              ),
+            ),
+        padding: const EdgeInsets.symmetric(horizontal: 30, vertical: 50),
+        child: Center(
+          child: ConstrainedBox(
+            constraints: const BoxConstraints(maxWidth: 1200),
+            child: Column(
+              children: [
+                Text(
+                  "Brands We Work With",
+                  style: TextStyle(
+                    fontSize: 30,
+                    fontWeight: FontWeight.bold,
+                    color: Colors.white,
+                    letterSpacing: 1.0,
+                  ),
+                ),
+                const SizedBox(height: 10),
+                Container(
+                  width: 60,
+                  height: 3,
+                  decoration: BoxDecoration(
+                    color: _gold,
+                    borderRadius: BorderRadius.circular(2),
+                  ),
+                ),
+                const SizedBox(height: 12),
+                Text(
+                  "Trusted global manufacturers behind every product we stock",
+                  textAlign: TextAlign.center,
+                  style: TextStyle(fontSize: 15, color: Colors.white.withValues(alpha: 0.6)),
+                ),
+                const SizedBox(height: 44),
+                StreamBuilder<List<Company>>(
+                  stream: _catalogService.watchCompanies(),
+                  builder: (context, snapshot) {
+                    if (!snapshot.hasData) {
+                      return const Padding(
+                        padding: EdgeInsets.symmetric(vertical: 24),
+                        child: CircularProgressIndicator(color: _gold),
+                      );
+                    }
+
+                    final companies = snapshot.data!;
+                    if (companies.isEmpty) return const SizedBox.shrink();
+
+                    return Wrap(
+                      alignment: WrapAlignment.center,
+                      spacing: 20,
+                      runSpacing: 20,
+                      children: companies
+                          .map((company) => _BrandTile(company: company))
+                          .toList(),
+                    );
+                  },
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _BrandTile extends StatefulWidget {
+  final Company company;
+  const _BrandTile({required this.company});
+
+  @override
+  State<_BrandTile> createState() => _BrandTileState();
+}
+
+class _BrandTileState extends State<_BrandTile> {
+  bool _hovered = false;
+
+  @override
+  Widget build(BuildContext context) {
+    final logoAsset = widget.company.imageUrl;
+    final isNetworkImage = logoAsset != null && logoAsset.startsWith('http');
+
+    return MouseRegion(
+      cursor: SystemMouseCursors.click,
+      onEnter: (_) => setState(() => _hovered = true),
+      onExit: (_) => setState(() => _hovered = false),
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 200),
+        width: 170,
+        height: 100,
+        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(10),
+          border: Border.all(
+            color: _hovered ? _gold : Colors.transparent,
+            width: 2,
+          ),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withValues(alpha: _hovered ? 0.3 : 0.15),
+              blurRadius: _hovered ? 16 : 8,
+              offset: const Offset(0, 4),
+            ),
+          ],
+        ),
+        child: Center(
+          child: logoAsset == null
+              ? Text(
+                  widget.company.name,
+                  textAlign: TextAlign.center,
+                  style: const TextStyle(
+                    fontSize: 13,
+                    fontWeight: FontWeight.w600,
+                    color: Colors.black87,
+                  ),
+                )
+              : isNetworkImage
+                  ? Image.network(
+                      logoAsset,
+                      fit: BoxFit.contain,
+                      cacheWidth: 260,
+                      errorBuilder: (context, error, stackTrace) => Text(
+                        widget.company.name,
+                        textAlign: TextAlign.center,
+                        style: const TextStyle(
+                          fontSize: 13,
+                          fontWeight: FontWeight.w600,
+                          color: Colors.black87,
+                        ),
+                      ),
+                    )
+                  : Image.asset(
+                      logoAsset,
+                      fit: BoxFit.contain,
+                      errorBuilder: (context, error, stackTrace) => Text(
+                        widget.company.name,
+                        textAlign: TextAlign.center,
+                        style: const TextStyle(
+                          fontSize: 13,
+                          fontWeight: FontWeight.w600,
+                          color: Colors.black87,
+                        ),
+                      ),
+                    ),
         ),
       ),
     );

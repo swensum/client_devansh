@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart';
 
 class StatItem {
   final IconData icon;
@@ -68,6 +67,7 @@ class StatsSection extends StatelessWidget {
     );
   }
 }
+
 class _StatTile extends StatelessWidget {
   final StatItem stat;
 
@@ -86,12 +86,11 @@ class _StatTile extends StatelessWidget {
         const SizedBox(height: 12),
        Text(
   stat.value,
-  style: GoogleFonts.getFont(
-    'Big Shoulders Display',
-    fontSize: 34,
-    fontWeight: FontWeight.w800,
+  style: const TextStyle(
+    fontFamily: 'BrandonGrotesque',
+    fontSize: 30,
+    fontWeight: FontWeight.w900,
     color: Colors.white,
-    letterSpacing: 1.2,
   ),
 ),
         const SizedBox(height: 6),
