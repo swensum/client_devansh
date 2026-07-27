@@ -1,5 +1,8 @@
+// ignore_for_file: unused_element_parameter
+
 import 'package:devansh/components/footer.dart';
 import 'package:devansh/components/header.dart';
+import 'package:devansh/components/reviews.dart' show userAvatar;
 import 'package:devansh/components/stat.dart';
 import 'package:devansh/models/authmodel.dart';
 import 'package:devansh/models/catalogmodels.dart';
@@ -14,8 +17,30 @@ import 'package:visibility_detector/visibility_detector.dart';
 const double _kHeaderHeight = 100;
 const _gold = Color.fromRGBO(245, 171, 30, 1);
 
-class AboutPage extends StatelessWidget {
+class AboutPage extends StatefulWidget {
   const AboutPage({super.key});
+
+  @override
+  State<AboutPage> createState() => _AboutPageState();
+}
+
+class _AboutPageState extends State<AboutPage> {
+  bool _precached = false;
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    // Only needs to run once per widget lifetime, but didChangeDependencies
+    // can technically fire more than once (e.g. locale/theme changes),
+    // so guard against re-triggering the same work.
+    if (!_precached) {
+      _precached = true;
+      precacheImage(const AssetImage('assets/decor.jpg'), context);
+      precacheImage(const AssetImage('assets/devansh.png'), context);
+      precacheImage(const AssetImage('assets/chimney.png'), context);
+      precacheImage(const AssetImage('assets/basket.png'), context);
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -26,6 +51,7 @@ class AboutPage extends StatelessWidget {
             child: Column(
               children: [
                 const SizedBox(height: _kHeaderHeight),
+                // Above the fold — visible immediately, no fade needed.
                 const _WelcomeSection(),
                 const _GallerySection(),
                 const StatsSection(),
@@ -38,6 +64,52 @@ class AboutPage extends StatelessWidget {
           ),
           const Positioned(top: 0, left: 0, right: 0, child: Header()),
         ],
+      ),
+    );
+  }
+}
+
+class _RevealOnScroll extends StatefulWidget {
+  final Widget child;
+  final Key detectorKey;
+  final double offsetY;
+  final Duration duration;
+  final double visibleThreshold;
+
+  const _RevealOnScroll({
+    required this.child,
+    required this.detectorKey,
+    this.offsetY = 24,
+    this.duration = const Duration(milliseconds: 550),
+    this.visibleThreshold = 0.15,
+  });
+
+  @override
+  State<_RevealOnScroll> createState() => _RevealOnScrollState();
+}
+
+class _RevealOnScrollState extends State<_RevealOnScroll> {
+  bool _visible = false;
+
+  @override
+  Widget build(BuildContext context) {
+    return VisibilityDetector(
+      key: widget.detectorKey,
+      onVisibilityChanged: (info) {
+        if (!_visible && info.visibleFraction > widget.visibleThreshold) {
+          setState(() => _visible = true);
+        }
+      },
+      child: AnimatedSlide(
+        offset: _visible ? Offset.zero : Offset(0, widget.offsetY / 100),
+        duration: widget.duration,
+        curve: Curves.easeOutCubic,
+        child: AnimatedOpacity(
+          opacity: _visible ? 1 : 0,
+          duration: widget.duration,
+          curve: Curves.easeOut,
+          child: widget.child,
+        ),
       ),
     );
   }
@@ -131,11 +203,16 @@ class _WelcomeImage extends StatelessWidget {
                 fit: BoxFit.cover,
                 width: double.infinity,
                 height: double.infinity,
-                // Downsamples during decode instead of after — this is
-                // what was causing the visible lag on first paint, since
-                // the source photo is far larger than its ~550px display
-                // height.
                 cacheWidth: 700,
+                frameBuilder: (context, child, frame, wasSynchronouslyLoaded) {
+                  if (wasSynchronouslyLoaded) return child;
+                  return AnimatedOpacity(
+                    opacity: frame == null ? 0 : 1,
+                    duration: const Duration(milliseconds: 250),
+                    curve: Curves.easeOut,
+                    child: child,
+                  );
+                },
               ),
             ),
           ),
@@ -280,7 +357,9 @@ class _GallerySection extends StatelessWidget {
         ),
       ),
       padding: const EdgeInsets.symmetric(horizontal: 30, vertical: 80),
-      child: Center(
+      child: _RevealOnScroll(
+        detectorKey: const Key('reveal-gallery'),
+        child: Center(
         child: ConstrainedBox(
           constraints: const BoxConstraints(maxWidth: 1400),
           child: LayoutBuilder(
@@ -340,6 +419,7 @@ class _GallerySection extends StatelessWidget {
             },
           ),
         ),
+        ),
       ),
     );
   }
@@ -358,7 +438,16 @@ class _GalleryImage extends StatelessWidget {
         fit: BoxFit.cover,
         width: double.infinity,
         height: double.infinity,
-        cacheWidth: 700, // downsample large source photos during decode
+        cacheWidth: 700,
+        frameBuilder: (context, child, frame, wasSynchronouslyLoaded) {
+          if (wasSynchronouslyLoaded) return child;
+          return AnimatedOpacity(
+            opacity: frame == null ? 0 : 1,
+            duration: const Duration(milliseconds: 250),
+            curve: Curves.easeOut,
+            child: child,
+          );
+        },
       ),
     );
   }
@@ -397,23 +486,26 @@ class _FeaturesSection extends StatelessWidget {
       width: double.infinity,
       color: Colors.black,
       padding: const EdgeInsets.symmetric(horizontal: 30, vertical: 80),
-      child: Center(
-        child: ConstrainedBox(
-          constraints: const BoxConstraints(maxWidth: 1300),
-          child: LayoutBuilder(
-            builder: (context, constraints) {
-              final w = constraints.maxWidth;
-              final columns = w > 900 ? 4 : (w > 600 ? 2 : 1);
-              final cardWidth = (w - (columns - 1) * 24) / columns;
+      child: _RevealOnScroll(
+        detectorKey: const Key('reveal-features'),
+        child: Center(
+          child: ConstrainedBox(
+            constraints: const BoxConstraints(maxWidth: 1300),
+            child: LayoutBuilder(
+              builder: (context, constraints) {
+                final w = constraints.maxWidth;
+                final columns = w > 900 ? 4 : (w > 600 ? 2 : 1);
+                final cardWidth = (w - (columns - 1) * 24) / columns;
 
-              return Wrap(
-                spacing: 24,
-                runSpacing: 24,
-                children: _features
-                    .map((f) => SizedBox(width: cardWidth, height: 380, child: _FeatureCard(data: f)))
-                    .toList(),
-              );
-            },
+                return Wrap(
+                  spacing: 24,
+                  runSpacing: 24,
+                  children: _features
+                      .map((f) => SizedBox(width: cardWidth, height: 380, child: _FeatureCard(data: f)))
+                      .toList(),
+                );
+              },
+            ),
           ),
         ),
       ),
@@ -541,7 +633,9 @@ class _BrandsSectionState extends State<_BrandsSection> {
           ),
         ),
         padding: const EdgeInsets.symmetric(horizontal: 30, vertical: 50),
-        child: Center(
+        child: _RevealOnScroll(
+          detectorKey: const Key('reveal-brands'),
+          child: Center(
           child: ConstrainedBox(
             constraints: const BoxConstraints(maxWidth: 1200),
             child: Column(
@@ -606,6 +700,7 @@ class _BrandsSectionState extends State<_BrandsSection> {
                 ),
               ],
             ),
+          ),
           ),
         ),
       ),
@@ -702,12 +797,64 @@ class _ReviewFormSectionState extends State<_ReviewFormSection> {
   int _rating = 0;
   bool _isSubmitting = false;
   bool _submitted = false;
+  bool _loadingExisting = false;
+  Review? _existingReview;
+  String? _loadedForUid;
+
+  @override
+  void initState() {
+    super.initState();
+    // Kick off a load for whoever's already signed in (if anyone), and
+    // re-run whenever the signed-in user changes (sign in, sign out, or a
+    // different account). Doing this via a listener — rather than as a
+    // side-effect inside build() — avoids calling setState() synchronously
+    // during the build phase, which is what was leaving the spinner stuck
+    // forever after signing in from this page.
+    AuthService.instance.currentUser.addListener(_onAuthChanged);
+    _onAuthChanged();
+  }
+
+  void _onAuthChanged() {
+    final user = AuthService.instance.currentUser.value;
+    if (user == null) {
+      // Signed out: reset so a future sign-in (possibly a different
+      // account) triggers a fresh load instead of being skipped.
+      if (_loadedForUid != null) {
+        setState(() {
+          _loadedForUid = null;
+          _existingReview = null;
+          _loadingExisting = false;
+        });
+      }
+      return;
+    }
+    _loadExistingReview(user.uid);
+  }
 
   @override
   void dispose() {
+    AuthService.instance.currentUser.removeListener(_onAuthChanged);
     _roleController.dispose();
     _messageController.dispose();
     super.dispose();
+  }
+
+  Future<void> _loadExistingReview(String uid) async {
+    if (_loadedForUid == uid) return; // already loaded/loading for this user
+    _loadedForUid = uid;
+    setState(() => _loadingExisting = true);
+    try {
+      final review = await _reviewService.getUserReview(uid);
+      if (!mounted) return;
+      setState(() {
+        _existingReview = review;
+        _loadingExisting = false;
+      });
+    } catch (e) {
+      debugPrint('🔥 Failed to load existing review: $e');
+      if (!mounted) return;
+      setState(() => _loadingExisting = false);
+    }
   }
 
   Future<void> _handleSubmit(AppUser user) async {
@@ -722,23 +869,22 @@ class _ReviewFormSectionState extends State<_ReviewFormSection> {
     setState(() => _isSubmitting = true);
 
     try {
-      await _reviewService.submitReview(
-        Review(
-          id: '',
-          name: user.name?.isNotEmpty == true ? user.name! : (user.email ?? 'Customer'),
-          role: _roleController.text.trim().isEmpty ? "Customer" : _roleController.text.trim(),
-          message: _messageController.text.trim(),
-          rating: _rating,
-          photoUrl: user.photoUrl,
-        ),
-        user.uid, // one review per uid — overwrites any previous one
+      final review = Review(
+        id: '',
+        name: user.name?.isNotEmpty == true ? user.name! : (user.email ?? 'Customer'),
+        role: _roleController.text.trim().isEmpty ? "Customer" : _roleController.text.trim(),
+        message: _messageController.text.trim(),
+        rating: _rating,
+        photoUrl: user.photoUrl,
       );
+
+      await _reviewService.submitReview(review, user.uid);
 
       if (!mounted) return;
       setState(() {
         _isSubmitting = false;
         _submitted = true;
-        _rating = 0;
+        _existingReview = review; // once submitted, locks the form permanently
       });
       _roleController.clear();
       _messageController.clear();
@@ -761,7 +907,9 @@ class _ReviewFormSectionState extends State<_ReviewFormSection> {
       width: double.infinity,
       color: const Color(0xFF0D0D0D),
       padding: const EdgeInsets.symmetric(horizontal: 30, vertical: 80),
-      child: Center(
+      child: _RevealOnScroll(
+        detectorKey: const Key('reveal-review-form'),
+        child: Center(
         child: ConstrainedBox(
           constraints: const BoxConstraints(maxWidth: 700),
           child: Column(
@@ -789,12 +937,79 @@ class _ReviewFormSectionState extends State<_ReviewFormSection> {
                   if (user == null) {
                     return _signInPrompt(context);
                   }
+
+                  // The fetch itself is triggered by _onAuthChanged (via the
+                  // listener set up in initState) — build() only reads state.
+                  if (_loadingExisting && _existingReview == null && _loadedForUid == user.uid) {
+                    return const Padding(
+                      padding: EdgeInsets.symmetric(vertical: 24),
+                      child: CircularProgressIndicator(color: _gold),
+                    );
+                  }
+
+                  // Once a review exists, the form is permanently locked —
+                  // no editing, just a summary of what was submitted.
+                  if (_existingReview != null) {
+                    return _alreadySubmittedCard(_existingReview!);
+                  }
                   return _formCard(user);
                 },
               ),
             ],
           ),
         ),
+        ),
+      ),
+    );
+  }
+
+  Widget _alreadySubmittedCard(Review review) {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(28),
+      decoration: BoxDecoration(
+        color: Colors.white.withValues(alpha: 0.04),
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(color: Colors.white.withValues(alpha: 0.1)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          const Row(
+            children: [
+              Icon(Icons.check_circle, color: _gold, size: 20),
+              SizedBox(width: 8),
+              Expanded(
+                child: Text(
+                  "Thanks for your feedback!",
+                  style: TextStyle(color: Colors.white, fontWeight: FontWeight.w600, fontSize: 15),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 16),
+          Row(
+            children: List.generate(5, (i) {
+              return Icon(
+                Icons.star,
+                size: 18,
+                color: i < review.rating ? _gold : Colors.white24,
+              );
+            }),
+          ),
+          const SizedBox(height: 10),
+          Text(
+            review.message,
+            style: TextStyle(color: Colors.white.withValues(alpha: 0.85), fontSize: 14, height: 1.5),
+          ),
+          if (!review.approved) ...[
+            const SizedBox(height: 8),
+            Text(
+              "Pending approval — it'll appear publicly once reviewed.",
+              style: TextStyle(color: Colors.white.withValues(alpha: 0.45), fontSize: 12.5),
+            ),
+          ],
+        ],
       ),
     );
   }
@@ -812,9 +1027,9 @@ class _ReviewFormSectionState extends State<_ReviewFormSection> {
         children: [
           Icon(Icons.lock_outline, color: _gold, size: 32),
           const SizedBox(height: 14),
-          Text(
+          const Text(
             "Sign in to leave a review",
-            style: const TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.w600),
+            style: TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.w600),
           ),
           const SizedBox(height: 8),
           Text(
@@ -854,17 +1069,7 @@ class _ReviewFormSectionState extends State<_ReviewFormSection> {
           children: [
             Row(
               children: [
-                CircleAvatar(
-                  radius: 20,
-                  backgroundColor: _gold,
-                  backgroundImage: user.photoUrl != null ? NetworkImage(user.photoUrl!) : null,
-                  child: user.photoUrl == null
-                      ? Text(
-                          (user.name?.isNotEmpty == true ? user.name![0] : "?").toUpperCase(),
-                          style: const TextStyle(color: Colors.black, fontWeight: FontWeight.bold),
-                        )
-                      : null,
-                ),
+                userAvatar(photoUrl: user.photoUrl, name: user.name ?? user.email ?? '?', radius: 20),
                 const SizedBox(width: 12),
                 Expanded(
                   child: Text(

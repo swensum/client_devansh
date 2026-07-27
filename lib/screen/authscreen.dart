@@ -157,6 +157,8 @@ class _AuthScreenState extends State<AuthScreen> {
         _mode = _AuthMode.signIn;
       });
       // Clean the reset params out of the address bar.
+      // This is a fresh entry into /auth (not something we pushed onto an
+      // existing stack), so going to the plain sign-in screen is correct here.
       context.go('/auth');
     } on FirebaseAuthException catch (e) {
       if (!mounted) return;
@@ -174,6 +176,21 @@ class _AuthScreenState extends State<AuthScreen> {
       _mode = mode;
       _error = null;
     });
+  }
+
+  /// After a successful sign-in, return the user to wherever they came from
+  /// (About page, Orders page, checkout, etc.) instead of always dumping
+  /// them on the home route. `/auth` is reached via `context.push(...)` from
+  /// those screens, so there's normally something to pop back to. Only fall
+  /// back to home if /auth was opened directly (e.g. a bookmarked/deep link)
+  /// and there's nothing underneath it on the stack.
+  void _returnAfterSignIn() {
+    if (!mounted) return;
+    if (context.canPop()) {
+      context.pop();
+    } else {
+      context.go('/');
+    }
   }
 
   Future<void> _signInWithGoogle() async {
@@ -197,8 +214,7 @@ class _AuthScreenState extends State<AuthScreen> {
       );
 
       await Future.delayed(const Duration(milliseconds: 700));
-      if (!mounted) return;
-      context.go('/');
+      _returnAfterSignIn();
     } on FirebaseAuthException catch (e) {
       if (mounted) setState(() => _error = e.message ?? 'Google sign-in failed.');
     } catch (e) {
@@ -271,8 +287,7 @@ class _AuthScreenState extends State<AuthScreen> {
       );
 
       await Future.delayed(const Duration(milliseconds: 700));
-      if (!mounted) return;
-      context.go('/');
+      _returnAfterSignIn();
     } on FirebaseAuthException catch (e) {
       if (!mounted) return;
       setState(() => _error = _friendlyAuthError(e.code) ?? e.message);
@@ -571,12 +586,6 @@ class _AuthScreenState extends State<AuthScreen> {
                 ),
 
                 const SizedBox(height: 18),
-
-                // --- Submit ---
-                // onPressed stays non-null even while loading (guard is
-                // inside _submit itself) so the button keeps its solid
-                // amber color instead of Flutter's default disabled-grey
-                // fade — only the spinner shows loading state.
                 SizedBox(
                   width: double.infinity,
                   child: ElevatedButton(

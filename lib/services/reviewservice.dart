@@ -12,22 +12,27 @@ class ReviewService {
         .limit(limit)
         .snapshots()
         .handleError((error, stack) {
-          // This is almost certainly where your issue shows up.
-          debugPrint('🔥 ReviewService stream error: $error');
+      
         })
         .map((snap) {
-          debugPrint('📦 Got ${snap.docs.length} review doc(s) from Firestore');
+          
           final reviews = <Review>[];
           for (final doc in snap.docs) {
             try {
               reviews.add(Review.fromFirestore(doc));
             } catch (e) {
-              // If one doc fails to parse, don't kill the whole stream/list.
               debugPrint('⚠️ Failed to parse review ${doc.id}: $e');
             }
           }
           return reviews;
         });
+  }
+
+  /// Returns the current user's own review, if they've submitted one.
+  Future<Review?> getUserReview(String uid) async {
+    final doc = await _col.doc(uid).get();
+    if (!doc.exists) return null;
+    return Review.fromFirestore(doc);
   }
 
   Future<void> submitReview(Review review, String uid) => _col.doc(uid).set(review.toMap());

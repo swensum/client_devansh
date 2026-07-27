@@ -612,6 +612,7 @@ class _DetailEntry {
   const _DetailEntry({
     required this.label,
     required this.value,
+    // ignore: unused_element_parameter
     this.isAvailability = false, this.valueColor,
   });
 }

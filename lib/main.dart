@@ -10,6 +10,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
 Future<void> main() async {
+    usePathUrlStrategy();
   WidgetsFlutterBinding.ensureInitialized();
 
   SystemChrome.setSystemUIOverlayStyle(
@@ -25,7 +26,7 @@ Future<void> main() async {
     persistenceEnabled: true,
     webExperimentalForceLongPolling: true,
   );
-  usePathUrlStrategy();
+
   runApp(const MyApp());
 }
 

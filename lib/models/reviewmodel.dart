@@ -8,6 +8,7 @@ class Review {
   final int rating;
   final String? photoUrl;
   final DateTime? createdAt;
+  final bool approved;
 
   const Review({
     required this.id,
@@ -17,6 +18,7 @@ class Review {
     required this.rating,
     this.photoUrl,
     this.createdAt,
+    this.approved = false,
   });
 
   factory Review.fromFirestore(DocumentSnapshot<Map<String, dynamic>> doc) {
@@ -29,6 +31,7 @@ class Review {
       rating: (data['rating'] as num?)?.toInt() ?? 5,
       photoUrl: data['photoUrl'] as String?,
       createdAt: (data['createdAt'] as Timestamp?)?.toDate(),
+      approved: (data['approved'] as bool?) ?? false,
     );
   }
 
@@ -39,6 +42,6 @@ class Review {
     'rating': rating,
     'photoUrl': photoUrl,
     'createdAt': FieldValue.serverTimestamp(),
-    'approved': false,
+    'approved': false, // always resets to unapproved on submit/edit
   };
 }

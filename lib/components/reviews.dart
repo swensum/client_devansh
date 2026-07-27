@@ -25,23 +25,19 @@ class _ReviewsSectionState extends State<ReviewsSection> {
   @override
   void initState() {
     super.initState();
-    _pageController = PageController(
-      initialPage: _initialPage,
-      viewportFraction: 1,
-    );
-    _startAutoScroll();
+    _pageController = PageController(initialPage: _initialPage, viewportFraction: 1);
+
     _reviewsSub = _reviewService.watchReviews().listen(
-  (data) {
-    debugPrint('✅ ReviewsSection received ${data.length} reviews');
-    if (mounted) {
-      setState(() => _reviews = data);
-      _startAutoScroll(); // re-evaluate now that we know the count
-    }
-  },
-  onError: (error, stack) {
-    debugPrint('🔥 ReviewsSection stream error: $error');
-  },
-);
+      (data) {
+        debugPrint('✅ ReviewsSection received ${data.length} reviews');
+        if (!mounted) return;
+        setState(() => _reviews = data);
+        _startAutoScroll(); // re-evaluate now that we know the count
+      },
+      onError: (error, stack) {
+        debugPrint('🔥 ReviewsSection stream error: $error');
+      },
+    );
   }
 
   @override
@@ -53,12 +49,12 @@ class _ReviewsSectionState extends State<ReviewsSection> {
   }
 
   void _startAutoScroll() {
-  _autoScrollTimer?.cancel();
-  if (_reviews.length <= 1) return; // nothing to rotate
-  _autoScrollTimer = Timer.periodic(const Duration(seconds: 4), (timer) {
-    _goToPage(_pageCounter + 1);
-  });
-}
+    _autoScrollTimer?.cancel();
+    if (_reviews.length <= 1) return; // nothing to rotate
+    _autoScrollTimer = Timer.periodic(const Duration(seconds: 4), (timer) {
+      _goToPage(_pageCounter + 1);
+    });
+  }
 
   void _goToPage(int page) {
     if (!_pageController.hasClients) return;
@@ -106,6 +102,8 @@ class _ReviewsSectionState extends State<ReviewsSection> {
         final r = _ReviewsResponsive.of(constraints.maxWidth);
         _rebuildControllerFor(r.visibleCount);
 
+        final showArrows = r.showArrows && _reviews.length > 1;
+
         return Container(
           width: double.infinity,
           color: Colors.black,
@@ -119,7 +117,6 @@ class _ReviewsSectionState extends State<ReviewsSection> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.center,
                 children: [
-                  // Section Title
                   Text(
                     "What Our Customers Say",
                     style: TextStyle(
@@ -130,7 +127,6 @@ class _ReviewsSectionState extends State<ReviewsSection> {
                     ),
                   ),
                   const SizedBox(height: 10),
-
                   Container(
                     width: 60,
                     height: 3,
@@ -146,7 +142,6 @@ class _ReviewsSectionState extends State<ReviewsSection> {
                     ),
                   ),
                   const SizedBox(height: 12),
-
                   Text(
                     "Real feedback from people who trust our hardware",
                     textAlign: TextAlign.center,
@@ -158,11 +153,10 @@ class _ReviewsSectionState extends State<ReviewsSection> {
                   ),
                   SizedBox(height: r.headerGap),
 
-                  // Carousel row: left arrow — review cards — right arrow
                   Row(
                     crossAxisAlignment: CrossAxisAlignment.center,
                     children: [
-                      if (r.showArrows) ...[
+                      if (showArrows) ...[
                         _NavArrowButton(
                           icon: Icons.keyboard_double_arrow_left,
                           onTap: _handlePrevious,
@@ -170,43 +164,12 @@ class _ReviewsSectionState extends State<ReviewsSection> {
                         const SizedBox(width: 12),
                       ],
                       Expanded(
-  child: SizedBox(
-    height: r.cardHeight,
-    child: _reviews.isEmpty
-        ? const Center(
-            child: Text(
-              "No reviews yet.",
-              style: TextStyle(color: Colors.white54, fontSize: 14),
-            ),
-          )
-        : _reviews.length <= 1
-            ? Center(
-                child: ConstrainedBox(
-                  constraints: const BoxConstraints(maxWidth: 380),
-                  child: _ReviewCard(review: _reviews.first, r: r),
-                ),
-              )
-            : _controllerVisibleCount == r.visibleCount
-                ? PageView.builder(
-                    controller: _pageController,
-                    padEnds: false,
-                    onPageChanged: (index) {
-                      setState(() {
-                        _pageCounter = index;
-                      });
-                    },
-                    itemBuilder: (context, index) {
-                      final review = _reviews[index % _reviews.length];
-                      return Padding(
-                        padding: EdgeInsets.symmetric(horizontal: r.cardHGap),
-                        child: _ReviewCard(review: review, r: r),
-                      );
-                    },
-                  )
-                : const SizedBox.shrink(),
-  ),
-),
-                      if (r.showArrows) ...[
+                        child: SizedBox(
+                          height: r.cardHeight,
+                          child: _buildCarouselBody(r),
+                        ),
+                      ),
+                      if (showArrows) ...[
                         const SizedBox(width: 12),
                         _NavArrowButton(
                           icon: Icons.keyboard_double_arrow_right,
@@ -219,6 +182,48 @@ class _ReviewsSectionState extends State<ReviewsSection> {
               ),
             ),
           ),
+        );
+      },
+    );
+  }
+
+  Widget _buildCarouselBody(_ReviewsResponsive r) {
+    if (_reviews.isEmpty) {
+      return const Center(
+        child: Text(
+          "No reviews yet.",
+          style: TextStyle(color: Colors.white54, fontSize: 14),
+        ),
+      );
+    }
+
+    // Only one review: show it statically, no fake rotation.
+    if (_reviews.length <= 1) {
+      return Center(
+        child: ConstrainedBox(
+          constraints: const BoxConstraints(maxWidth: 380),
+          child: _ReviewCard(review: _reviews.first, r: r),
+        ),
+      );
+    }
+
+    if (_controllerVisibleCount != r.visibleCount) {
+      return const SizedBox.shrink();
+    }
+
+    return PageView.builder(
+      controller: _pageController,
+      padEnds: false,
+      onPageChanged: (index) {
+        setState(() {
+          _pageCounter = index;
+        });
+      },
+      itemBuilder: (context, index) {
+        final review = _reviews[index % _reviews.length];
+        return Padding(
+          padding: EdgeInsets.symmetric(horizontal: r.cardHGap),
+          child: _ReviewCard(review: review, r: r),
         );
       },
     );
@@ -309,8 +314,6 @@ class _ReviewsResponsive {
       headerGap: 24,
       cardPadding: 14,
       cardMessageFont: 12.5,
-      // Arrows plus a single narrow card leaves almost no room; swiping
-      // and autoplay still work without them.
       showArrows: false,
     );
   }
@@ -362,6 +365,35 @@ class _NavArrowButtonState extends State<_NavArrowButton> {
   }
 }
 
+Widget userAvatar({
+  required String? photoUrl,
+  required String name,
+  double radius = 18,
+  Color background = const Color.fromRGBO(245, 171, 30, 1),
+}) {
+  return CircleAvatar(
+    radius: radius,
+    backgroundColor: background,
+    child: Text(
+      getInitials(name),
+      style: TextStyle(
+        color: Colors.black,
+        fontWeight: FontWeight.bold,
+        fontSize: radius * 0.7,
+      ),
+    ),
+  );
+}
+String getInitials(String name) {
+  final trimmed = name.trim();
+  if (trimmed.isEmpty) return '?';
+
+  final parts = trimmed.split(RegExp(r'\s+'));
+  if (parts.length == 1) {
+    return parts.first.substring(0, 1).toUpperCase();
+  }
+  return (parts.first.substring(0, 1) + parts.last.substring(0, 1)).toUpperCase();
+}
 class _ReviewCard extends StatefulWidget {
   final Review review;
   final _ReviewsResponsive r;
@@ -378,9 +410,6 @@ class _ReviewCardState extends State<_ReviewCard> {
   @override
   Widget build(BuildContext context) {
     final r = widget.r;
-    final initial = widget.review.name.isNotEmpty
-        ? widget.review.name[0].toUpperCase()
-        : "?";
 
     return MouseRegion(
       onEnter: (_) => setState(() => _isHovered = true),
@@ -409,15 +438,12 @@ class _ReviewCardState extends State<_ReviewCard> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // Quote icon
             const Icon(
               Icons.format_quote,
               color: Color.fromARGB(186, 245, 170, 30),
               size: 28,
             ),
             const SizedBox(height: 10),
-
-            // Review message
             Expanded(
               child: Text(
                 widget.review.message,
@@ -429,8 +455,6 @@ class _ReviewCardState extends State<_ReviewCard> {
               ),
             ),
             const SizedBox(height: 14),
-
-            // Star rating
             Row(
               children: List.generate(5, (i) {
                 return Icon(
@@ -443,27 +467,9 @@ class _ReviewCardState extends State<_ReviewCard> {
               }),
             ),
             const SizedBox(height: 14),
-
-            // Reviewer info
             Row(
               children: [
-                CircleAvatar(
-                  radius: 18,
-                  backgroundColor: const Color.fromRGBO(245, 171, 30, 1),
-                  backgroundImage: widget.review.photoUrl != null
-                      ? NetworkImage(widget.review.photoUrl!)
-                      : null,
-                  child: widget.review.photoUrl == null
-                      ? Text(
-                          initial,
-                          style: const TextStyle(
-                            color: Colors.black,
-                            fontWeight: FontWeight.bold,
-                            fontSize: 14,
-                          ),
-                        )
-                      : null,
-                ),
+                userAvatar(photoUrl: widget.review.photoUrl, name: widget.review.name, radius: 18),
                 const SizedBox(width: 10),
                 Expanded(
                   child: Column(
