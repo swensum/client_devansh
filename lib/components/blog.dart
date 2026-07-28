@@ -19,6 +19,7 @@ class _BlogSectionState extends State<BlogSection> {
   bool _isDisposed = false;
   final BlogService _blogService = BlogService();
   List<BlogPost> _posts = [];
+  int _totalCount = 0;
   bool _loading = true;
   StreamSubscription<List<BlogPost>>? _postsSub;
 
@@ -29,6 +30,7 @@ class _BlogSectionState extends State<BlogSection> {
       if (!_isDisposed) {
         setState(() {
           _posts = data.take(_maxPosts).toList();
+          _totalCount = data.length;
           _loading = false;
         });
       }
@@ -44,7 +46,8 @@ class _BlogSectionState extends State<BlogSection> {
 
   @override
   Widget build(BuildContext context) {
-  
+    // Nothing published yet (and we're done loading) — skip the section
+    // entirely rather than showing an empty block on the homepage.
     if (!_loading && _posts.isEmpty) {
       return const SizedBox.shrink();
     }
@@ -86,8 +89,10 @@ class _BlogSectionState extends State<BlogSection> {
                 )
               else ...[
                 BlogGrid(posts: _posts),
-                const SizedBox(height: 36),
-                _SeeMoreButton(onTap: () => context.push('/blog')),
+                if (_totalCount > _maxPosts) ...[
+                  const SizedBox(height: 36),
+                  _SeeMoreButton(onTap: () => context.push('/blog')),
+                ],
               ],
             ],
           ),
