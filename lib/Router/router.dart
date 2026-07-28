@@ -5,6 +5,7 @@ import 'package:devansh/productwidgets/productdetail.dart';
 import 'package:devansh/screen/aboutscreen.dart';
 import 'package:devansh/screen/authscreen.dart';
 import 'package:devansh/screen/blogscreen.dart';
+import 'package:devansh/screen/blogsdetailpage.dart';
 import 'package:devansh/screen/contactscreen.dart';
 import 'package:devansh/screen/homescreen.dart';
 import 'package:devansh/screen/orderscreen.dart';
@@ -135,6 +136,10 @@ final GoRouter appRouter = GoRouter(
   },
 ),
 GoRoute(path: '/blog', builder: (context, state) => const BlogsListPage()),
+GoRoute(
+  path: '/blog/:slug',
+  builder: (context, state) => BlogDetailPage(slug: state.pathParameters['slug']!),
+),
     GoRoute(
       path: '/product/:id',
       name: 'productDetail',
