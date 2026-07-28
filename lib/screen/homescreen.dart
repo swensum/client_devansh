@@ -1,4 +1,5 @@
 import 'package:devansh/components/about.dart';
+import 'package:devansh/components/blog.dart';
 import 'package:devansh/components/categories.dart';
 
 import 'package:devansh/components/footer.dart';
@@ -54,7 +55,7 @@ class _HomePageState extends State<HomePage> {
                 const TopProductsSection(),
                 const _Divider(),
                 const ReviewsSection(),
-                
+                 const BlogSection(),
                 const _Divider(),
                 const Footer(),
               ],

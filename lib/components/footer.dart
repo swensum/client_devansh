@@ -1,7 +1,11 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
-class Footer extends StatelessWidget {
+import 'package:devansh/models/catalogmodels.dart';
+import 'package:devansh/services/catalogservice.dart';
+
+class Footer extends StatefulWidget {
   const Footer({super.key});
 
   static const _accent = Color.fromRGBO(245, 171, 30, 1);
@@ -14,20 +18,60 @@ class Footer extends StatelessWidget {
     _FooterLink(label: "Contact", route: "/contact"),
   ];
 
-  static const List<_FooterLink> _categoryLinks = [
-    _FooterLink(label: "Cabinet Handles"),
-    _FooterLink(label: "Door Handles"),
-    _FooterLink(label: "Hinges & Locks"),
-    _FooterLink(label: "Aldrops"),
-    _FooterLink(label: "Accessories"),
-  ];
-
   static const List<_SocialIconData> _socials = [
     _SocialIconData(icon: Icons.facebook),
     _SocialIconData(icon: Icons.camera_alt_outlined), // Instagram stand-in
     _SocialIconData(icon: Icons.alternate_email), // Twitter/X stand-in
     _SocialIconData(icon: Icons.chat_bubble_outline), // WhatsApp stand-in
   ];
+
+  @override
+  State<Footer> createState() => _FooterState();
+}
+
+class _FooterState extends State<Footer> {
+  bool _isDisposed = false;
+  final CatalogService _catalogService = CatalogService();
+  List<Category> _categories = [];
+  StreamSubscription<List<Category>>? _categoriesSub;
+
+  @override
+  void initState() {
+    super.initState();
+    _categoriesSub = _catalogService.watchCategories().listen((data) {
+      if (!_isDisposed) setState(() => _categories = data);
+    });
+  }
+
+  @override
+  void dispose() {
+    _isDisposed = true;
+    _categoriesSub?.cancel();
+    super.dispose();
+  }
+
+  static const int _categoriesPerColumn = 6;
+
+  List<_FooterLink> get _categoryLinks => _categories
+      .map(
+        (c) => _FooterLink(
+          label: c.name,
+          route: '/products?category=${c.id}',
+        ),
+      )
+      .toList();
+
+  List<List<_FooterLink>> get _categoryColumns {
+    final links = _categoryLinks;
+    final columns = <List<_FooterLink>>[];
+    for (var i = 0; i < links.length; i += _categoriesPerColumn) {
+      final end = (i + _categoriesPerColumn < links.length)
+          ? i + _categoriesPerColumn
+          : links.length;
+      columns.add(links.sublist(i, end));
+    }
+    return columns.isEmpty ? [[]] : columns;
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -46,18 +90,21 @@ class Footer extends StatelessWidget {
                     final isWide = constraints.maxWidth > 800;
 
                     final brand = _buildBrandColumn();
-                    final quick = _buildLinkColumn("Quick Links", _quickLinks);
-                    final categories = _buildLinkColumn("Categories", _categoryLinks);
-                    final newsletter = _buildNewsletterColumn();
+                    final quick = _buildLinkColumn("Quick Links", Footer._quickLinks);
+                    final categoryColumns = _categoryColumns;
+                    final categories = _buildCategoriesSection(categoryColumns);
+                    final contact = _buildContactColumn();
 
                     if (isWide) {
+                      // Give the categories block more room as it grows extra columns.
+                      final categoriesFlex = 2 * categoryColumns.length;
                       return Row(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Expanded(flex: 4, child: brand),
                           Expanded(flex: 2, child: quick),
-                          Expanded(flex: 2, child: categories),
-                          Expanded(flex: 4, child: newsletter),
+                          Expanded(flex: categoriesFlex, child: categories),
+                          Expanded(flex: 4, child: contact),
                         ],
                       );
                     }
@@ -71,7 +118,7 @@ class Footer extends StatelessWidget {
                         const SizedBox(height: 36),
                         categories,
                         const SizedBox(height: 36),
-                        newsletter,
+                        contact,
                       ],
                     );
                   },
@@ -139,7 +186,7 @@ class Footer extends StatelessWidget {
           ),
           const SizedBox(height: 20),
           Row(
-            children: _socials
+            children: Footer._socials
                 .map((s) => Padding(
                       padding: const EdgeInsets.only(right: 10),
                       child: _SocialIcon(icon: s.icon),
@@ -176,14 +223,14 @@ class Footer extends StatelessWidget {
     );
   }
 
-  Widget _buildNewsletterColumn() {
+  Widget _buildCategoriesSection(List<List<_FooterLink>> columns) {
     return Padding(
-      padding: const EdgeInsets.only(bottom: 10),
+      padding: const EdgeInsets.only(right: 20, bottom: 10),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           const Text(
-            "Stay Updated",
+            "Categories",
             style: TextStyle(
               fontSize: 15,
               fontWeight: FontWeight.w600,
@@ -192,12 +239,64 @@ class Footer extends StatelessWidget {
             ),
           ),
           const SizedBox(height: 16),
-          Text(
-            "Subscribe for new arrivals and exclusive offers.",
-            style: TextStyle(fontSize: 13.5, color: Colors.white.withValues(alpha: 0.6)),
+          Wrap(
+            spacing: 24,
+            runSpacing: 16,
+            children: [
+              for (final column in columns)
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    for (final link in column)
+                      Padding(
+                        padding: const EdgeInsets.only(bottom: 12),
+                        child: _FooterLinkText(label: link.label, route: link.route),
+                      ),
+                  ],
+                ),
+            ],
           ),
-          const SizedBox(height: 16),
-          _NewsletterField(),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildContactColumn() {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 10),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: const [
+          Text(
+            "Contact",
+            style: TextStyle(
+              fontSize: 15,
+              fontWeight: FontWeight.w600,
+              color: Colors.white,
+              letterSpacing: 0.5,
+            ),
+          ),
+          SizedBox(height: 16),
+          _ContactRow(
+            icon: Icons.location_on_outlined,
+            text: "123 Hardware Street, Industrial Area, City, State 12345",
+          ),
+          SizedBox(height: 14),
+          _ContactRow(
+            icon: Icons.phone_outlined,
+            text: "+91 98765 43210",
+          ),
+          SizedBox(height: 14),
+          _ContactRow(
+            icon: Icons.email_outlined,
+            text: "info@devanshhardware.com",
+          ),
+          SizedBox(height: 14),
+          _ContactRow(
+            icon: Icons.access_time,
+            text: "Sun - Fri (10 AM to 6 PM)",
+          ),
         ],
       ),
     );
@@ -213,6 +312,33 @@ class _FooterLink {
 class _SocialIconData {
   final IconData icon;
   const _SocialIconData({required this.icon});
+}
+
+class _ContactRow extends StatelessWidget {
+  final IconData icon;
+  final String text;
+  const _ContactRow({required this.icon, required this.text});
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Icon(icon, size: 16, color: Footer._accent),
+        const SizedBox(width: 10),
+        Expanded(
+          child: Text(
+            text,
+            style: TextStyle(
+              fontSize: 13.5,
+              color: Colors.white.withValues(alpha: 0.6),
+              height: 1.4,
+            ),
+          ),
+        ),
+      ],
+    );
+  }
 }
 
 class _FooterLinkText extends StatefulWidget {
@@ -329,93 +455,6 @@ class _SocialIconState extends State<_SocialIcon> {
           ),
         ),
       ),
-    );
-  }
-}
-
-class _NewsletterField extends StatefulWidget {
-  @override
-  State<_NewsletterField> createState() => _NewsletterFieldState();
-}
-
-class _NewsletterFieldState extends State<_NewsletterField> {
-  final _controller = TextEditingController();
-  bool _subscribed = false;
-
-  @override
-  void dispose() {
-    _controller.dispose();
-    super.dispose();
-  }
-
-  void _handleSubscribe() {
-    if (_controller.text.trim().isEmpty) return;
-
-    // Replace with your actual newsletter signup call.
-    setState(() => _subscribed = true);
-    _controller.clear();
-
-    Future.delayed(const Duration(seconds: 3), () {
-      if (mounted) setState(() => _subscribed = false);
-    });
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Row(
-          children: [
-            Expanded(
-              child: TextField(
-                controller: _controller,
-                style: const TextStyle(color: Colors.white, fontSize: 13.5),
-                cursorColor: Footer._accent,
-                decoration: InputDecoration(
-                  hintText: "Your email",
-                  hintStyle: TextStyle(color: Colors.white.withValues(alpha: 0.4)),
-                  filled: true,
-                  fillColor: Colors.white.withValues(alpha: 0.06),
-                  contentPadding:
-                      const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(8),
-                    borderSide: BorderSide(color: Colors.white.withValues(alpha: 0.15)),
-                  ),
-                  enabledBorder: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(8),
-                    borderSide: BorderSide(color: Colors.white.withValues(alpha: 0.15)),
-                  ),
-                  focusedBorder: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(8),
-                    borderSide: const BorderSide(color: Footer._accent, width: 1.5),
-                  ),
-                ),
-              ),
-            ),
-            const SizedBox(width: 10),
-            GestureDetector(
-              onTap: _handleSubscribe,
-              child: Container(
-                padding: const EdgeInsets.all(13),
-                decoration: const BoxDecoration(
-                  color: Footer._accent,
-                  shape: BoxShape.circle,
-                ),
-                child: const Icon(Icons.arrow_forward, size: 16, color: Colors.black),
-              ),
-            ),
-          ],
-        ),
-        if (_subscribed) ...[
-          const SizedBox(height: 10),
-          Text(
-            "Subscribed! Thanks for joining.",
-            style: TextStyle(fontSize: 12, color: Footer._accent),
-          ),
-        ],
-      ],
     );
   }
 }

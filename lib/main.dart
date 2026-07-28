@@ -10,9 +10,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
 Future<void> main() async {
-    usePathUrlStrategy();
   WidgetsFlutterBinding.ensureInitialized();
-
+  usePathUrlStrategy();
   SystemChrome.setSystemUIOverlayStyle(
     const SystemUiOverlayStyle(
       statusBarColor: Color(0xFF0A1929),
