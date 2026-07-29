@@ -11,6 +11,8 @@ import 'package:devansh/components/footer.dart';
 
 const double _kHeaderHeight = 100;
 
+/// Typography for the post body — headings, bold text, and bullet lists all
+/// get visibly distinct sizes/weights instead of one flat paragraph style.
 MarkdownStyleSheet _blogMarkdownStyleSheet() {
   final bodyColor = Colors.white.withValues(alpha: 0.72);
   const bodySize = 15.5;
@@ -73,6 +75,8 @@ MarkdownStyleSheet _blogMarkdownStyleSheet() {
   );
 }
 
+/// Full post view at `/blog/:slug` — cover image + a "Recent Blogs" rail
+/// side by side up top, then the title/meta/content below that.
 class BlogDetailPage extends StatefulWidget {
   final String slug;
   const BlogDetailPage({super.key, required this.slug});
@@ -180,7 +184,8 @@ class _BlogDetailPageState extends State<BlogDetailPage> {
             "This post may have been removed or unpublished.",
             style: TextStyle(fontSize: 14, color: Colors.white.withValues(alpha: 0.5)),
           ),
-         
+          const SizedBox(height: 24),
+          _BackToBlogLink(onTap: () => context.go('/blog')),
         ],
       ),
     );
@@ -195,7 +200,7 @@ class _BlogDetailPageState extends State<BlogDetailPage> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-             
+              _BackToBlogLink(onTap: () => context.go('/blog')),
               const SizedBox(height: 20),
 
               // ── Cover image (left) + Recent Blogs rail (right) ──────
@@ -310,6 +315,23 @@ class _BlogDetailPageState extends State<BlogDetailPage> {
                       shrinkWrap: true,
                       styleSheet: _blogMarkdownStyleSheet(),
                     ),
+
+                    if (post.faqs.isNotEmpty) ...[
+                      const SizedBox(height: 44),
+                      Container(height: 1, color: Colors.white.withValues(alpha: 0.08)),
+                      const SizedBox(height: 36),
+                      const Text(
+                        "Frequently Asked Questions",
+                        style: TextStyle(
+                          fontSize: 22,
+                          fontWeight: FontWeight.w700,
+                          color: Colors.white,
+                        ),
+                      ),
+                      const SizedBox(height: 20),
+                      _FaqList(faqs: post.faqs),
+                    ],
+
                     const SizedBox(height: 60),
                   ],
                 ),
@@ -322,6 +344,8 @@ class _BlogDetailPageState extends State<BlogDetailPage> {
   }
 }
 
+/// Smaller, contained cover image — rounded corners instead of an edge-to-edge
+/// banner, so it visually sits as a card rather than a full-bleed hero.
 class _CoverImage extends StatelessWidget {
   final BlogPost post;
   const _CoverImage({required this.post});
@@ -331,9 +355,11 @@ class _CoverImage extends StatelessWidget {
     return ClipRRect(
       borderRadius: BorderRadius.circular(12),
       child: AspectRatio(
-        aspectRatio: 16 / 9,
+        aspectRatio: 16 / 10,
         child: Container(
-         
+          // Letterbox background so BoxFit.contain doesn't leave bare gaps —
+          // this shows the WHOLE image with nothing cropped, at the same
+          // box size as before.
           color: const Color(0xFF1A1A1A),
           child: post.coverImage != null
               ? Image.network(
@@ -364,6 +390,8 @@ class _CoverImage extends StatelessWidget {
   }
 }
 
+/// Sidebar next to the cover image: "Recent Blogs" title + a compact list of
+/// other posts (small thumbnail + title only, no excerpt/date).
 class _RecentBlogsPanel extends StatelessWidget {
   final List<BlogPost> posts;
   final void Function(BlogPost post) onTapPost;
@@ -405,6 +433,110 @@ class _RecentBlogsPanel extends StatelessWidget {
               ),
             ),
         ],
+      ),
+    );
+  }
+}
+
+class _FaqList extends StatelessWidget {
+  final List<BlogFaq> faqs;
+  const _FaqList({required this.faqs});
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      children: [
+        for (int i = 0; i < faqs.length; i++)
+          Padding(
+            padding: EdgeInsets.only(bottom: i == faqs.length - 1 ? 0 : 12),
+            child: _FaqTile(faq: faqs[i]),
+          ),
+      ],
+    );
+  }
+}
+
+class _FaqTile extends StatefulWidget {
+  final BlogFaq faq;
+  const _FaqTile({required this.faq});
+
+  @override
+  State<_FaqTile> createState() => _FaqTileState();
+}
+
+class _FaqTileState extends State<_FaqTile> {
+  bool _isOpen = false;
+  bool _isHovered = false;
+
+  @override
+  Widget build(BuildContext context) {
+    return MouseRegion(
+      onEnter: (_) => setState(() => _isHovered = true),
+      onExit: (_) => setState(() => _isHovered = false),
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 200),
+        decoration: BoxDecoration(
+          color: const Color(0xFF1A1A1A),
+          borderRadius: BorderRadius.circular(10),
+          border: Border.all(
+            color: _isOpen || _isHovered
+                ? kBlogAccent
+                : Colors.white.withValues(alpha: 0.08),
+          ),
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            GestureDetector(
+              behavior: HitTestBehavior.opaque,
+              onTap: () => setState(() => _isOpen = !_isOpen),
+              child: Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 16),
+                child: Row(
+                  crossAxisAlignment: CrossAxisAlignment.center,
+                  children: [
+                    Expanded(
+                      child: Text(
+                        widget.faq.question,
+                        style: TextStyle(
+                          fontSize: 15.5,
+                          fontWeight: FontWeight.w600,
+                          color: _isOpen ? kBlogAccent : Colors.white,
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    AnimatedRotation(
+                      duration: const Duration(milliseconds: 200),
+                      turns: _isOpen ? 0.5 : 0.0,
+                      child: Icon(
+                        Icons.keyboard_arrow_down,
+                        color: _isOpen ? kBlogAccent : Colors.white70,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+            AnimatedCrossFade(
+              duration: const Duration(milliseconds: 200),
+              crossFadeState:
+                  _isOpen ? CrossFadeState.showFirst : CrossFadeState.showSecond,
+              firstChild: Padding(
+                padding: const EdgeInsets.fromLTRB(18, 0, 18, 18),
+                child: Text(
+                  widget.faq.answer,
+                  style: TextStyle(
+                    fontSize: 14.5,
+                    height: 1.7,
+                    color: Colors.white.withValues(alpha: 0.68),
+                  ),
+                ),
+              ),
+              secondChild: const SizedBox(width: double.infinity),
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -461,6 +593,49 @@ class _RecentBlogRowState extends State<_RecentBlogRow> {
                   height: 1.3,
                   color: _isHovered ? kBlogAccent : Colors.white.withValues(alpha: 0.85),
                 ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _BackToBlogLink extends StatefulWidget {
+  final VoidCallback onTap;
+  const _BackToBlogLink({required this.onTap});
+
+  @override
+  State<_BackToBlogLink> createState() => _BackToBlogLinkState();
+}
+
+class _BackToBlogLinkState extends State<_BackToBlogLink> {
+  bool _isHovered = false;
+
+  @override
+  Widget build(BuildContext context) {
+    return MouseRegion(
+      cursor: SystemMouseCursors.click,
+      onEnter: (_) => setState(() => _isHovered = true),
+      onExit: (_) => setState(() => _isHovered = false),
+      child: GestureDetector(
+        onTap: widget.onTap,
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(
+              Icons.arrow_back,
+              size: 15,
+              color: _isHovered ? kBlogAccent : Colors.white70,
+            ),
+            const SizedBox(width: 6),
+            Text(
+              "Back to Blog",
+              style: TextStyle(
+                fontSize: 13.5,
+                fontWeight: FontWeight.w600,
+                color: _isHovered ? kBlogAccent : Colors.white70,
               ),
             ),
           ],

@@ -7,6 +7,7 @@ import 'package:devansh/components/header.dart';
 import 'package:devansh/components/product.dart';
 import 'package:devansh/components/reviews.dart';
 import 'package:devansh/components/stat.dart';
+import 'package:devansh/dialog/faq.dart';
 
 import 'package:flutter/material.dart';
 import 'dart:async';
@@ -55,7 +56,9 @@ class _HomePageState extends State<HomePage> {
                 const TopProductsSection(),
                 const _Divider(),
                 const ReviewsSection(),
-                 const BlogSection(),
+                const BlogSection(),
+                const _Divider(),
+                const FaqSection(),
                 const _Divider(),
                 const Footer(),
               ],

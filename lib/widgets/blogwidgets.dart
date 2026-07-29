@@ -92,7 +92,7 @@ class _BlogPostCardState extends State<BlogPostCard> {
                 borderRadius:
                     const BorderRadius.vertical(top: Radius.circular(10)),
                 child: AspectRatio(
-                  aspectRatio: 16 / 10,
+                  aspectRatio: 15 / 10,
                   child: Stack(
                     fit: StackFit.expand,
                     children: [
