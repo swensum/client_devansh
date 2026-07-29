@@ -8,7 +8,11 @@ class TopBar extends StatelessWidget {
 
   static const double height = 36;
 
-  static const _textStyle = TextStyle(color: Colors.white70, fontSize: 12);
+  static const _textStyle = TextStyle(
+    color: Colors.white70,
+    fontSize: 12,
+    fontFamily: 'BrandonGrotesque',
+  );
 
   @override
   Widget build(BuildContext context) {
@@ -23,12 +27,11 @@ class TopBar extends StatelessWidget {
       padding: EdgeInsets.symmetric(horizontal: isTight ? 10 : 20),
       child: Row(
         children: [
-          // Address — left side, shrinks if space is tight.
           const Icon(Icons.location_on, color: Colors.white70, size: 14),
-          const SizedBox(width: 6),
+          const SizedBox(width: 16),
           Flexible(
             child: Text(
-              'Shop No. 12, Main Market, Biratnagar, Nepal',
+              'Sukhanagar(Old Napi Office),Butwal,Nepal',
               overflow: TextOverflow.ellipsis,
               maxLines: 1,
               style: _textStyle,
@@ -47,7 +50,10 @@ class TopBar extends StatelessWidget {
             const SizedBox(width: 20),
             const Icon(Icons.phone, color: Colors.white70, size: 14),
             const SizedBox(width: 6),
-            const Text('+977 98XXXXXXXX', style: _textStyle),
+            const Text(
+              '+977 9857033614, +977 9857081383',
+              style: _textStyle,
+            ),
           ],
         ],
       ),
