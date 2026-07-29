@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
+import 'package:flutter_markdown_plus/flutter_markdown_plus.dart';
 import 'package:go_router/go_router.dart';
 
 import 'package:devansh/models/blogmodel.dart';
@@ -9,6 +10,68 @@ import 'package:devansh/components/header.dart';
 import 'package:devansh/components/footer.dart';
 
 const double _kHeaderHeight = 100;
+
+MarkdownStyleSheet _blogMarkdownStyleSheet() {
+  final bodyColor = Colors.white.withValues(alpha: 0.72);
+  const bodySize = 15.5;
+  const bodyHeight = 1.8;
+
+  return MarkdownStyleSheet(
+    h1: const TextStyle(
+      fontSize: 26,
+      fontWeight: FontWeight.bold,
+      color: Colors.white,
+      height: 1.4,
+    ),
+    h2: const TextStyle(
+      fontSize: 21,
+      fontWeight: FontWeight.w700,
+      color: Colors.white,
+      height: 1.4,
+    ),
+    h3: TextStyle(
+      fontSize: 18,
+      fontWeight: FontWeight.w700,
+      color: Colors.white.withValues(alpha: 0.92),
+      height: 1.4,
+    ),
+    h4: TextStyle(
+      fontSize: bodySize,
+      fontWeight: FontWeight.w700,
+      color: Colors.white.withValues(alpha: 0.88),
+    ),
+    p: TextStyle(
+      fontSize: bodySize,
+      height: bodyHeight,
+      fontWeight: FontWeight.w400,
+      color: bodyColor,
+    ),
+    strong: const TextStyle(fontWeight: FontWeight.w700, color: Colors.white),
+    em: TextStyle(fontStyle: FontStyle.italic, color: bodyColor),
+    listBullet: TextStyle(
+      fontSize: bodySize,
+      height: bodyHeight,
+      color: kBlogAccent,
+    ),
+    listIndent: 20,
+    blockSpacing: 18,
+    horizontalRuleDecoration: BoxDecoration(
+      border: Border(
+        top: BorderSide(color: Colors.white.withValues(alpha: 0.1)),
+      ),
+    ),
+    blockquote: TextStyle(
+      fontSize: bodySize,
+      fontStyle: FontStyle.italic,
+      color: Colors.white.withValues(alpha: 0.6),
+    ),
+    blockquoteDecoration: BoxDecoration(
+      border: Border(left: BorderSide(color: kBlogAccent, width: 3)),
+    ),
+    blockquotePadding: const EdgeInsets.only(left: 16),
+    a: const TextStyle(color: kBlogAccent, decoration: TextDecoration.underline),
+  );
+}
 
 class BlogDetailPage extends StatefulWidget {
   final String slug;
@@ -117,8 +180,7 @@ class _BlogDetailPageState extends State<BlogDetailPage> {
             "This post may have been removed or unpublished.",
             style: TextStyle(fontSize: 14, color: Colors.white.withValues(alpha: 0.5)),
           ),
-          const SizedBox(height: 24),
-          _BackToBlogLink(onTap: () => context.go('/blog')),
+         
         ],
       ),
     );
@@ -133,7 +195,7 @@ class _BlogDetailPageState extends State<BlogDetailPage> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              _BackToBlogLink(onTap: () => context.go('/blog')),
+             
               const SizedBox(height: 20),
 
               // ── Cover image (left) + Recent Blogs rail (right) ──────
@@ -243,14 +305,10 @@ class _BlogDetailPageState extends State<BlogDetailPage> {
                       const SizedBox(height: 24),
                     ],
 
-                    Text(
-                      post.content ?? '',
-                      style: TextStyle(
-                        fontSize: 15.5,
-                        height: 1.8,
-                        fontWeight: FontWeight.w400,
-                        color: Colors.white.withValues(alpha: 0.72),
-                      ),
+                    MarkdownBody(
+                      data: post.content ?? '',
+                      shrinkWrap: true,
+                      styleSheet: _blogMarkdownStyleSheet(),
                     ),
                     const SizedBox(height: 60),
                   ],
@@ -264,8 +322,6 @@ class _BlogDetailPageState extends State<BlogDetailPage> {
   }
 }
 
-/// Smaller, contained cover image — rounded corners instead of an edge-to-edge
-/// banner, so it visually sits as a card rather than a full-bleed hero.
 class _CoverImage extends StatelessWidget {
   final BlogPost post;
   const _CoverImage({required this.post});
@@ -275,18 +331,22 @@ class _CoverImage extends StatelessWidget {
     return ClipRRect(
       borderRadius: BorderRadius.circular(12),
       child: AspectRatio(
-        aspectRatio: 16 / 10,
-        child: post.coverImage != null
-            ? Image.network(
-                post.coverImage!,
-                fit: BoxFit.cover,
-                errorBuilder: (context, error, stackTrace) => _placeholder(),
-                loadingBuilder: (context, child, progress) {
-                  if (progress == null) return child;
-                  return _placeholder();
-                },
-              )
-            : _placeholder(),
+        aspectRatio: 16 / 9,
+        child: Container(
+         
+          color: const Color(0xFF1A1A1A),
+          child: post.coverImage != null
+              ? Image.network(
+                  post.coverImage!,
+                  fit: BoxFit.contain,
+                  errorBuilder: (context, error, stackTrace) => _placeholder(),
+                  loadingBuilder: (context, child, progress) {
+                    if (progress == null) return child;
+                    return _placeholder();
+                  },
+                )
+              : _placeholder(),
+        ),
       ),
     );
   }
@@ -304,8 +364,6 @@ class _CoverImage extends StatelessWidget {
   }
 }
 
-/// Sidebar next to the cover image: "Recent Blogs" title + a compact list of
-/// other posts (small thumbnail + title only, no excerpt/date).
 class _RecentBlogsPanel extends StatelessWidget {
   final List<BlogPost> posts;
   final void Function(BlogPost post) onTapPost;
@@ -403,49 +461,6 @@ class _RecentBlogRowState extends State<_RecentBlogRow> {
                   height: 1.3,
                   color: _isHovered ? kBlogAccent : Colors.white.withValues(alpha: 0.85),
                 ),
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-class _BackToBlogLink extends StatefulWidget {
-  final VoidCallback onTap;
-  const _BackToBlogLink({required this.onTap});
-
-  @override
-  State<_BackToBlogLink> createState() => _BackToBlogLinkState();
-}
-
-class _BackToBlogLinkState extends State<_BackToBlogLink> {
-  bool _isHovered = false;
-
-  @override
-  Widget build(BuildContext context) {
-    return MouseRegion(
-      cursor: SystemMouseCursors.click,
-      onEnter: (_) => setState(() => _isHovered = true),
-      onExit: (_) => setState(() => _isHovered = false),
-      child: GestureDetector(
-        onTap: widget.onTap,
-        child: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Icon(
-              Icons.arrow_back,
-              size: 15,
-              color: _isHovered ? kBlogAccent : Colors.white70,
-            ),
-            const SizedBox(width: 6),
-            Text(
-              "Back to Blog",
-              style: TextStyle(
-                fontSize: 13.5,
-                fontWeight: FontWeight.w600,
-                color: _isHovered ? kBlogAccent : Colors.white70,
               ),
             ),
           ],
