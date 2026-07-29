@@ -1,20 +1,19 @@
 import 'package:devansh/components/about.dart';
 import 'package:devansh/components/blog.dart';
 import 'package:devansh/components/categories.dart';
-
 import 'package:devansh/components/footer.dart';
 import 'package:devansh/components/header.dart';
 import 'package:devansh/components/product.dart';
 import 'package:devansh/components/reviews.dart';
 import 'package:devansh/components/stat.dart';
+
+import 'package:devansh/components/topbar.dart';
 import 'package:devansh/dialog/faq.dart';
 
 import 'package:flutter/material.dart';
 import 'dart:async';
 
 import 'package:go_router/go_router.dart';
-
-const double _kHeaderHeight = 100;
 
 class HomePage extends StatefulWidget {
   const HomePage({super.key});
@@ -25,27 +24,36 @@ class HomePage extends StatefulWidget {
 
 class _HomePageState extends State<HomePage> {
   bool _headerRevealed = false;
+  final ScrollController _scrollController = ScrollController();
 
   @override
   void initState() {
     super.initState();
     // Slide the header in shortly after first paint, regardless of scroll.
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      Future.delayed(const Duration(milliseconds: 150), () {
+      Future.delayed(const Duration(milliseconds: 50), () {
         if (mounted) setState(() => _headerRevealed = true);
       });
     });
   }
 
   @override
+  void dispose() {
+    _scrollController.dispose();
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: Colors.black,
       body: Stack(
         children: [
           SingleChildScrollView(
+            controller: _scrollController,
             child: Column(
               children: [
-                const SizedBox(height: _kHeaderHeight), // reserve space
+                SizedBox(height: Header.height + TopBar.height), // reserve space
                 const HeroCarousel(),
                 const _Divider(),
                 const StatsSection(),
@@ -72,7 +80,7 @@ class _HomePageState extends State<HomePage> {
               duration: const Duration(milliseconds: 500),
               curve: Curves.easeOutCubic,
               offset: _headerRevealed ? Offset.zero : const Offset(0, -1),
-              child: const Header(),
+              child: SiteHeader(scrollController: _scrollController),
             ),
           ),
         ],
@@ -311,6 +319,7 @@ class _HeroAlignmentInfo {
     }
   }
 }
+
 class _HeroResponsive {
   final double headlineSize;
   final double subtextSize;
@@ -406,7 +415,6 @@ class _HeroSlideViewState extends State<_HeroSlideView> {
           child: Image.asset(
             slide.image,
             fit: BoxFit.cover,
-           
             gaplessPlayback: true,
           ),
         ),
@@ -471,9 +479,7 @@ class _HeroSlideViewState extends State<_HeroSlideView> {
                             duration: const Duration(milliseconds: 200),
                             child: ElevatedButton(
                               onPressed: () {
-                                 
-          context.push('/products');
-        
+                                context.push('/products');
                               },
                               style: ElevatedButton.styleFrom(
                                 backgroundColor: _isHovered

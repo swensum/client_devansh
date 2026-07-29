@@ -1,7 +1,9 @@
 import 'dart:async';
+import 'package:devansh/components/topbar.dart';
 import 'package:web/web.dart' as web;
 import 'dart:ui';
 import 'package:devansh/data/catalog.dart';
+
 
 import 'package:devansh/models/catalogmodels.dart';
 import 'package:devansh/models/authmodel.dart';
@@ -12,8 +14,88 @@ import 'package:devansh/services/orderservice.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
+class SiteHeader extends StatefulWidget {
+  final ScrollController scrollController;
+
+  /// Scroll offset (in px) below which the top bar stays visible.
+  final double revealThreshold;
+
+  const SiteHeader({
+    super.key,
+    required this.scrollController,
+    this.revealThreshold = 4,
+  });
+
+  @override
+  State<SiteHeader> createState() => _SiteHeaderState();
+}
+
+class _SiteHeaderState extends State<SiteHeader> {
+  bool _showTopBar = true;
+
+  @override
+  void initState() {
+    super.initState();
+    widget.scrollController.addListener(_onScroll);
+    // Initialize from current position in case the page starts pre-scrolled.
+    WidgetsBinding.instance.addPostFrameCallback((_) => _onScroll());
+  }
+
+  void _onScroll() {
+    if (!widget.scrollController.hasClients) return;
+    final offset = widget.scrollController.offset;
+    final show = offset <= widget.revealThreshold;
+    if (show != _showTopBar && mounted) {
+      setState(() => _showTopBar = show);
+    }
+  }
+
+  @override
+  void didUpdateWidget(covariant SiteHeader oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.scrollController != widget.scrollController) {
+      oldWidget.scrollController.removeListener(_onScroll);
+      widget.scrollController.addListener(_onScroll);
+    }
+  }
+
+  @override
+  void dispose() {
+    widget.scrollController.removeListener(_onScroll);
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    // Fixed total height — nothing ever resizes, we only translate it,
+    // so there's no layout reflow and no gap/flash during the transition.
+    const totalHeight = TopBar.height + Header.height;
+
+    return ClipRect(
+      child: AnimatedSlide(
+        duration: const Duration(milliseconds: 320),
+        curve: Curves.easeInOut,
+      
+        offset: _showTopBar
+            ? Offset.zero
+            : const Offset(0, -TopBar.height / totalHeight),
+        child: const Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            TopBar(),
+            Header(),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
 class Header extends StatefulWidget {
   const Header({super.key});
+
+  /// Fixed navbar height — kept in sync with the Container height in build().
+  static const double height = 100;
 
   @override
   State<Header> createState() => _HeaderState();
@@ -46,8 +128,7 @@ class _HeaderState extends State<Header> {
   StreamSubscription<List<Company>>? _companiesSub;
 
   final Map<int, List<String>> _dropdownItems = {
-    2: ["New Arrivals", "Best Sellers", "Special Offers", "Seasonal"],
-    3: ["About Us", "Contact", "FAQs", "Shipping Info", "Terms & Conditions"],
+    3: ["About Us", "Contact", "Blogs", "FAQs"],
   };
   final Map<int, LayerLink> _layerLinks = {
     1: LayerLink(),
@@ -105,6 +186,7 @@ class _HeaderState extends State<Header> {
 
     final link = _layerLinks[index]!;
     final bool isShop = index == 1;
+    final bool isCollection = index == 2;
 
     _overlayEntry = OverlayEntry(
       builder: (context) {
@@ -133,7 +215,7 @@ class _HeaderState extends State<Header> {
                         child: BackdropFilter(
                           filter: ImageFilter.blur(sigmaX: 16, sigmaY: 16),
                           child: Container(
-                            width: isShop ? 420 : 180,
+                            width: (isShop || isCollection) ? 220 : 180,
                             decoration: BoxDecoration(
                               color: Colors.white.withValues(
                                 alpha: 0.15,
@@ -157,19 +239,26 @@ class _HeaderState extends State<Header> {
                                     categories: _categories,
                                     products: _products,
                                     types: _types,
-                                    companies: _companies,
                                     onNavigate: (route) {
                                       _closeDropdown();
                                       context.push(route);
                                     },
                                   )
-                                : _DropdownList(
-                                    items: _dropdownItems[index] ?? [],
-                                    onSelect: (item) {
-                                      _closeDropdown();
-                                      debugPrint('Selected: $item');
-                                    },
-                                  ),
+                                : isCollection
+                                    ? _CollectionDropdownContent(
+                                        companies: _companies,
+                                        onNavigate: (route) {
+                                          _closeDropdown();
+                                          context.push(route);
+                                        },
+                                      )
+                                    : _DropdownList(
+                                        items: _dropdownItems[index] ?? [],
+                                        onSelect: (item) {
+                                          _closeDropdown();
+                                          debugPrint('Selected: $item');
+                                        },
+                                      ),
                           ),
                         ),
                       ),
@@ -277,7 +366,7 @@ void _reloadHome() {
 
         return Container(
           height: 100,
-          padding: EdgeInsets.symmetric(horizontal: isTight ? 10 : 20),
+          padding: EdgeInsets.symmetric(horizontal: isTight ? 10 : 30),
           color: const Color(0xFF1A1A1A),
           child: Row(
             children: [
@@ -642,13 +731,52 @@ class _ShopDropdownContent extends StatelessWidget {
   final List<Category> categories;
   final List<Product> products;
   final List<ProductType> types;
-  final List<Company> companies;
   final void Function(String route) onNavigate;
 
   const _ShopDropdownContent({
     required this.categories,
     required this.products,
     required this.types,
+    required this.onNavigate,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return _DropdownColumn(
+      title: 'Categories',
+      children: [
+        for (final category in categories) ...[
+          _DropdownColumnRow(
+            item: _DropdownColumnItem(
+              label: category.name,
+              onTap: () => onNavigate('/products?category=${category.id}'),
+            ),
+          ),
+          for (final type in Catalog.typesInCategory(
+            products,
+            types,
+            category.id,
+          ))
+            _DropdownColumnRow(
+              item: _DropdownColumnItem(
+                label: '- ${type.name}',
+                onTap: () => onNavigate(
+                  '/products?category=${category.id}&type=${type.id}',
+                ),
+              ),
+              isSubItem: true,
+            ),
+        ],
+      ],
+    );
+  }
+}
+
+class _CollectionDropdownContent extends StatelessWidget {
+  final List<Company> companies;
+  final void Function(String route) onNavigate;
+
+  const _CollectionDropdownContent({
     required this.companies,
     required this.onNavigate,
   });
@@ -660,58 +788,17 @@ class _ShopDropdownContent extends StatelessWidget {
         .where((c) => c.id != 'unknown' && c.id != 'others')
         .toList();
 
-    return IntrinsicHeight(
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          Expanded(
-            child: _DropdownColumn(
-              title: 'Categories',
-              children: [
-                for (final category in categories) ...[
-                  _DropdownColumnRow(
-                    item: _DropdownColumnItem(
-                      label: category.name,
-                      onTap: () =>
-                          onNavigate('/products?category=${category.id}'),
-                    ),
-                  ),
-                  for (final type in Catalog.typesInCategory(
-                    products,
-                    types,
-                    category.id,
-                  ))
-                    _DropdownColumnRow(
-                      item: _DropdownColumnItem(
-                        label: '- ${type.name}',
-                        onTap: () => onNavigate(
-                          '/products?category=${category.id}&type=${type.id}',
-                        ),
-                      ),
-                      isSubItem: true,
-                    ),
-                ],
-              ],
+    return _DropdownColumn(
+      title: 'Companies',
+      children: [
+        for (final company in visibleCompanies)
+          _DropdownColumnRow(
+            item: _DropdownColumnItem(
+              label: company.name,
+              onTap: () => onNavigate('/products?company=${company.id}'),
             ),
           ),
-          Container(width: 1, color: Colors.white.withValues(alpha: 0.2)),
-          Expanded(
-            child: _DropdownColumn(
-              title: 'Companies',
-              children: [
-                for (final company in visibleCompanies)
-                  _DropdownColumnRow(
-                    item: _DropdownColumnItem(
-                      label: company.name,
-                      onTap: () =>
-                          onNavigate('/products?company=${company.id}'),
-                    ),
-                  ),
-              ],
-            ),
-          ),
-        ],
-      ),
+      ],
     );
   }
 }
@@ -1092,10 +1179,6 @@ class _MobileNavMenu extends StatelessWidget {
         final label = entry.value;
 
         if (index == 1) {
-          final visibleCompanies = companies
-              .where((c) => c.id != 'unknown' && c.id != 'others')
-              .toList();
-
           return ExpansionTile(
             tilePadding: const EdgeInsets.symmetric(horizontal: 16),
             iconColor: Colors.white,
@@ -1139,33 +1222,37 @@ class _MobileNavMenu extends StatelessWidget {
                     ),
                   ),
               ],
-              if (visibleCompanies.isNotEmpty) ...[
-                const Padding(
-                  padding: EdgeInsets.fromLTRB(32, 8, 16, 4),
-                  child: Text(
-                    "Companies",
-                    style: TextStyle(
-                      color: Color.fromRGBO(245, 171, 30, 1),
-                      fontSize: 12,
-                      fontWeight: FontWeight.w700,
-                      letterSpacing: 0.6,
+            ],
+          );
+        }
+
+        if (index == 2) {
+          final visibleCompanies = companies
+              .where((c) => c.id != 'unknown' && c.id != 'others')
+              .toList();
+
+          return ExpansionTile(
+            tilePadding: const EdgeInsets.symmetric(horizontal: 16),
+            iconColor: Colors.white,
+            collapsedIconColor: Colors.white70,
+            title: const Text(
+              "Collection",
+              style: TextStyle(color: Colors.white, fontSize: 14),
+            ),
+            children: [
+              for (final company in visibleCompanies)
+                ListTile(
+                  dense: true,
+                  contentPadding: const EdgeInsets.only(left: 32, right: 16),
+                  title: Text(
+                    company.name,
+                    style: const TextStyle(
+                      color: Colors.white70,
+                      fontSize: 13,
                     ),
                   ),
+                  onTap: () => onNavigate('/products?company=${company.id}'),
                 ),
-                for (final company in visibleCompanies)
-                  ListTile(
-                    dense: true,
-                    contentPadding: const EdgeInsets.only(left: 32, right: 16),
-                    title: Text(
-                      company.name,
-                      style: const TextStyle(
-                        color: Colors.white70,
-                        fontSize: 13,
-                      ),
-                    ),
-                    onTap: () => onNavigate('/products?company=${company.id}'),
-                  ),
-              ],
             ],
           );
         }
@@ -1184,7 +1271,7 @@ class _MobileNavMenu extends StatelessWidget {
   );
 }
 
-        // "Collection" / "Pages" – generic sub-items, unchanged behavior.
+        // "Pages" – generic sub-items, unchanged behavior.
         return ExpansionTile(
           tilePadding: const EdgeInsets.symmetric(horizontal: 16),
           iconColor: Colors.white,
