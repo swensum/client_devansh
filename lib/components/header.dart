@@ -4,7 +4,6 @@ import 'package:web/web.dart' as web;
 import 'dart:ui';
 import 'package:devansh/data/catalog.dart';
 
-
 import 'package:devansh/models/catalogmodels.dart';
 import 'package:devansh/models/authmodel.dart';
 import 'package:devansh/services/catalogservice.dart';
@@ -67,24 +66,20 @@ class _SiteHeaderState extends State<SiteHeader> {
 
   @override
   Widget build(BuildContext context) {
-    // Fixed total height — nothing ever resizes, we only translate it,
-    // so there's no layout reflow and no gap/flash during the transition.
+   
     const totalHeight = TopBar.height + Header.height;
 
     return ClipRect(
       child: AnimatedSlide(
         duration: const Duration(milliseconds: 320),
         curve: Curves.easeInOut,
-      
+
         offset: _showTopBar
             ? Offset.zero
             : const Offset(0, -TopBar.height / totalHeight),
         child: const Column(
           mainAxisSize: MainAxisSize.min,
-          children: [
-            TopBar(),
-            Header(),
-          ],
+          children: [TopBar(), Header()],
         ),
       ),
     );
@@ -129,6 +124,12 @@ class _HeaderState extends State<Header> {
 
   final Map<int, List<String>> _dropdownItems = {
     3: ["About Us", "Contact", "Blogs", "FAQs"],
+  };
+  static const Map<String, String> _pageRoutes = {
+    "About Us": '/about',
+    "Contact": '/contact',
+    "Blogs": '/blog',
+    "FAQs": '/faq',
   };
   final Map<int, LayerLink> _layerLinks = {
     1: LayerLink(),
@@ -245,20 +246,23 @@ class _HeaderState extends State<Header> {
                                     },
                                   )
                                 : isCollection
-                                    ? _CollectionDropdownContent(
-                                        companies: _companies,
-                                        onNavigate: (route) {
-                                          _closeDropdown();
-                                          context.push(route);
-                                        },
-                                      )
-                                    : _DropdownList(
-                                        items: _dropdownItems[index] ?? [],
-                                        onSelect: (item) {
-                                          _closeDropdown();
-                                          debugPrint('Selected: $item');
-                                        },
-                                      ),
+                                ? _CollectionDropdownContent(
+                                    companies: _companies,
+                                    onNavigate: (route) {
+                                      _closeDropdown();
+                                      context.push(route);
+                                    },
+                                  )
+                                : _DropdownList(
+                                    items: _dropdownItems[index] ?? [],
+                                    onSelect: (item) {
+                                      _closeDropdown();
+                                      final route = _pageRoutes[item];
+                                      if (route != null) {
+                                        context.push(route);
+                                      }
+                                    },
+                                  ),
                           ),
                         ),
                       ),
@@ -309,7 +313,10 @@ class _HeaderState extends State<Header> {
           dropdownItems: _dropdownItems,
           onSelect: (item) {
             _mobileSidebarKey.currentState?.close();
-            debugPrint('Selected: $item');
+            final route = _pageRoutes[item];
+            if (route != null) {
+              context.push(route);
+            }
           },
           onNavigate: (route) {
             _mobileSidebarKey.currentState?.close();
@@ -340,9 +347,11 @@ class _HeaderState extends State<Header> {
     await AuthService.instance.signOut();
     web.window.location.reload();
   }
-void _reloadHome() {
-   web.window.location.reload();
-}
+
+  void _reloadHome() {
+    web.window.location.reload();
+  }
+
   @override
   void dispose() {
     _isDisposed = true;
@@ -665,17 +674,14 @@ void _reloadHome() {
       ],
     );
 
-   if (!showArrow) {
-  return MouseRegion(
-    cursor: SystemMouseCursors.click,
-    onEnter: (_) => setState(() => _hoveredIndex = index),
-    onExit: (_) => setState(() => _hoveredIndex = -1),
-    child: GestureDetector(
-      onTap: _reloadHome,
-      child: content,
-    ),
-  );
-}
+    if (!showArrow) {
+      return MouseRegion(
+        cursor: SystemMouseCursors.click,
+        onEnter: (_) => setState(() => _hoveredIndex = index),
+        onExit: (_) => setState(() => _hoveredIndex = -1),
+        child: GestureDetector(onTap: _reloadHome, child: content),
+      );
+    }
 
     return CompositedTransformTarget(
       link: _layerLinks[index]!,
@@ -1246,10 +1252,7 @@ class _MobileNavMenu extends StatelessWidget {
                   contentPadding: const EdgeInsets.only(left: 32, right: 16),
                   title: Text(
                     company.name,
-                    style: const TextStyle(
-                      color: Colors.white70,
-                      fontSize: 13,
-                    ),
+                    style: const TextStyle(color: Colors.white70, fontSize: 13),
                   ),
                   onTap: () => onNavigate('/products?company=${company.id}'),
                 ),
@@ -1259,17 +1262,17 @@ class _MobileNavMenu extends StatelessWidget {
 
         final subItems = dropdownItems[index];
 
-       if (subItems == null) {
-  // "Home" – reload the whole site, just like the sign-out flow.
-  return ListTile(
-    dense: true,
-    title: Text(
-      label,
-      style: const TextStyle(color: Colors.white, fontSize: 14),
-    ),
-    onTap: () => web.window.location.reload(),
-  );
-}
+        if (subItems == null) {
+          // "Home" – reload the whole site, just like the sign-out flow.
+          return ListTile(
+            dense: true,
+            title: Text(
+              label,
+              style: const TextStyle(color: Colors.white, fontSize: 14),
+            ),
+            onTap: () => web.window.location.reload(),
+          );
+        }
 
         // "Pages" – generic sub-items, unchanged behavior.
         return ExpansionTile(

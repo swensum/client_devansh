@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
-import 'package:url_launcher/url_launcher.dart';
+import 'package:web/web.dart' as web;
 
+/// Thin bar shown above the main navbar with address & contact info.
+/// Hidden automatically once the page scrolls away from the top
+/// (see [SiteHeader] in header.dart).
 class TopBar extends StatelessWidget {
   const TopBar({super.key});
 
@@ -18,15 +21,16 @@ class TopBar extends StatelessWidget {
     '+977 9857081383',
   ];
 
-  Future<void> _openEmail() async {
-    final uri = Uri(scheme: 'mailto', path: _email);
-    await launchUrl(uri);
+  // Using package:web directly (same as the reload logic in header.dart)
+  // instead of url_launcher — avoids the plugin/method-channel error that
+  // url_launcher's web implementation can throw for mailto/tel schemes.
+  void _openEmail() {
+    web.window.location.href = 'mailto:$_email';
   }
 
-  Future<void> _callNumber(String number) async {
+  void _callNumber(String number) {
     final sanitized = number.replaceAll(' ', '');
-    final uri = Uri(scheme: 'tel', path: sanitized);
-    await launchUrl(uri);
+    web.window.location.href = 'tel:$sanitized';
   }
 
   @override
@@ -66,8 +70,7 @@ class TopBar extends StatelessWidget {
             const Icon(Icons.phone, color: Colors.white70, size: 14),
             const SizedBox(width: 6),
             for (int i = 0; i < _phoneNumbers.length; i++) ...[
-              if (i > 0)
-                const Text(', ', style: _textStyle),
+              if (i > 0) const Text(', ', style: _textStyle),
               _TopBarLink(
                 text: _phoneNumbers[i],
                 onTap: () => _callNumber(_phoneNumbers[i]),

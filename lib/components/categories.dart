@@ -233,12 +233,12 @@ class _CompanyLogoBoxState extends State<_CompanyLogoBox> {
             height: 115,
             padding: const EdgeInsets.symmetric(horizontal: 22, vertical: 18),
             decoration: BoxDecoration(
-              color: Colors.white.withValues(alpha: 0.12),
+              color: Colors.white, // solid white so logos are clearly visible
               borderRadius: BorderRadius.circular(12),
               border: Border.all(
                 color: _isHovered
                     ? const Color.fromRGBO(245, 171, 30, 1)
-                    : Colors.white.withValues(alpha: 0.15),
+                    : Colors.black.withValues(alpha: 0.08),
                 width: _isHovered ? 2 : 1,
               ),
               boxShadow: [
@@ -258,17 +258,13 @@ class _CompanyLogoBoxState extends State<_CompanyLogoBox> {
                       style: const TextStyle(
                         fontSize: 14,
                         fontWeight: FontWeight.w600,
-                        color: Colors.white,
+                        color: Colors.black87, // dark text on white bg
                       ),
                     )
                   : isNetworkImage
                       ? Image.network(
                           logoAsset,
                           fit: BoxFit.contain,
-                          // Logos render at ~136px inside this box (180 minus
-                          // padding) — decoding at full source resolution for
-                          // every logo on every home page load was unnecessary
-                          // raster cost.
                           cacheWidth: 280,
                           errorBuilder: (context, error, stackTrace) => Text(
                             widget.company.name,
@@ -276,7 +272,7 @@ class _CompanyLogoBoxState extends State<_CompanyLogoBox> {
                             style: const TextStyle(
                               fontSize: 14,
                               fontWeight: FontWeight.w600,
-                              color: Colors.white,
+                              color: Colors.black87,
                             ),
                           ),
                         )
@@ -289,7 +285,7 @@ class _CompanyLogoBoxState extends State<_CompanyLogoBox> {
                             style: const TextStyle(
                               fontSize: 14,
                               fontWeight: FontWeight.w600,
-                              color: Colors.white,
+                              color: Colors.black87,
                             ),
                           ),
                         ),

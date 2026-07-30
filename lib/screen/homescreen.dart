@@ -222,7 +222,7 @@ class _HeroCarouselState extends State<HeroCarousel>
     final screenWidth = MediaQuery.sizeOf(context).width;
     double aspectRatio;
     if (screenWidth > 900) {
-      aspectRatio = 16 / 8; // desktop – wider
+      aspectRatio = 16 / 7.6; // desktop – wider
     } else if (screenWidth > 600) {
       aspectRatio = 16 / 9; // tablet
     } else {
