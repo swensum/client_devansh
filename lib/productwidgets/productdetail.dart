@@ -7,6 +7,8 @@ import 'package:devansh/models/catalogmodels.dart';
 import 'package:devansh/services/catalogservice.dart';
 import 'package:flutter/material.dart' hide MaterialType;
 
+import 'package:flutter_markdown_plus/flutter_markdown_plus.dart';
+
 const _kAmber = Color.fromRGBO(245, 171, 30, 1);
 const _kGreen = Color(0xFF4CAF50);
 
@@ -178,17 +180,79 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
                                                   fontSize: 16,
                                                   fontWeight: FontWeight.w600),
                                             ),
+
+                                            // ─────────────────────────────────────
+                                            // Description — rendered as Markdown so
+                                            // headings ("## Product Highlights"),
+                                            // bullet lists ("- item"), and tables
+                                            // ("| Spec | Details |") all display
+                                            // properly instead of as plain text.
+                                            // ─────────────────────────────────────
                                             if (product.description != null &&
                                                 product.description!.trim().isNotEmpty) ...[
                                               const SizedBox(height: 15),
-                                              Text(
-                                                product.description!,
-                                                style: TextStyle(
+                                              MarkdownBody(
+                                                data: product.description!,
+                                                styleSheet: MarkdownStyleSheet(
+                                                  p: TextStyle(
                                                     color: Colors.white.withValues(alpha: 0.75),
                                                     fontSize: 16,
-                                                    height: 1.5),
+                                                    height: 1.5,
+                                                  ),
+                                                  h1: const TextStyle(
+                                                    color: Colors.white,
+                                                    fontSize: 24,
+                                                    fontWeight: FontWeight.bold,
+                                                  ),
+                                                  h2: const TextStyle(
+                                                    color: _kAmber,
+                                                    fontSize: 20,
+                                                    fontWeight: FontWeight.bold,
+                                                  ),
+                                                  h3: const TextStyle(
+                                                    color: Colors.white,
+                                                    fontSize: 18,
+                                                    fontWeight: FontWeight.w600,
+                                                  ),
+                                                  strong: const TextStyle(
+                                                    color: Colors.white,
+                                                    fontWeight: FontWeight.bold,
+                                                  ),
+                                                  em: TextStyle(
+                                                    color: Colors.white.withValues(alpha: 0.75),
+                                                    fontStyle: FontStyle.italic,
+                                                  ),
+                                                  listBullet: const TextStyle(color: _kAmber),
+                                                  listIndent: 20,
+                                                  tableHead: const TextStyle(
+                                                    color: Colors.white,
+                                                    fontWeight: FontWeight.bold,
+                                                    fontSize: 14,
+                                                  ),
+                                                  tableBody: TextStyle(
+                                                    color: Colors.white.withValues(alpha: 0.75),
+                                                    fontSize: 14,
+                                                  ),
+                                                  tableBorder: TableBorder.all(
+                                                    color: Colors.white24,
+                                                  ),
+                                                  tableCellsPadding: const EdgeInsets.symmetric(
+                                                    horizontal: 10,
+                                                    vertical: 6,
+                                                  ),
+                                                  tableColumnWidth: const FlexColumnWidth(),
+                                                  blockquoteDecoration: BoxDecoration(
+                                                    color: Colors.white.withValues(alpha: 0.05),
+                                                    borderRadius: BorderRadius.circular(6),
+                                                    border: Border(
+                                                      left: BorderSide(color: _kAmber, width: 3),
+                                                    ),
+                                                  ),
+                                                  a: const TextStyle(color: _kAmber),
+                                                ),
                                               ),
                                             ],
+
                                             const SizedBox(height: 20),
                                             Container(
                                               width: double.infinity,
