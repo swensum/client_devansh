@@ -104,16 +104,7 @@ class _TopProductsSectionState extends State<TopProductsSection> {
                   horizontal: r.sectionHPadding,
                   vertical: r.sectionVPadding,
                 ),
-                decoration: BoxDecoration(
-                  gradient: LinearGradient(
-                    begin: Alignment.topLeft,
-                    end: Alignment.bottomRight,
-                    colors: [
-                      Colors.black.withValues(alpha: 0.9),
-                      Colors.black.withValues(alpha: 0.7),
-                    ],
-                  ),
-                ),
+                 color: const Color(0xFF0F0F0F),
                 child: Center(
                   child: SizedBox(
                     width: double.infinity,
@@ -476,7 +467,7 @@ class _ProductsResponsive {
         headingSize: 34,
         subtitleSize: 16,
         headerGap: 40,
-        cardContentHeight: 100,
+        cardContentHeight: 72,
         cardTitleFont: 14,
         cardPriceFont: 16,
         showNavArrows: true,
@@ -493,7 +484,7 @@ class _ProductsResponsive {
         headingSize: 28,
         subtitleSize: 15,
         headerGap: 32,
-        cardContentHeight: 100,
+        cardContentHeight: 72,
         cardTitleFont: 10.5,
         cardPriceFont: 12,
         showNavArrows: true,
@@ -510,7 +501,7 @@ class _ProductsResponsive {
         headingSize: 24,
         subtitleSize: 14,
         headerGap: 24,
-        cardContentHeight: 100,
+        cardContentHeight: 72,
         cardTitleFont: 13,
         cardPriceFont: 14.5,
         showNavArrows: false,
@@ -526,7 +517,7 @@ class _ProductsResponsive {
       headingSize: 20,
       subtitleSize: 13,
       headerGap: 20,
-      cardContentHeight: 88,
+      cardContentHeight: 62,
       cardTitleFont: 13,
       cardPriceFont: 14,
       showNavArrows: false,
@@ -705,81 +696,71 @@ class _PremiumProductCardState extends State<_PremiumProductCard>
                           ),
                         ),
                       ),
-                      Container(
+                     Container(
                         height: r.cardContentHeight,
                         padding: const EdgeInsets.all(14),
-                        child: Column(
+                        child: Row(
                           crossAxisAlignment: CrossAxisAlignment.start,
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
                           children: [
-                            Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Text(
-                                  product.name,
-                                  maxLines: 2,
-                                  overflow: TextOverflow.ellipsis,
-                                  style: TextStyle(
-                                    fontSize: r.cardTitleFont,
-                                    fontWeight: FontWeight.w600,
-                                    color: Colors.white,
-                                    height: 1.3,
-                                  ),
-                                ),
-                                const SizedBox(height: 4),
-                                Row(
-                                  children: [
-                                    ...List.generate(
-                                      5,
-                                      (index) => Icon(
-                                        Icons.star,
-                                        size: 13,
-                                        color: index < 4
-                                            ? const Color.fromRGBO(245, 171, 30, 1)
-                                            : Colors.grey.shade300,
-                                      ),
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    product.name,
+                                    maxLines: 2,
+                                    overflow: TextOverflow.ellipsis,
+                                    style: TextStyle(
+                                      fontSize: r.cardTitleFont,
+                                      fontWeight: FontWeight.w600,
+                                      color: Colors.white,
+                                      height: 1.3,
                                     ),
-                                    const SizedBox(width: 4),
-                                    Text("(124)", style: TextStyle(fontSize: 11, color: Colors.grey.shade500)),
-                                  ],
-                                ),
-                              ],
+                                  ),
+                                  const SizedBox(height: 4),
+                                  Row(
+                                    children: [
+                                      ...List.generate(
+                                        5,
+                                        (index) => Icon(
+                                          Icons.star,
+                                          size: 13,
+                                          color: index < 4
+                                              ? const Color.fromRGBO(245, 171, 30, 1)
+                                              : Colors.grey.shade300,
+                                        ),
+                                      ),
+                                      const SizedBox(width: 4),
+                                      Text("(124)", style: TextStyle(fontSize: 11, color: Colors.grey.shade500)),
+                                    ],
+                                  ),
+                                ],
+                              ),
                             ),
-                           Row(
-  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-  children: [
-    Text(
-      '\$${product.price.toStringAsFixed(2)}',
-      style: TextStyle(
-        fontSize: r.cardPriceFont,
-        fontWeight: FontWeight.bold,
-        color: const Color.fromRGBO(245, 171, 30, 1),
-      ),
-    ),
-    Opacity(
-  opacity: t,
-  child: GestureDetector(
-    onTap: () async {
-      final catalogService = CatalogService();
-      final allProducts = await catalogService.watchProducts().first;
-      final related = allProducts
-          .where((p) => p.categoryId == product.categoryId && p.id != product.id)
-          .toList();
+                            const SizedBox(width: 8),
+                            Opacity(
+                              opacity: t,
+                              child: GestureDetector(
+                                onTap: () async {
+                                  final catalogService = CatalogService();
+                                  final allProducts = await catalogService.watchProducts().first;
+                                  final related = allProducts
+                                      .where((p) =>
+                                          p.categoryId == product.categoryId && p.id != product.id)
+                                      .toList();
 
-      if (context.mounted) {
-        handleOrderTap(context, product, relatedProducts: related);
-      }
-    },
-    child: _buildQuickActionButton(
-      Icons.shopping_bag_outlined,
-      Colors.black,
-      backgroundColor: const Color.fromRGBO(245, 171, 30, 1),
-      borderColor: Colors.transparent,
-    ),
-  ),
-),
-  ],
-),
+                                  if (context.mounted) {
+                                    handleOrderTap(context, product, relatedProducts: related);
+                                  }
+                                },
+                                child: _buildQuickActionButton(
+                                  Icons.shopping_bag_outlined,
+                                  Colors.black,
+                                  backgroundColor: const Color.fromRGBO(245, 171, 30, 1),
+                                  borderColor: Colors.transparent,
+                                ),
+                              ),
+                            ),
                           ],
                         ),
                       ),

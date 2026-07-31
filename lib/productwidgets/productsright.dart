@@ -1,11 +1,12 @@
-
 import 'package:devansh/data/catalog.dart';
+import 'package:devansh/dialog/order.dart';
 import 'package:devansh/models/catalogmodels.dart';
-import 'package:devansh/productwidgets/productdetail.dart';
+
 import 'package:devansh/productwidgets/productview.dart';
 import 'package:devansh/services/catalogservice.dart';
 
 import 'package:flutter/material.dart' hide MaterialType;
+import 'package:go_router/go_router.dart';
 
 
 const _kAmber = Color.fromRGBO(245, 171, 30, 1);
@@ -438,10 +439,6 @@ class _ProductsToolbar extends StatelessWidget {
     );
   }
 }
-
-/// "Filters" trigger shown on narrow screens (where the sidebar is hidden)
-/// that opens the filter drawer. Shows a small amber badge with the number
-/// of active filters, if any.
 class _FilterButton extends StatelessWidget {
   final int count;
   final VoidCallback onTap;
@@ -558,7 +555,7 @@ class _SortDropdown extends StatelessWidget {
   }
 }
 
-/// Horizontal card used in list view: small thumbnail, details, price.
+/// Horizontal card used in list view: small thumbnail, details, order button.
 class _ProductListTile extends StatefulWidget {
   final Product product;
   final List<Company> companies;
@@ -572,6 +569,18 @@ class _ProductListTile extends StatefulWidget {
 class _ProductListTileState extends State<_ProductListTile> {
   bool _isHovered = false;
 
+  Future<void> _handleOrderTap(BuildContext context) async {
+    final catalogService = CatalogService();
+    final allProducts = await catalogService.watchProducts().first;
+    final related = allProducts
+        .where((p) => p.categoryId == widget.product.categoryId && p.id != widget.product.id)
+        .toList();
+
+    if (context.mounted) {
+      handleOrderTap(context, widget.product, relatedProducts: related);
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final product = widget.product;
@@ -583,9 +592,7 @@ class _ProductListTileState extends State<_ProductListTile> {
       onExit: (_) => setState(() => _isHovered = false),
       child: GestureDetector(
         onTap: () {
-          Navigator.of(context).push(
-            MaterialPageRoute(builder: (_) => ProductDetailPage(product: product)),
-          );
+          context.push('/product/${product.id}', extra: product);
         },
         child: AnimatedContainer(
           duration: const Duration(milliseconds: 200),
@@ -681,32 +688,24 @@ class _ProductListTileState extends State<_ProductListTile> {
                 ),
               ),
               const SizedBox(width: 20),
-              Column(
-                crossAxisAlignment: CrossAxisAlignment.end,
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Text(
-                    '\$${product.price.toStringAsFixed(2)}',
-                    style: const TextStyle(color: _kAmber, fontWeight: FontWeight.bold, fontSize: 20),
-                  ),
-                  const SizedBox(height: 12),
-                  AnimatedOpacity(
-                    duration: const Duration(milliseconds: 200),
-                    opacity: _isHovered ? 1.0 : 0.0,
-                    child: Container(
-                      padding: const EdgeInsets.all(10),
-                      decoration: BoxDecoration(
-                        color: _kAmber,
-                        shape: BoxShape.circle,
-                      ),
-                      child: const Icon(
-                        Icons.shopping_bag_outlined,
-                        size: 18,
-                        color: Colors.black,
-                      ),
+              AnimatedOpacity(
+                duration: const Duration(milliseconds: 200),
+                opacity: _isHovered ? 1.0 : 0.0,
+                child: GestureDetector(
+                  onTap: () => _handleOrderTap(context),
+                  child: Container(
+                    padding: const EdgeInsets.all(10),
+                    decoration: const BoxDecoration(
+                      color: _kAmber,
+                      shape: BoxShape.circle,
+                    ),
+                    child: const Icon(
+                      Icons.shopping_bag_outlined,
+                      size: 18,
+                      color: Colors.black,
                     ),
                   ),
-                ],
+                ),
               ),
             ],
           ),
@@ -756,6 +755,18 @@ class _ProductCardState extends State<_ProductCard> with SingleTickerProviderSta
     value ? _scaleController.forward() : _scaleController.reverse();
   }
 
+  Future<void> _handleOrderTap(BuildContext context) async {
+    final catalogService = CatalogService();
+    final allProducts = await catalogService.watchProducts().first;
+    final related = allProducts
+        .where((p) => p.categoryId == widget.product.categoryId && p.id != widget.product.id)
+        .toList();
+
+    if (context.mounted) {
+      handleOrderTap(context, widget.product, relatedProducts: related);
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final product = widget.product;
@@ -765,12 +776,10 @@ class _ProductCardState extends State<_ProductCard> with SingleTickerProviderSta
       cursor: SystemMouseCursors.click,
       onEnter: (_) => _setHovered(true),
       onExit: (_) => _setHovered(false),
-      child: GestureDetector(
-        onTap: () {
-          Navigator.of(context).push(
-            MaterialPageRoute(builder: (_) => ProductDetailPage(product: product)),
-          );
-        },
+     child: GestureDetector(
+          onTap: () {
+            context.push('/product/${product.id}', extra: product);
+          },
         child: RepaintBoundary(
           child: ScaleTransition(
             scale: _scaleAnimation,
@@ -857,42 +866,45 @@ class _ProductCardState extends State<_ProductCard> with SingleTickerProviderSta
                       ),
                     ),
                   ),
+                 
                   Padding(
                     padding: const EdgeInsets.all(12),
-                    child: Column(
+                    child: Row(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Text(
-                          product.name,
-                          maxLines: 2,
-                          overflow: TextOverflow.ellipsis,
-                          style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w600, fontSize: 13.5),
-                        ),
-                        const SizedBox(height: 4),
-                        if (company != null)
-                          Text(
-                            company.name,
-                            style: TextStyle(color: Colors.white.withValues(alpha: 0.55), fontSize: 11),
-                          ),
-                        const SizedBox(height: 6),
-                        Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                          children: [
-                            Text(
-                              '\$${product.price.toStringAsFixed(2)}',
-                              style: const TextStyle(color: _kAmber, fontWeight: FontWeight.bold, fontSize: 14),
-                            ),
-                            AnimatedOpacity(
-                              duration: const Duration(milliseconds: 200),
-                              opacity: _isHovered ? 1.0 : 0.0,
-                              child: _buildQuickActionButton(
-                                Icons.shopping_bag_outlined,
-                                Colors.black,
-                                backgroundColor: _kAmber,
-                                borderColor: Colors.transparent,
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                product.name,
+                                maxLines: 2,
+                                overflow: TextOverflow.ellipsis,
+                                style: const TextStyle(
+                                    color: Colors.white, fontWeight: FontWeight.w600, fontSize: 13.5),
                               ),
+                              const SizedBox(height: 4),
+                              if (company != null)
+                                Text(
+                                  company.name,
+                                  style: TextStyle(color: Colors.white.withValues(alpha: 0.55), fontSize: 11),
+                                ),
+                            ],
+                          ),
+                        ),
+                        const SizedBox(width: 8),
+                        AnimatedOpacity(
+                          duration: const Duration(milliseconds: 200),
+                          opacity: _isHovered ? 1.0 : 0.0,
+                          child: GestureDetector(
+                            onTap: () => _handleOrderTap(context),
+                            child: _buildQuickActionButton(
+                              Icons.shopping_bag_outlined,
+                              Colors.black,
+                              backgroundColor: _kAmber,
+                              borderColor: Colors.transparent,
                             ),
-                          ],
+                          ),
                         ),
                       ],
                     ),

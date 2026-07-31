@@ -49,7 +49,17 @@ class FaqSection extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       width: double.infinity,
-      color: const Color(0xFF0F0F0F),
+         decoration: BoxDecoration(
+              gradient: LinearGradient(
+                begin: Alignment.centerLeft,
+                end: Alignment.centerRight,
+                colors: [
+                  Colors.black.withValues(alpha: 0.85),
+                  Colors.black.withValues(alpha: 0.6),
+                ],
+                stops: const [0.0, 0.65],
+              ),
+            ),
       padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 70),
       child: Center(
         child: ConstrainedBox(

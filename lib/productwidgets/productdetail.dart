@@ -265,12 +265,6 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
                                               ),
                                               child: _DetailGrid(
                                                 entries: [
-                                                  _DetailEntry(
-                                                    label: 'Price',
-                                                    value:
-                                                        '\$${product.price.toStringAsFixed(2)}',
-                                                    valueColor: _kAmber,
-                                                  ),
                                                   for (final entry in specs.entries)
                                                     _DetailEntry(
                                                       label: entry.key,
@@ -898,6 +892,7 @@ class _DetailLine extends StatelessWidget {
               fontWeight: FontWeight.w500,
               letterSpacing: 0.3,
               height: 1.4,
+              
             ),
           ),
           TextSpan(
@@ -910,6 +905,7 @@ class _DetailLine extends StatelessWidget {
               fontWeight: FontWeight.w500,
               letterSpacing: 0.2,
               height: 1.4,
+              fontFamily: 'BrandonGrotesque',
             ),
           ),
           if (showGreen)
