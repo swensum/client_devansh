@@ -42,6 +42,7 @@ dependencies:
     sdk: flutter
   flutter_markdown_plus: ^1.0.12
   url_launcher: ^6.3.2
+  flutter_dotenv: ^6.0.1
   
 dev_dependencies:
   flutter_test:
@@ -70,6 +71,7 @@ flutter:
     - assets/png/door-handle.png
     - assets/png/money.png
     - assets/png/virtual-assistant.png
+    - .env
   fonts:
     - family: BrandonGrotesque
       fonts:
