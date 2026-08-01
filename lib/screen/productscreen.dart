@@ -1,5 +1,7 @@
 import 'package:devansh/components/footer.dart';
 import 'package:devansh/components/header.dart';
+import 'package:devansh/components/topbar.dart';
+
 import 'package:devansh/data/catalog.dart';
 import 'package:devansh/models/catalogmodels.dart';
 
@@ -7,10 +9,10 @@ import 'package:devansh/productwidgets/categories.dart';
 import 'package:devansh/productwidgets/productsright.dart';
 import 'package:devansh/productwidgets/productview.dart';
 import 'package:devansh/services/catalogservice.dart';
+import 'package:devansh/widgets/app_page_scaffold_widgets.dart';
 import 'package:flutter/material.dart' hide MaterialType;
 import 'package:go_router/go_router.dart';
 
-const double _kHeaderHeight = 100;
 const double _kBannerHeight = 100;
 const _kAmber = Color.fromRGBO(245, 171, 30, 1);
 
@@ -37,8 +39,6 @@ class _ProductsPageState extends State<ProductsPage> {
   String? _selectedMaterialId;
   String? _selectedTypeId;
 
-  bool _headerRevealed = false;
-
   final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
   final CatalogService _catalogService = CatalogService();
 
@@ -48,11 +48,6 @@ class _ProductsPageState extends State<ProductsPage> {
     _selectedCategoryId = widget.initialCategoryId;
     _selectedCompanyId = widget.initialCompanyId;
     _selectedTypeId = widget.initialTypeId;
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      Future.delayed(const Duration(milliseconds: 150), () {
-        if (mounted) setState(() => _headerRevealed = true);
-      });
-    });
   }
 
   void _selectCategory(String? id) {
@@ -95,8 +90,6 @@ class _ProductsPageState extends State<ProductsPage> {
     return sorted;
   }
 
-  /// Safe lookup-by-id that returns null instead of throwing when the id
-  /// isn't found (e.g. a selected id that no longer exists in Firestore).
   T? _findById<T>(List<T> list, String? id, String Function(T) idOf) {
     if (id == null) return null;
     for (final item in list) {
@@ -202,86 +195,67 @@ class _ProductsPageState extends State<ProductsPage> {
       _selectedMaterialId,
     ].where((id) => id != null).length;
 
-    return Scaffold(
-      key: _scaffoldKey,
+    return AppPageScaffold(
+      scaffoldKey: _scaffoldKey,
       backgroundColor: Colors.black,
       endDrawer: _FilterDrawer(sidebar: sidebar),
-      body: Stack(
-        children: [
-          LayoutBuilder(
-            builder: (context, constraints) {
-              final r = ProductsPageResponsive.of(constraints.maxWidth);
+      body: LayoutBuilder(
+        builder: (context, constraints) {
+          final r = ProductsPageResponsive.of(constraints.maxWidth);
 
-              final panel = ProductsRightPanel(
-                category: category,
-                company: company,
-                type: type,
-                material: material,
-                products: products,
-                viewMode: _viewMode,
-                sortOption: _sortOption,
-                onViewModeChanged: (mode) => setState(() => _viewMode = mode),
-                onSortChanged: (option) => setState(() => _sortOption = option),
-                r: r,
-                onFilterTap: r.sidebarOnLeft
-                    ? null
-                    : () => _scaffoldKey.currentState?.openEndDrawer(),
-                activeFilterCount: activeFilterCount,
-              );
+          final panel = ProductsRightPanel(
+            category: category,
+            company: company,
+            type: type,
+            material: material,
+            products: products,
+            viewMode: _viewMode,
+            sortOption: _sortOption,
+            onViewModeChanged: (mode) => setState(() => _viewMode = mode),
+            onSortChanged: (option) => setState(() => _sortOption = option),
+            r: r,
+            onFilterTap: r.sidebarOnLeft
+                ? null
+                : () => _scaffoldKey.currentState?.openEndDrawer(),
+            activeFilterCount: activeFilterCount,
+          );
 
-              if (r.sidebarOnLeft) {
-                return SingleChildScrollView(
-                  child: Column(
+          if (r.sidebarOnLeft) {
+            return Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                SizedBox(height: Header.height + TopBar.height), // reserve space
+                const _ProductsBanner(),
+                Padding(
+                  padding: EdgeInsets.all(r.hPadding),
+                  child: Row(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      const SizedBox(height: _kHeaderHeight), // reserve space
-                      const _ProductsBanner(),
-                      Padding(
-                        padding: EdgeInsets.all(r.hPadding),
-                        child: Row(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            SizedBox(width: r.sidebarWidth, child: sidebar),
-                            SizedBox(width: r.sectionGap),
-                            Expanded(child: panel),
-                          ],
-                        ),
-                      ),
-                      const _Divider(),
-                      const Footer(),
+                      SizedBox(width: r.sidebarWidth, child: sidebar),
+                      SizedBox(width: r.sectionGap),
+                      Expanded(child: panel),
                     ],
                   ),
-                );
-              }
-              return SingleChildScrollView(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    const SizedBox(height: _kHeaderHeight), // reserve space
-                    const _ProductsBanner(),
-                    Padding(
-                      padding: EdgeInsets.all(r.hPadding),
-                      child: panel,
-                    ),
-                    const _Divider(),
-                    const Footer(),
-                  ],
                 ),
-              );
-            },
-          ),
-          Positioned(
-            top: 0,
-            left: 0,
-            right: 0,
-            child: AnimatedSlide(
-              duration: const Duration(milliseconds: 500),
-              curve: Curves.easeOutCubic,
-              offset: _headerRevealed ? Offset.zero : const Offset(0, -1),
-              child: const Header(),
-            ),
-          ),
-        ],
+                const _Divider(),
+                const Footer(),
+              ],
+            );
+          }
+          return Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              SizedBox(height: Header.height + TopBar.height), // reserve space
+              const _ProductsBanner(),
+              Padding(
+                padding: EdgeInsets.all(r.hPadding),
+                child: panel,
+              ),
+              const _Divider(),
+              const Footer(),
+            ],
+          );
+        },
       ),
     );
   }

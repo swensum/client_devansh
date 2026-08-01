@@ -1,14 +1,14 @@
-
 import 'dart:ui_web' as ui_web;
 
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:devansh/components/footer.dart';
 import 'package:devansh/components/header.dart';
+import 'package:devansh/components/topbar.dart';
+
+import 'package:devansh/widgets/app_page_scaffold_widgets.dart';
 import 'package:flutter/material.dart';
 import 'package:visibility_detector/visibility_detector.dart';
 import 'package:web/web.dart' as web;
-
-const double _kHeaderHeight = 100;
 
 class ContactPage extends StatefulWidget {
   const ContactPage({super.key});
@@ -91,26 +91,14 @@ class _ContactPageState extends State<ContactPage> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      body: Stack(
+    return AppPageScaffold(
+      body: Column(
         children: [
-          SingleChildScrollView(
-            child: Column(
-              children: [
-                const SizedBox(height: _kHeaderHeight), // reserve space
-                _buildContactBody(),
-                const _MapSection(),
-                const _Divider(),
-                const Footer(),
-              ],
-            ),
-          ),
-          const Positioned(
-            top: 0,
-            left: 0,
-            right: 0,
-            child: Header(),
-          ),
+          SizedBox(height: Header.height + TopBar.height),
+          _buildContactBody(),
+          const _MapSection(),
+          const _Divider(),
+          const Footer(),
         ],
       ),
     );

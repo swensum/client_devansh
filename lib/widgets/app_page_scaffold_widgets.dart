@@ -2,14 +2,22 @@
 import 'package:devansh/components/header.dart';
 import 'package:flutter/material.dart';
 
+/// Shared page shell used by every screen except HomePage (which has its
+/// own scroll-driven reveal already). Wires up the same fixed
+/// TopBar + Header (via SiteHeader) and scroll controller so every page
+/// behaves consistently, without repeating the boilerplate.
 class AppPageScaffold extends StatefulWidget {
-  final Widget body;
-  final bool addTopSpacing;
+  final Widget body; // your page's scrollable content (without the header)
+  final Color? backgroundColor;
+  final Widget? endDrawer;
+  final GlobalKey<ScaffoldState>? scaffoldKey;
 
   const AppPageScaffold({
     super.key,
     required this.body,
-    this.addTopSpacing = true,
+    this.backgroundColor,
+    this.endDrawer,
+    this.scaffoldKey,
   });
 
   @override
@@ -39,6 +47,9 @@ class _AppPageScaffoldState extends State<AppPageScaffold> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      key: widget.scaffoldKey,
+      backgroundColor: widget.backgroundColor,
+      endDrawer: widget.endDrawer,
       body: Stack(
         children: [
           SingleChildScrollView(
