@@ -8,6 +8,7 @@ import 'package:devansh/services/catalogservice.dart';
 import 'package:flutter/material.dart' hide MaterialType;
 
 import 'package:flutter_markdown_plus/flutter_markdown_plus.dart';
+import 'package:go_router/go_router.dart';
 
 const _kAmber = Color.fromRGBO(245, 171, 30, 1);
 const _kGreen = Color(0xFF4CAF50);
@@ -659,11 +660,12 @@ class _RelatedProductCardState extends State<_RelatedProductCard> with SingleTic
       onEnter: (_) => _setHovered(true),
       onExit: (_) => _setHovered(false),
       child: GestureDetector(
-        onTap: () {
-          Navigator.of(context).push(
-            MaterialPageRoute(builder: (_) => ProductDetailPage(product: product)),
-          );
-        },
+       onTap: () {
+  context.push(
+    '/product/${product.id}',
+    extra: product,
+  );
+},
         child: RepaintBoundary(
           child: ScaleTransition(
             scale: _scaleAnimation,
@@ -831,6 +833,7 @@ class _DetailEntry {
   const _DetailEntry({
     required this.label,
     required this.value,
+    // ignore: unused_element_parameter
     this.valueColor,
     this.isAvailability = false,
   });

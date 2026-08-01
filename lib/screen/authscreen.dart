@@ -140,7 +140,7 @@ class _AuthScreenState extends State<AuthScreen> {
           ),
           actions: [
             TextButton(
-              onPressed: () => Navigator.pop(context),
+            onPressed: () => context.pop(),
               child: const Text('Continue', style: TextStyle(color: _kAmber, fontWeight: FontWeight.w700)),
             ),
           ],
@@ -366,7 +366,7 @@ class _AuthScreenState extends State<AuthScreen> {
               ),
               actions: [
                 TextButton(
-                  onPressed: () => Navigator.pop(context),
+                  onPressed: () => context.pop(),
                   child: const Text('Close', style: TextStyle(color: Colors.grey)),
                 ),
                 TextButton(
@@ -382,9 +382,10 @@ class _AuthScreenState extends State<AuthScreen> {
                       localError = null;
                     });
                     try {
-                      await AuthService.instance.sendPasswordResetEmail(email);
-                      if (!context.mounted) return;
-                      Navigator.pop(context); // close the dialog — done.
+                     await AuthService.instance.sendPasswordResetEmail(email);
+if (!context.mounted) return;
+context.pop(); // Close the dialog
+
                       ScaffoldMessenger.of(this.context).showSnackBar(
                         SnackBar(
                           content: Text('Reset link sent to $email. Check your inbox (and spam folder).'),

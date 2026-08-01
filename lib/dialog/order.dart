@@ -2,6 +2,7 @@ import 'package:devansh/services/orderservice.dart';
 import 'package:flutter/material.dart';
 
 import 'package:devansh/models/catalogmodels.dart' hide MaterialType;
+import 'package:go_router/go_router.dart';
 
 const _kBg = Color(0xFF0A1929);
 const _kBgDeep = Color(0xFF060F1D);
@@ -112,9 +113,9 @@ class _OrderDialogState extends State<_OrderDialog> {
     await Future.delayed(const Duration(milliseconds: 400));
     OrderCartService.instance.addItem(_product, _quantity);
 
-    if (!mounted) return;
-    setState(() => _submitting = false);
-    Navigator.of(context).pop();
+   if (!mounted) return;
+setState(() => _submitting = false);
+context.pop();
 
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
@@ -212,7 +213,9 @@ class _OrderDialogState extends State<_OrderDialog> {
                         ),
                       ],
                     ),
-                    _CloseButton(onTap: () => Navigator.of(context).pop()),
+                   _CloseButton(
+  onTap: () => context.pop(),
+),
                   ],
                 ),
               ),

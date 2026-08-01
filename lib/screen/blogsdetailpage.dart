@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'package:devansh/widgets/app_page_scaffold_widgets.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_markdown_plus/flutter_markdown_plus.dart';
 import 'package:go_router/go_router.dart';
@@ -8,11 +9,8 @@ import 'package:devansh/services/blogservice.dart';
 import 'package:devansh/widgets/blogwidgets.dart';
 import 'package:devansh/components/header.dart';
 import 'package:devansh/components/footer.dart';
+import 'package:devansh/components/topbar.dart';
 
-const double _kHeaderHeight = 100;
-
-/// Typography for the post body — headings, bold text, and bullet lists all
-/// get visibly distinct sizes/weights instead of one flat paragraph style.
 MarkdownStyleSheet _blogMarkdownStyleSheet() {
   final bodyColor = Colors.white.withValues(alpha: 0.72);
   const bodySize = 15.5;
@@ -139,29 +137,24 @@ class _BlogDetailPageState extends State<BlogDetailPage> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: const Color(0xFF0F0F0F),
-      body: Stack(
-        children: [
-          SingleChildScrollView(
-            child: Column(
-              children: [
-                const SizedBox(height: _kHeaderHeight), // reserve space
-                if (_loading)
-                  const Padding(
-                    padding: EdgeInsets.symmetric(vertical: 140),
-                    child: CircularProgressIndicator(color: kBlogAccent),
-                  )
-                else if (_notFound)
-                  _buildNotFound(context)
-                else
-                  _buildContent(context, _post!),
-                const Footer(),
-              ],
-            ),
-          ),
-          const Positioned(top: 0, left: 0, right: 0, child: Header()),
-        ],
+    return AppPageScaffold(
+      body: Container(
+        color: const Color(0xFF0F0F0F),
+        child: Column(
+          children: [
+            SizedBox(height: Header.height + TopBar.height),
+            if (_loading)
+              const Padding(
+                padding: EdgeInsets.symmetric(vertical: 140),
+                child: CircularProgressIndicator(color: kBlogAccent),
+              )
+            else if (_notFound)
+              _buildNotFound(context)
+            else
+              _buildContent(context, _post!),
+            const Footer(),
+          ],
+        ),
       ),
     );
   }

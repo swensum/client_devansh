@@ -12,6 +12,7 @@ import 'package:devansh/screen/orderscreen.dart';
 import 'package:devansh/screen/productscreen.dart'; // ProductsPage
 
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
@@ -61,10 +62,10 @@ CustomTransitionPage<void> _slideFromRightPage({
 }
 
 final GoRouter appRouter = GoRouter(
+  debugLogDiagnostics: kDebugMode,
   initialLocation: '/',
   refreshListenable: _authRefresh,
   redirect: (context, state) {
-     debugPrint('>>> REDIRECT CALLED, target=${state.matchedLocation}');
     final loggedIn = FirebaseAuth.instance.currentUser != null;
     final goingToAuth = state.matchedLocation == '/auth';
     final goingToProtected = _protectedPaths.contains(state.matchedLocation);
@@ -119,27 +120,33 @@ final GoRouter appRouter = GoRouter(
       },
     ),
     GoRoute(
-  path: '/about',
-  name: 'about',
-  pageBuilder: (context, state) {
-    return _slideFromRightPage(key: state.pageKey, child: const AboutPage());
-  },
-),
+      path: '/about',
+      name: 'about',
+      pageBuilder: (context, state) {
+        return _slideFromRightPage(key: state.pageKey, child: const AboutPage());
+      },
+    ),
     GoRoute(
-  path: '/contact',
-  name: 'contact',
-  pageBuilder: (context, state) {
-    return _slideFromRightPage(
-      key: state.pageKey,
-      child: const ContactPage(),
-    );
-  },
-),
-GoRoute(path: '/blog', builder: (context, state) => const BlogsListPage()),
-GoRoute(
-  path: '/blog/:slug',
-  builder: (context, state) => BlogDetailPage(slug: state.pathParameters['slug']!),
-),
+      path: '/contact',
+      name: 'contact',
+      pageBuilder: (context, state) {
+        return _slideFromRightPage(
+          key: state.pageKey,
+          child: const ContactPage(),
+        );
+      },
+    ),
+    GoRoute(
+      path: '/blog',
+      name: 'blog',
+      builder: (context, state) => const BlogsListPage(),
+    ),
+    GoRoute(
+      path: '/blog/:slug',
+      name: 'blogDetail',
+      builder: (context, state) =>
+          BlogDetailPage(slug: state.pathParameters['slug']!),
+    ),
     GoRoute(
       path: '/product/:id',
       name: 'productDetail',
@@ -190,7 +197,11 @@ class _ProductNotFoundPage extends StatelessWidget {
             const SizedBox(height: 16),
             const Text(
               'Product not found',
-              style: TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.w600),
+              style: TextStyle(
+                color: Colors.white,
+                fontSize: 18,
+                fontWeight: FontWeight.w600,
+              ),
             ),
             const SizedBox(height: 16),
             TextButton(

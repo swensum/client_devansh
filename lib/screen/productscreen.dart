@@ -8,6 +8,7 @@ import 'package:devansh/productwidgets/productsright.dart';
 import 'package:devansh/productwidgets/productview.dart';
 import 'package:devansh/services/catalogservice.dart';
 import 'package:flutter/material.dart' hide MaterialType;
+import 'package:go_router/go_router.dart';
 
 const double _kHeaderHeight = 100;
 const double _kBannerHeight = 100;
@@ -313,7 +314,7 @@ class _FilterDrawer extends StatelessWidget {
                     ),
                   ),
                   IconButton(
-                    onPressed: () => Navigator.of(context).pop(),
+                  onPressed: () => context.pop(),
                     icon: const Icon(Icons.close, color: Colors.white),
                     splashRadius: 20,
                   ),

@@ -134,10 +134,10 @@ class _OrdersPageState extends State<OrdersPage> {
                             child: Column(
                               crossAxisAlignment: CrossAxisAlignment.stretch,
                               children: [
-                                _TopBar(
-                                  onBack: () => Navigator.of(context).maybePop(),
-                                  r: r,
-                                ),
+                               _TopBar(
+  onBack: () => context.pop(),
+  r: r,
+),
                                 SizedBox(height: r.sectionGap),
                                 r.stacked
                                     ? Column(

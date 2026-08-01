@@ -4,17 +4,18 @@ import 'package:devansh/components/footer.dart';
 import 'package:devansh/components/header.dart';
 import 'package:devansh/components/reviews.dart' show userAvatar;
 import 'package:devansh/components/stat.dart';
+import 'package:devansh/components/topbar.dart';
 import 'package:devansh/models/authmodel.dart';
 import 'package:devansh/models/catalogmodels.dart';
 import 'package:devansh/models/reviewmodel.dart';
 import 'package:devansh/services/authservice.dart';
 import 'package:devansh/services/catalogservice.dart';
 import 'package:devansh/services/reviewservice.dart';
+import 'package:devansh/widgets/app_page_scaffold_widgets.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:visibility_detector/visibility_detector.dart';
 
-const double _kHeaderHeight = 100;
 const _gold = Color.fromRGBO(245, 171, 30, 1);
 
 class AboutPage extends StatefulWidget {
@@ -30,9 +31,6 @@ class _AboutPageState extends State<AboutPage> {
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
-    // Only needs to run once per widget lifetime, but didChangeDependencies
-    // can technically fire more than once (e.g. locale/theme changes),
-    // so guard against re-triggering the same work.
     if (!_precached) {
       _precached = true;
       precacheImage(const AssetImage('assets/decor.jpg'), context);
@@ -43,30 +41,22 @@ class _AboutPageState extends State<AboutPage> {
   }
 
   @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      body: Stack(
-        children: [
-          SingleChildScrollView(
-            child: Column(
-              children: [
-                const SizedBox(height: _kHeaderHeight),
-                // Above the fold — visible immediately, no fade needed.
-                const _WelcomeSection(),
-                const _GallerySection(),
-                const StatsSection(),
-                const _FeaturesSection(),
-                const _BrandsSection(),
-                const _ReviewFormSection(),
-                const Footer(),
-              ],
-            ),
-          ),
-          const Positioned(top: 0, left: 0, right: 0, child: Header()),
-        ],
-      ),
-    );
-  }
+Widget build(BuildContext context) {
+  return AppPageScaffold(
+    body: Column(
+      children: [
+        SizedBox(height: Header.height + TopBar.height),
+        const _WelcomeSection(),
+        const _GallerySection(),
+        const StatsSection(),
+        const _FeaturesSection(),
+        const _BrandsSection(),
+        const _ReviewFormSection(),
+        const Footer(),
+      ],
+    ),
+  );
+}
 }
 
 class _RevealOnScroll extends StatefulWidget {
