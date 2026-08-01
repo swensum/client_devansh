@@ -2,9 +2,12 @@ import 'dart:async';
 
 import 'package:devansh/components/footer.dart';
 import 'package:devansh/components/header.dart';
+import 'package:devansh/components/topbar.dart';
+
 import 'package:devansh/data/catalog.dart';
 import 'package:devansh/models/catalogmodels.dart';
 import 'package:devansh/services/catalogservice.dart';
+import 'package:devansh/widgets/app_page_scaffold_widgets.dart';
 import 'package:flutter/material.dart' hide MaterialType;
 
 import 'package:flutter_markdown_plus/flutter_markdown_plus.dart';
@@ -15,7 +18,6 @@ const _kGreen = Color(0xFF4CAF50);
 
 const double _kImageHeight = 420;
 const double _kImageHeightNarrow = 300;
-const double _kHeaderHeight = 100;
 const double _kBannerHeight = 100;
 
 // Below this width, the image and details stack vertically instead of
@@ -32,18 +34,7 @@ class ProductDetailPage extends StatefulWidget {
 }
 
 class _ProductDetailPageState extends State<ProductDetailPage> {
-  bool _headerRevealed = false;
   final CatalogService _catalogService = CatalogService();
-
-  @override
-  void initState() {
-    super.initState();
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      Future.delayed(const Duration(milliseconds: 150), () {
-        if (mounted) setState(() => _headerRevealed = true);
-      });
-    });
-  }
 
   @override
   Widget build(BuildContext context) {
@@ -103,247 +94,230 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
                         .where((p) => p.id != product.id)
                         .toList();
 
-                    return Scaffold(
+                    return AppPageScaffold(
                       backgroundColor: Colors.black,
-                      body: Stack(
+                      body: Column(
+                        crossAxisAlignment: CrossAxisAlignment.stretch,
                         children: [
-                          SingleChildScrollView(
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.stretch,
-                              children: [
-                                const SizedBox(height: _kHeaderHeight),
-                                const _DetailBanner(),
-                                const SizedBox(height: 40),
-                                Center(
-                                  child: ConstrainedBox(
-                                    constraints: const BoxConstraints(maxWidth: 1200),
-                                    child: LayoutBuilder(
-                                      builder: (context, constraints) {
-                                        final isNarrow =
-                                            constraints.maxWidth < _kDetailStackBreakpoint;
+                          SizedBox(height: Header.height + TopBar.height),
+                          const _DetailBanner(),
+                          const SizedBox(height: 40),
+                          Center(
+                            child: ConstrainedBox(
+                              constraints: const BoxConstraints(maxWidth: 1200),
+                              child: LayoutBuilder(
+                                builder: (context, constraints) {
+                                  final isNarrow =
+                                      constraints.maxWidth < _kDetailStackBreakpoint;
 
-                                        final imageWidget = SizedBox(
-                                          height: isNarrow ? _kImageHeightNarrow : _kImageHeight,
-                                          width: double.infinity,
-                                          child: ClipRRect(
-                                            borderRadius: BorderRadius.circular(12),
-                                            child: product.imageUrl.isNotEmpty
-                                                ? Image.network(
-                                                    product.imageUrl,
-                                                    fit: BoxFit.cover,
-                                                    loadingBuilder: (context, child, progress) {
-                                                      if (progress == null) return child;
-                                                      return Container(
-                                                        color: Colors.grey.shade900,
-                                                        child: const Center(
-                                                          child: CircularProgressIndicator(
-                                                            color: _kAmber,
-                                                            strokeWidth: 2,
-                                                          ),
-                                                        ),
-                                                      );
-                                                    },
-                                                    errorBuilder: (context, error, stackTrace) =>
-                                                        Container(
-                                                      color: Colors.grey.shade800,
-                                                      child: const Icon(
-                                                          Icons.image_not_supported_outlined,
-                                                          color: Colors.white38,
-                                                          size: 32),
-                                                    ),
-                                                  )
-                                                : Container(
-                                                    color: Colors.grey.shade800,
-                                                    child: const Icon(
-                                                        Icons.image_not_supported_outlined,
-                                                        color: Colors.white38,
-                                                        size: 32),
-                                                  ),
-                                          ),
-                                        );
-
-                                        final detailsWidget = Column(
-                                          crossAxisAlignment: CrossAxisAlignment.start,
-                                          children: [
-                                            Text(
-                                              product.name,
-                                              style: TextStyle(
-                                                color: Colors.white,
-                                                fontSize: isNarrow ? 22 : 28,
-                                                fontWeight: FontWeight.bold,
-                                              ),
-                                            ),
-                                            const SizedBox(height: 8),
-                                            Text(
-                                              category.name,
-                                              style: const TextStyle(
-                                                  color: _kAmber,
-                                                  fontSize: 16,
-                                                  fontWeight: FontWeight.w600),
-                                            ),
-
-                                            // ─────────────────────────────────────
-                                            // Description — rendered as Markdown so
-                                            // headings ("## Product Highlights"),
-                                            // bullet lists ("- item"), and tables
-                                            // ("| Spec | Details |") all display
-                                            // properly instead of as plain text.
-                                            // ─────────────────────────────────────
-                                            if (product.description != null &&
-                                                product.description!.trim().isNotEmpty) ...[
-                                              const SizedBox(height: 15),
-                                              MarkdownBody(
-                                                data: product.description!,
-                                                styleSheet: MarkdownStyleSheet(
-                                                  p: TextStyle(
-                                                    color: Colors.white.withValues(alpha: 0.75),
-                                                    fontSize: 16,
-                                                    height: 1.5,
-                                                  ),
-                                                  h1: const TextStyle(
-                                                    color: Colors.white,
-                                                    fontSize: 24,
-                                                    fontWeight: FontWeight.bold,
-                                                  ),
-                                                  h2: const TextStyle(
-                                                    color: _kAmber,
-                                                    fontSize: 20,
-                                                    fontWeight: FontWeight.bold,
-                                                  ),
-                                                  h3: const TextStyle(
-                                                    color: Colors.white,
-                                                    fontSize: 18,
-                                                    fontWeight: FontWeight.w600,
-                                                  ),
-                                                  strong: const TextStyle(
-                                                    color: Colors.white,
-                                                    fontWeight: FontWeight.bold,
-                                                  ),
-                                                  em: TextStyle(
-                                                    color: Colors.white.withValues(alpha: 0.75),
-                                                    fontStyle: FontStyle.italic,
-                                                  ),
-                                                  listBullet: const TextStyle(color: _kAmber),
-                                                  listIndent: 20,
-                                                  tableHead: const TextStyle(
-                                                    color: Colors.white,
-                                                    fontWeight: FontWeight.bold,
-                                                    fontSize: 14,
-                                                  ),
-                                                  tableBody: TextStyle(
-                                                    color: Colors.white.withValues(alpha: 0.75),
-                                                    fontSize: 14,
-                                                  ),
-                                                  tableBorder: TableBorder.all(
-                                                    color: Colors.white24,
-                                                  ),
-                                                  tableCellsPadding: const EdgeInsets.symmetric(
-                                                    horizontal: 10,
-                                                    vertical: 6,
-                                                  ),
-                                                  tableColumnWidth: const FlexColumnWidth(),
-                                                  blockquoteDecoration: BoxDecoration(
-                                                    color: Colors.white.withValues(alpha: 0.05),
-                                                    borderRadius: BorderRadius.circular(6),
-                                                    border: Border(
-                                                      left: BorderSide(color: _kAmber, width: 3),
+                                  final imageWidget = SizedBox(
+                                    height: isNarrow ? _kImageHeightNarrow : _kImageHeight,
+                                    width: double.infinity,
+                                    child: ClipRRect(
+                                      borderRadius: BorderRadius.circular(12),
+                                      child: product.imageUrl.isNotEmpty
+                                          ? Image.network(
+                                              product.imageUrl,
+                                              fit: BoxFit.cover,
+                                              loadingBuilder: (context, child, progress) {
+                                                if (progress == null) return child;
+                                                return Container(
+                                                  color: Colors.grey.shade900,
+                                                  child: const Center(
+                                                    child: CircularProgressIndicator(
+                                                      color: _kAmber,
+                                                      strokeWidth: 2,
                                                     ),
                                                   ),
-                                                  a: const TextStyle(color: _kAmber),
-                                                ),
+                                                );
+                                              },
+                                              errorBuilder: (context, error, stackTrace) =>
+                                                  Container(
+                                                color: Colors.grey.shade800,
+                                                child: const Icon(
+                                                    Icons.image_not_supported_outlined,
+                                                    color: Colors.white38,
+                                                    size: 32),
                                               ),
-                                            ],
-
-                                            const SizedBox(height: 20),
-                                            Container(
-                                              width: double.infinity,
-                                              padding: const EdgeInsets.all(18),
-                                              decoration: BoxDecoration(
-                                                color: Colors.white.withValues(alpha: 0.08),
-                                                borderRadius: BorderRadius.circular(12),
-                                                border: Border.all(
-                                                    color: Colors.white.withValues(alpha: 0.15)),
-                                              ),
-                                              child: _DetailGrid(
-                                                entries: [
-                                                  for (final entry in specs.entries)
-                                                    _DetailEntry(
-                                                      label: entry.key,
-                                                      value: entry.value!,
-                                                      isAvailability:
-                                                          entry.key == 'Availability',
-                                                    ),
-                                                ],
-                                              ),
+                                            )
+                                          : Container(
+                                              color: Colors.grey.shade800,
+                                              child: const Icon(
+                                                  Icons.image_not_supported_outlined,
+                                                  color: Colors.white38,
+                                                  size: 32),
                                             ),
-                                            const SizedBox(height: 30),
-                                            SizedBox(
-                                              width: double.infinity,
-                                              child: ElevatedButton(
-                                                onPressed: () {},
-                                                style: ElevatedButton.styleFrom(
-                                                  backgroundColor: _kAmber,
-                                                  foregroundColor: Colors.black,
-                                                  minimumSize: const Size(double.infinity, 46),
-                                                  shape: RoundedRectangleBorder(
-                                                      borderRadius: BorderRadius.circular(8)),
-                                                ),
-                                                child: const Text('Place Order',
-                                                    style:
-                                                        TextStyle(fontWeight: FontWeight.w600)),
-                                              ),
-                                            ),
-                                          ],
-                                        );
-
-                                        return Padding(
-                                          padding:
-                                              EdgeInsets.fromLTRB(16, isNarrow ? 24 : 50, 16, 16),
-                                          child: isNarrow
-                                              ? Column(
-                                                  crossAxisAlignment: CrossAxisAlignment.stretch,
-                                                  children: [
-                                                    imageWidget,
-                                                    const SizedBox(height: 24),
-                                                    detailsWidget,
-                                                  ],
-                                                )
-                                              : Row(
-                                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                                  children: [
-                                                    Expanded(child: imageWidget),
-                                                    const SizedBox(width: 24),
-                                                    Expanded(child: detailsWidget),
-                                                  ],
-                                                ),
-                                        );
-                                      },
                                     ),
-                                  ),
-                                ),
-                                if (relatedProducts.isNotEmpty) ...[
-                                  const SizedBox(height: 86),
-                                  _RelatedProductsSection(
-                                    products: relatedProducts,
-                                    companies: companies,
-                                  ),
-                                ],
-                                const _Divider(),
-                                const Footer(),
-                              ],
+                                  );
+
+                                  final detailsWidget = Column(
+                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    children: [
+                                      Text(
+                                        product.name,
+                                        style: TextStyle(
+                                          color: Colors.white,
+                                          fontSize: isNarrow ? 22 : 28,
+                                          fontWeight: FontWeight.bold,
+                                        ),
+                                      ),
+                                      const SizedBox(height: 8),
+                                      Text(
+                                        category.name,
+                                        style: const TextStyle(
+                                            color: _kAmber,
+                                            fontSize: 16,
+                                            fontWeight: FontWeight.w600),
+                                      ),
+
+                                      // ─────────────────────────────────────
+                                      // Description — rendered as Markdown so
+                                      // headings ("## Product Highlights"),
+                                      // bullet lists ("- item"), and tables
+                                      // ("| Spec | Details |") all display
+                                      // properly instead of as plain text.
+                                      // ─────────────────────────────────────
+                                      if (product.description != null &&
+                                          product.description!.trim().isNotEmpty) ...[
+                                        const SizedBox(height: 15),
+                                        MarkdownBody(
+                                          data: product.description!,
+                                          styleSheet: MarkdownStyleSheet(
+                                            p: TextStyle(
+                                              color: Colors.white.withValues(alpha: 0.75),
+                                              fontSize: 16,
+                                              height: 1.5,
+                                            ),
+                                            h1: const TextStyle(
+                                              color: Colors.white,
+                                              fontSize: 24,
+                                              fontWeight: FontWeight.bold,
+                                            ),
+                                            h2: const TextStyle(
+                                              color: _kAmber,
+                                              fontSize: 20,
+                                              fontWeight: FontWeight.bold,
+                                            ),
+                                            h3: const TextStyle(
+                                              color: Colors.white,
+                                              fontSize: 18,
+                                              fontWeight: FontWeight.w600,
+                                            ),
+                                            strong: const TextStyle(
+                                              color: Colors.white,
+                                              fontWeight: FontWeight.bold,
+                                            ),
+                                            em: TextStyle(
+                                              color: Colors.white.withValues(alpha: 0.75),
+                                              fontStyle: FontStyle.italic,
+                                            ),
+                                            listBullet: const TextStyle(color: _kAmber),
+                                            listIndent: 20,
+                                            tableHead: const TextStyle(
+                                              color: Colors.white,
+                                              fontWeight: FontWeight.bold,
+                                              fontSize: 14,
+                                            ),
+                                            tableBody: TextStyle(
+                                              color: Colors.white.withValues(alpha: 0.75),
+                                              fontSize: 14,
+                                            ),
+                                            tableBorder: TableBorder.all(
+                                              color: Colors.white24,
+                                            ),
+                                            tableCellsPadding: const EdgeInsets.symmetric(
+                                              horizontal: 10,
+                                              vertical: 6,
+                                            ),
+                                            tableColumnWidth: const FlexColumnWidth(),
+                                            blockquoteDecoration: BoxDecoration(
+                                              color: Colors.white.withValues(alpha: 0.05),
+                                              borderRadius: BorderRadius.circular(6),
+                                              border: Border(
+                                                left: BorderSide(color: _kAmber, width: 3),
+                                              ),
+                                            ),
+                                            a: const TextStyle(color: _kAmber),
+                                          ),
+                                        ),
+                                      ],
+
+                                      const SizedBox(height: 20),
+                                      Container(
+                                        width: double.infinity,
+                                        padding: const EdgeInsets.all(18),
+                                        decoration: BoxDecoration(
+                                          color: Colors.white.withValues(alpha: 0.08),
+                                          borderRadius: BorderRadius.circular(12),
+                                          border: Border.all(
+                                              color: Colors.white.withValues(alpha: 0.15)),
+                                        ),
+                                        child: _DetailGrid(
+                                          entries: [
+                                            for (final entry in specs.entries)
+                                              _DetailEntry(
+                                                label: entry.key,
+                                                value: entry.value!,
+                                                isAvailability:
+                                                    entry.key == 'Availability',
+                                              ),
+                                          ],
+                                        ),
+                                      ),
+                                      const SizedBox(height: 30),
+                                      SizedBox(
+                                        width: double.infinity,
+                                        child: ElevatedButton(
+                                          onPressed: () {},
+                                          style: ElevatedButton.styleFrom(
+                                            backgroundColor: _kAmber,
+                                            foregroundColor: Colors.black,
+                                            minimumSize: const Size(double.infinity, 46),
+                                            shape: RoundedRectangleBorder(
+                                                borderRadius: BorderRadius.circular(8)),
+                                          ),
+                                          child: const Text('Place Order',
+                                              style:
+                                                  TextStyle(fontWeight: FontWeight.w600)),
+                                        ),
+                                      ),
+                                    ],
+                                  );
+
+                                  return Padding(
+                                    padding:
+                                        EdgeInsets.fromLTRB(16, isNarrow ? 24 : 50, 16, 16),
+                                    child: isNarrow
+                                        ? Column(
+                                            crossAxisAlignment: CrossAxisAlignment.stretch,
+                                            children: [
+                                              imageWidget,
+                                              const SizedBox(height: 24),
+                                              detailsWidget,
+                                            ],
+                                          )
+                                        : Row(
+                                            crossAxisAlignment: CrossAxisAlignment.start,
+                                            children: [
+                                              Expanded(child: imageWidget),
+                                              const SizedBox(width: 24),
+                                              Expanded(child: detailsWidget),
+                                            ],
+                                          ),
+                                  );
+                                },
+                              ),
                             ),
                           ),
-                          Positioned(
-                            top: 0,
-                            left: 0,
-                            right: 0,
-                            child: AnimatedSlide(
-                              duration: const Duration(milliseconds: 500),
-                              curve: Curves.easeOutCubic,
-                              offset: _headerRevealed ? Offset.zero : const Offset(0, -1),
-                              child: const Header(),
+                          if (relatedProducts.isNotEmpty) ...[
+                            const SizedBox(height: 86),
+                            _RelatedProductsSection(
+                              products: relatedProducts,
+                              companies: companies,
                             ),
-                          ),
+                          ],
+                          const _Divider(),
+                          const Footer(),
                         ],
                       ),
                     );
