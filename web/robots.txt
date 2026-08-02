@@ -1,0 +1,4 @@
+User-agent: *
+Allow: /
+
+Sitemap: https://devansh-supplers.web.app/sitemap.xml

@@ -328,7 +328,7 @@ class _ProductsBanner extends StatelessWidget {
         fit: StackFit.expand,
         children: [
           Image.asset(
-            'assets/image1.png',
+            'assets/image1.jpg',
             fit: BoxFit.cover,
             errorBuilder: (context, error, stackTrace) =>
                 Container(color: Colors.grey.shade900),
