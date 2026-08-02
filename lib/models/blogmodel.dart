@@ -60,9 +60,9 @@ class BlogPost {
       createdAt: createdAtRaw is Timestamp ? createdAtRaw.toDate() : null,
       faqs: faqsRaw is List
           ? faqsRaw
-              .whereType<Map>()
-              .map((f) => BlogFaq.fromMap(Map<String, dynamic>.from(f)))
-              .toList()
+                .whereType<Map>()
+                .map((f) => BlogFaq.fromMap(Map<String, dynamic>.from(f)))
+                .toList()
           : const [],
     );
   }

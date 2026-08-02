@@ -122,8 +122,9 @@ class _ProductsPageState extends State<ProductsPage> {
                         final allProducts = productSnap.data ?? [];
 
                         final stillLoading =
-                            categorySnap.connectionState == ConnectionState.waiting &&
-                                categories.isEmpty;
+                            categorySnap.connectionState ==
+                                ConnectionState.waiting &&
+                            categories.isEmpty;
 
                         if (stillLoading) {
                           return const Scaffold(
@@ -224,7 +225,9 @@ class _ProductsPageState extends State<ProductsPage> {
             return Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                SizedBox(height: Header.height + TopBar.height), // reserve space
+                SizedBox(
+                  height: Header.height + TopBar.height,
+                ), // reserve space
                 const _ProductsBanner(),
                 Padding(
                   padding: EdgeInsets.all(r.hPadding),
@@ -247,10 +250,7 @@ class _ProductsPageState extends State<ProductsPage> {
             children: [
               SizedBox(height: Header.height + TopBar.height), // reserve space
               const _ProductsBanner(),
-              Padding(
-                padding: EdgeInsets.all(r.hPadding),
-                child: panel,
-              ),
+              Padding(padding: EdgeInsets.all(r.hPadding), child: panel),
               const _Divider(),
               const Footer(),
             ],
@@ -260,6 +260,7 @@ class _ProductsPageState extends State<ProductsPage> {
     );
   }
 }
+
 class _FilterDrawer extends StatelessWidget {
   final Widget sidebar;
 
@@ -288,7 +289,7 @@ class _FilterDrawer extends StatelessWidget {
                     ),
                   ),
                   IconButton(
-                  onPressed: () => context.pop(),
+                    onPressed: () => context.pop(),
                     icon: const Icon(Icons.close, color: Colors.white),
                     splashRadius: 20,
                   ),

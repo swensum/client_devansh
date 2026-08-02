@@ -10,7 +10,6 @@ import 'package:devansh/services/blogservice.dart';
 import 'package:devansh/components/header.dart';
 import 'package:devansh/components/footer.dart';
 
-
 class BlogsListPage extends StatefulWidget {
   const BlogsListPage({super.key});
 

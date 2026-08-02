@@ -8,7 +8,6 @@ import 'package:devansh/services/catalogservice.dart';
 import 'package:flutter/material.dart' hide MaterialType;
 import 'package:go_router/go_router.dart';
 
-
 const _kAmber = Color.fromRGBO(245, 171, 30, 1);
 
 const int _kItemsPerPage = 12;
@@ -56,8 +55,8 @@ class _ProductsRightPanelState extends State<ProductsRightPanel> {
     super.didUpdateWidget(oldWidget);
     if (oldWidget.category?.id != widget.category?.id ||
         oldWidget.company?.id != widget.company?.id ||
-         oldWidget.type?.id != widget.type?.id || 
-      oldWidget.material?.id != widget.material?.id || 
+        oldWidget.type?.id != widget.type?.id ||
+        oldWidget.material?.id != widget.material?.id ||
         oldWidget.products != widget.products ||
         oldWidget.viewMode != widget.viewMode) {
       _currentPage = 0;
@@ -87,8 +86,8 @@ class _ProductsRightPanelState extends State<ProductsRightPanel> {
         final companies = companySnap.data ?? [];
         final products = widget.products;
         final banner = widget.category != null
-              ? (widget.category!.imageUrl ??
-                (products.isNotEmpty ? products.first.imageUrl : null))
+            ? (widget.category!.imageUrl ??
+                  (products.isNotEmpty ? products.first.imageUrl : null))
             : null;
         final bannerIsNetwork = banner != null && banner.startsWith('http');
 
@@ -96,27 +95,60 @@ class _ProductsRightPanelState extends State<ProductsRightPanel> {
 
         final start = _currentPage * _kItemsPerPage;
         final end = (start + _kItemsPerPage).clamp(0, products.length);
-        final pageProducts = products.isEmpty ? const <Product>[] : products.sublist(start, end);
+        final pageProducts = products.isEmpty
+            ? const <Product>[]
+            : products.sublist(start, end);
 
         return Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             RichText(
               text: TextSpan(
-                style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: Colors.white),
+                style: const TextStyle(
+                  fontSize: 20,
+                  fontWeight: FontWeight.bold,
+                  color: Colors.white,
+                ),
                 children: [
                   TextSpan(text: widget.category?.name ?? 'All Products'),
                   if (widget.company != null) ...[
-                    const TextSpan(text: '  :  ', style: TextStyle(color: Colors.white38, fontWeight: FontWeight.w400)),
-                    TextSpan(text: widget.company!.name, style: const TextStyle(color: _kAmber)),
+                    const TextSpan(
+                      text: '  :  ',
+                      style: TextStyle(
+                        color: Colors.white38,
+                        fontWeight: FontWeight.w400,
+                      ),
+                    ),
+                    TextSpan(
+                      text: widget.company!.name,
+                      style: const TextStyle(color: _kAmber),
+                    ),
                   ],
                   if (widget.type != null) ...[
-                    const TextSpan(text: '  /  ', style: TextStyle(color: Colors.white38, fontWeight: FontWeight.w400)),
-                    TextSpan(text: widget.type!.name, style: const TextStyle(color: _kAmber)),
+                    const TextSpan(
+                      text: '  /  ',
+                      style: TextStyle(
+                        color: Colors.white38,
+                        fontWeight: FontWeight.w400,
+                      ),
+                    ),
+                    TextSpan(
+                      text: widget.type!.name,
+                      style: const TextStyle(color: _kAmber),
+                    ),
                   ],
                   if (widget.material != null) ...[
-                    const TextSpan(text: '  /  ', style: TextStyle(color: Colors.white38, fontWeight: FontWeight.w400)),
-                    TextSpan(text: widget.material!.name, style: const TextStyle(color: _kAmber)),
+                    const TextSpan(
+                      text: '  /  ',
+                      style: TextStyle(
+                        color: Colors.white38,
+                        fontWeight: FontWeight.w400,
+                      ),
+                    ),
+                    TextSpan(
+                      text: widget.material!.name,
+                      style: const TextStyle(color: _kAmber),
+                    ),
                   ],
                 ],
               ),
@@ -139,7 +171,10 @@ class _ProductsRightPanelState extends State<ProductsRightPanel> {
                             height: widget.r.bannerHeight,
                             color: Colors.grey.shade900,
                             child: const Center(
-                              child: CircularProgressIndicator(color: _kAmber, strokeWidth: 2),
+                              child: CircularProgressIndicator(
+                                color: _kAmber,
+                                strokeWidth: 2,
+                              ),
                             ),
                           );
                         },
@@ -183,7 +218,9 @@ class _ProductsRightPanelState extends State<ProductsRightPanel> {
                 child: Center(
                   child: Text(
                     'No products in this category yet.',
-                    style: TextStyle(color: Colors.white.withValues(alpha: 0.6)),
+                    style: TextStyle(
+                      color: Colors.white.withValues(alpha: 0.6),
+                    ),
                   ),
                 ),
               )
@@ -201,8 +238,10 @@ class _ProductsRightPanelState extends State<ProductsRightPanel> {
                     mainAxisSpacing: widget.r.gridSpacing,
                     childAspectRatio: widget.r.childAspectRatio,
                   ),
-                  itemBuilder: (context, index) =>
-                      _ProductCard(product: pageProducts[index], companies: companies),
+                  itemBuilder: (context, index) => _ProductCard(
+                    product: pageProducts[index],
+                    companies: companies,
+                  ),
                 ),
               )
             else
@@ -210,9 +249,12 @@ class _ProductsRightPanelState extends State<ProductsRightPanel> {
                 shrinkWrap: true,
                 physics: const NeverScrollableScrollPhysics(),
                 itemCount: pageProducts.length,
-                separatorBuilder: (_, _) => SizedBox(height: widget.r.gridSpacing),
-                itemBuilder: (context, index) =>
-                    _ProductListTile(product: pageProducts[index], companies: companies),
+                separatorBuilder: (_, _) =>
+                    SizedBox(height: widget.r.gridSpacing),
+                itemBuilder: (context, index) => _ProductListTile(
+                  product: pageProducts[index],
+                  companies: companies,
+                ),
               ),
 
             if (totalPages > 1) ...[
@@ -229,6 +271,7 @@ class _ProductsRightPanelState extends State<ProductsRightPanel> {
     );
   }
 }
+
 class _Pagination extends StatelessWidget {
   final int currentPage; // 0-based
   final int totalPages;
@@ -286,7 +329,9 @@ class _Pagination extends StatelessWidget {
                     width: i == currentPage ? 18 : 6,
                     height: 6,
                     decoration: BoxDecoration(
-                      color: i == currentPage ? _kAmber : Colors.white.withValues(alpha: 0.25),
+                      color: i == currentPage
+                          ? _kAmber
+                          : Colors.white.withValues(alpha: 0.25),
                       borderRadius: BorderRadius.circular(3),
                     ),
                   ),
@@ -297,6 +342,7 @@ class _Pagination extends StatelessWidget {
       ],
     );
   }
+
   List<int> _pagesToShow() {
     if (totalPages <= 7) {
       return List.generate(totalPages, (i) => i);
@@ -323,7 +369,11 @@ class _PageArrowButton extends StatelessWidget {
   final bool enabled;
   final VoidCallback onTap;
 
-  const _PageArrowButton({required this.icon, required this.enabled, required this.onTap});
+  const _PageArrowButton({
+    required this.icon,
+    required this.enabled,
+    required this.onTap,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -334,7 +384,9 @@ class _PageArrowButton extends StatelessWidget {
         padding: const EdgeInsets.all(6),
         decoration: BoxDecoration(
           borderRadius: BorderRadius.circular(8),
-          border: Border.all(color: Colors.white.withValues(alpha: enabled ? 0.2 : 0.08)),
+          border: Border.all(
+            color: Colors.white.withValues(alpha: enabled ? 0.2 : 0.08),
+          ),
         ),
         child: Icon(
           icon,
@@ -351,7 +403,11 @@ class _PageNumberButton extends StatelessWidget {
   final bool isSelected;
   final VoidCallback onTap;
 
-  const _PageNumberButton({required this.page, required this.isSelected, required this.onTap});
+  const _PageNumberButton({
+    required this.page,
+    required this.isSelected,
+    required this.onTap,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -363,9 +419,13 @@ class _PageNumberButton extends StatelessWidget {
         height: 32,
         alignment: Alignment.center,
         decoration: BoxDecoration(
-          color: isSelected ? _kAmber.withValues(alpha: 0.18) : Colors.transparent,
+          color: isSelected
+              ? _kAmber.withValues(alpha: 0.18)
+              : Colors.transparent,
           borderRadius: BorderRadius.circular(8),
-          border: Border.all(color: isSelected ? _kAmber : Colors.white.withValues(alpha: 0.2)),
+          border: Border.all(
+            color: isSelected ? _kAmber : Colors.white.withValues(alpha: 0.2),
+          ),
         ),
         child: Text(
           '${page + 1}',
@@ -432,13 +492,20 @@ class _ProductsToolbar extends StatelessWidget {
           onTap: () => onViewModeChanged(ViewMode.list),
         ),
         const Spacer(),
-        Text('Sort by', style: TextStyle(color: Colors.white.withValues(alpha: 0.6), fontSize: 13)),
+        Text(
+          'Sort by',
+          style: TextStyle(
+            color: Colors.white.withValues(alpha: 0.6),
+            fontSize: 13,
+          ),
+        ),
         const SizedBox(width: 8),
         _SortDropdown(value: sortOption, onChanged: onSortChanged),
       ],
     );
   }
 }
+
 class _FilterButton extends StatelessWidget {
   final int count;
   final VoidCallback onTap;
@@ -453,7 +520,9 @@ class _FilterButton extends StatelessWidget {
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
         decoration: BoxDecoration(
-          color: count > 0 ? _kAmber.withValues(alpha: 0.18) : Colors.transparent,
+          color: count > 0
+              ? _kAmber.withValues(alpha: 0.18)
+              : Colors.transparent,
           borderRadius: BorderRadius.circular(8),
           border: Border.all(
             color: count > 0 ? _kAmber : Colors.white.withValues(alpha: 0.2),
@@ -462,7 +531,11 @@ class _FilterButton extends StatelessWidget {
         child: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Icon(Icons.tune_rounded, size: 16, color: count > 0 ? _kAmber : Colors.white70),
+            Icon(
+              Icons.tune_rounded,
+              size: 16,
+              color: count > 0 ? _kAmber : Colors.white70,
+            ),
             const SizedBox(width: 6),
             Text(
               'Filters',
@@ -502,7 +575,11 @@ class _ViewToggleButton extends StatelessWidget {
   final bool isSelected;
   final VoidCallback onTap;
 
-  const _ViewToggleButton({required this.icon, required this.isSelected, required this.onTap});
+  const _ViewToggleButton({
+    required this.icon,
+    required this.isSelected,
+    required this.onTap,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -512,11 +589,19 @@ class _ViewToggleButton extends StatelessWidget {
       child: Container(
         padding: const EdgeInsets.all(8),
         decoration: BoxDecoration(
-          color: isSelected ? _kAmber.withValues(alpha: 0.18) : Colors.transparent,
+          color: isSelected
+              ? _kAmber.withValues(alpha: 0.18)
+              : Colors.transparent,
           borderRadius: BorderRadius.circular(8),
-          border: Border.all(color: isSelected ? _kAmber : Colors.white.withValues(alpha: 0.2)),
+          border: Border.all(
+            color: isSelected ? _kAmber : Colors.white.withValues(alpha: 0.2),
+          ),
         ),
-        child: Icon(icon, size: 18, color: isSelected ? _kAmber : Colors.white70),
+        child: Icon(
+          icon,
+          size: 18,
+          color: isSelected ? _kAmber : Colors.white70,
+        ),
       ),
     );
   }
@@ -541,13 +626,20 @@ class _SortDropdown extends StatelessWidget {
           value: value,
           isDense: true,
           dropdownColor: const Color(0xFF1A1A1A),
-          icon: const Icon(Icons.keyboard_arrow_down, color: Colors.white70, size: 18),
+          icon: const Icon(
+            Icons.keyboard_arrow_down,
+            color: Colors.white70,
+            size: 18,
+          ),
           style: const TextStyle(color: Colors.white, fontSize: 13),
           onChanged: (option) {
             if (option != null) onChanged(option);
           },
           items: SortOption.values
-              .map((option) => DropdownMenuItem(value: option, child: Text(option.label)))
+              .map(
+                (option) =>
+                    DropdownMenuItem(value: option, child: Text(option.label)),
+              )
               .toList(),
         ),
       ),
@@ -573,7 +665,11 @@ class _ProductListTileState extends State<_ProductListTile> {
     final catalogService = CatalogService();
     final allProducts = await catalogService.watchProducts().first;
     final related = allProducts
-        .where((p) => p.categoryId == widget.product.categoryId && p.id != widget.product.id)
+        .where(
+          (p) =>
+              p.categoryId == widget.product.categoryId &&
+              p.id != widget.product.id,
+        )
         .toList();
 
     if (context.mounted) {
@@ -601,7 +697,9 @@ class _ProductListTileState extends State<_ProductListTile> {
             color: Colors.white.withValues(alpha: _isHovered ? 0.12 : 0.08),
             borderRadius: BorderRadius.circular(18),
             border: Border.all(
-              color: _isHovered ? _kAmber.withValues(alpha: 0.6) : Colors.white.withValues(alpha: 0.12),
+              color: _isHovered
+                  ? _kAmber.withValues(alpha: 0.6)
+                  : Colors.white.withValues(alpha: 0.12),
               width: 1.5,
             ),
             boxShadow: [
@@ -630,7 +728,10 @@ class _ProductListTileState extends State<_ProductListTile> {
                             height: 150,
                             color: Colors.grey.shade900,
                             child: const Center(
-                              child: CircularProgressIndicator(color: _kAmber, strokeWidth: 2),
+                              child: CircularProgressIndicator(
+                                color: _kAmber,
+                                strokeWidth: 2,
+                              ),
                             ),
                           );
                         },
@@ -638,14 +739,22 @@ class _ProductListTileState extends State<_ProductListTile> {
                           width: 150,
                           height: 150,
                           color: Colors.grey.shade800,
-                          child: const Icon(Icons.image_not_supported_outlined, color: Colors.white38, size: 32),
+                          child: const Icon(
+                            Icons.image_not_supported_outlined,
+                            color: Colors.white38,
+                            size: 32,
+                          ),
                         ),
                       )
                     : Container(
                         width: 150,
                         height: 150,
                         color: Colors.grey.shade800,
-                        child: const Icon(Icons.image_not_supported_outlined, color: Colors.white38, size: 32),
+                        child: const Icon(
+                          Icons.image_not_supported_outlined,
+                          color: Colors.white38,
+                          size: 32,
+                        ),
                       ),
               ),
               const SizedBox(width: 26),
@@ -657,13 +766,20 @@ class _ProductListTileState extends State<_ProductListTile> {
                       product.name,
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
-                      style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w700, fontSize: 21),
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontWeight: FontWeight.w700,
+                        fontSize: 21,
+                      ),
                     ),
                     if (company != null) ...[
                       const SizedBox(height: 8),
                       Text(
                         company.name,
-                        style: TextStyle(color: Colors.white.withValues(alpha: 0.55), fontSize: 15),
+                        style: TextStyle(
+                          color: Colors.white.withValues(alpha: 0.55),
+                          fontSize: 15,
+                        ),
                       ),
                     ],
                     const SizedBox(height: 14),
@@ -680,7 +796,10 @@ class _ProductListTileState extends State<_ProductListTile> {
                         const SizedBox(width: 8),
                         Text(
                           '(124)',
-                          style: TextStyle(color: Colors.white.withValues(alpha: 0.5), fontSize: 14),
+                          style: TextStyle(
+                            color: Colors.white.withValues(alpha: 0.5),
+                            fontSize: 14,
+                          ),
                         ),
                       ],
                     ),
@@ -714,6 +833,7 @@ class _ProductListTileState extends State<_ProductListTile> {
     );
   }
 }
+
 class _ProductCard extends StatefulWidget {
   final Product product;
   final List<Company> companies;
@@ -724,7 +844,8 @@ class _ProductCard extends StatefulWidget {
   State<_ProductCard> createState() => _ProductCardState();
 }
 
-class _ProductCardState extends State<_ProductCard> with SingleTickerProviderStateMixin {
+class _ProductCardState extends State<_ProductCard>
+    with SingleTickerProviderStateMixin {
   bool _isHovered = false;
   late final AnimationController _scaleController;
   late final Animation<double> _scaleAnimation;
@@ -738,9 +859,10 @@ class _ProductCardState extends State<_ProductCard> with SingleTickerProviderSta
       vsync: this,
       duration: const Duration(milliseconds: 200),
     );
-    _scaleAnimation = Tween<double>(begin: 1.0, end: 1.03).animate(
-      CurvedAnimation(parent: _scaleController, curve: Curves.easeOut),
-    );
+    _scaleAnimation = Tween<double>(
+      begin: 1.0,
+      end: 1.03,
+    ).animate(CurvedAnimation(parent: _scaleController, curve: Curves.easeOut));
   }
 
   @override
@@ -759,7 +881,11 @@ class _ProductCardState extends State<_ProductCard> with SingleTickerProviderSta
     final catalogService = CatalogService();
     final allProducts = await catalogService.watchProducts().first;
     final related = allProducts
-        .where((p) => p.categoryId == widget.product.categoryId && p.id != widget.product.id)
+        .where(
+          (p) =>
+              p.categoryId == widget.product.categoryId &&
+              p.id != widget.product.id,
+        )
         .toList();
 
     if (context.mounted) {
@@ -776,10 +902,10 @@ class _ProductCardState extends State<_ProductCard> with SingleTickerProviderSta
       cursor: SystemMouseCursors.click,
       onEnter: (_) => _setHovered(true),
       onExit: (_) => _setHovered(false),
-     child: GestureDetector(
-          onTap: () {
-            context.push('/product/${product.id}', extra: product);
-          },
+      child: GestureDetector(
+        onTap: () {
+          context.push('/product/${product.id}', extra: product);
+        },
         child: RepaintBoundary(
           child: ScaleTransition(
             scale: _scaleAnimation,
@@ -788,12 +914,16 @@ class _ProductCardState extends State<_ProductCard> with SingleTickerProviderSta
                 color: Colors.white.withValues(alpha: 0.12),
                 borderRadius: BorderRadius.circular(_cardRadius),
                 border: Border.all(
-                  color: _isHovered ? _kAmber.withValues(alpha: 0.6) :  Colors.white.withValues(alpha: 0.12),
+                  color: _isHovered
+                      ? _kAmber.withValues(alpha: 0.6)
+                      : Colors.white.withValues(alpha: 0.12),
                   width: 1.5,
                 ),
                 boxShadow: [
                   BoxShadow(
-                    color: Colors.black.withValues(alpha: _isHovered ? 0.15 : 0.06),
+                    color: Colors.black.withValues(
+                      alpha: _isHovered ? 0.15 : 0.06,
+                    ),
                     blurRadius: _isHovered ? 20 : 8,
                     offset: Offset(0, _isHovered ? 8 : 4),
                     spreadRadius: _isHovered ? 2 : 0,
@@ -823,20 +953,35 @@ class _ProductCardState extends State<_ProductCard> with SingleTickerProviderSta
                                     loadingBuilder: (context, child, progress) {
                                       if (progress == null) return child;
                                       return const Center(
-                                        child: CircularProgressIndicator(color: _kAmber, strokeWidth: 2),
+                                        child: CircularProgressIndicator(
+                                          color: _kAmber,
+                                          strokeWidth: 2,
+                                        ),
                                       );
                                     },
-                                    errorBuilder: (context, error, stackTrace) => Container(
-                                      color: Colors.grey.shade800,
-                                      child: const Center(
-                                        child: Icon(Icons.image_not_supported_outlined, color: Colors.white38),
-                                      ),
-                                    ),
+                                    errorBuilder:
+                                        (
+                                          context,
+                                          error,
+                                          stackTrace,
+                                        ) => Container(
+                                          color: Colors.grey.shade800,
+                                          child: const Center(
+                                            child: Icon(
+                                              Icons
+                                                  .image_not_supported_outlined,
+                                              color: Colors.white38,
+                                            ),
+                                          ),
+                                        ),
                                   )
                                 : Container(
                                     color: Colors.grey.shade800,
                                     child: const Center(
-                                      child: Icon(Icons.image_not_supported_outlined, color: Colors.white38),
+                                      child: Icon(
+                                        Icons.image_not_supported_outlined,
+                                        color: Colors.white38,
+                                      ),
                                     ),
                                   ),
                             AnimatedOpacity(
@@ -847,7 +992,10 @@ class _ProductCardState extends State<_ProductCard> with SingleTickerProviderSta
                                   gradient: LinearGradient(
                                     begin: Alignment.topCenter,
                                     end: Alignment.bottomCenter,
-                                    colors: [Colors.transparent, Colors.black.withValues(alpha: 0.7)],
+                                    colors: [
+                                      Colors.transparent,
+                                      Colors.black.withValues(alpha: 0.7),
+                                    ],
                                   ),
                                 ),
                               ),
@@ -858,7 +1006,10 @@ class _ProductCardState extends State<_ProductCard> with SingleTickerProviderSta
                               child: AnimatedOpacity(
                                 duration: const Duration(milliseconds: 200),
                                 opacity: _isHovered ? 1.0 : 0.0,
-                                child: _buildQuickActionButton(Icons.favorite_border, Colors.white),
+                                child: _buildQuickActionButton(
+                                  Icons.favorite_border,
+                                  Colors.white,
+                                ),
                               ),
                             ),
                           ],
@@ -866,7 +1017,7 @@ class _ProductCardState extends State<_ProductCard> with SingleTickerProviderSta
                       ),
                     ),
                   ),
-                 
+
                   Padding(
                     padding: const EdgeInsets.all(12),
                     child: Row(
@@ -881,13 +1032,19 @@ class _ProductCardState extends State<_ProductCard> with SingleTickerProviderSta
                                 maxLines: 2,
                                 overflow: TextOverflow.ellipsis,
                                 style: const TextStyle(
-                                    color: Colors.white, fontWeight: FontWeight.w600, fontSize: 13.5),
+                                  color: Colors.white,
+                                  fontWeight: FontWeight.w600,
+                                  fontSize: 13.5,
+                                ),
                               ),
                               const SizedBox(height: 4),
                               if (company != null)
                                 Text(
                                   company.name,
-                                  style: TextStyle(color: Colors.white.withValues(alpha: 0.55), fontSize: 11),
+                                  style: TextStyle(
+                                    color: Colors.white.withValues(alpha: 0.55),
+                                    fontSize: 11,
+                                  ),
                                 ),
                             ],
                           ),
@@ -929,7 +1086,10 @@ class _ProductCardState extends State<_ProductCard> with SingleTickerProviderSta
       decoration: BoxDecoration(
         color: backgroundColor ?? Colors.black.withValues(alpha: 0.7),
         shape: BoxShape.circle,
-        border: Border.all(color: borderColor ?? Colors.white.withValues(alpha: 0.2), width: 1),
+        border: Border.all(
+          color: borderColor ?? Colors.white.withValues(alpha: 0.2),
+          width: 1,
+        ),
       ),
       child: Icon(icon, size: 16, color: color),
     );

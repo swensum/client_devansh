@@ -69,7 +69,10 @@ MarkdownStyleSheet _blogMarkdownStyleSheet() {
       border: Border(left: BorderSide(color: kBlogAccent, width: 3)),
     ),
     blockquotePadding: const EdgeInsets.only(left: 16),
-    a: const TextStyle(color: kBlogAccent, decoration: TextDecoration.underline),
+    a: const TextStyle(
+      color: kBlogAccent,
+      decoration: TextDecoration.underline,
+    ),
   );
 }
 
@@ -100,8 +103,10 @@ class _BlogDetailPageState extends State<BlogDetailPage> {
     _recentSub = _blogService.watchPublishedPosts().listen((data) {
       if (!mounted) return;
       setState(() {
-        _recentPosts =
-            data.where((p) => p.slug != widget.slug).take(5).toList();
+        _recentPosts = data
+            .where((p) => p.slug != widget.slug)
+            .take(5)
+            .toList();
       });
     });
   }
@@ -175,7 +180,10 @@ class _BlogDetailPageState extends State<BlogDetailPage> {
           const SizedBox(height: 10),
           Text(
             "This post may have been removed or unpublished.",
-            style: TextStyle(fontSize: 14, color: Colors.white.withValues(alpha: 0.5)),
+            style: TextStyle(
+              fontSize: 14,
+              color: Colors.white.withValues(alpha: 0.5),
+            ),
           ),
           const SizedBox(height: 24),
           _BackToBlogLink(onTap: () => context.go('/blog')),
@@ -221,11 +229,7 @@ class _BlogDetailPageState extends State<BlogDetailPage> {
                   }
 
                   return Column(
-                    children: [
-                      image,
-                      const SizedBox(height: 28),
-                      recent,
-                    ],
+                    children: [image, const SizedBox(height: 28), recent],
                   );
                 },
               ),
@@ -239,7 +243,10 @@ class _BlogDetailPageState extends State<BlogDetailPage> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 5),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 12,
+                        vertical: 5,
+                      ),
                       decoration: BoxDecoration(
                         color: kBlogAccent,
                         borderRadius: BorderRadius.circular(4),
@@ -286,7 +293,10 @@ class _BlogDetailPageState extends State<BlogDetailPage> {
                       ],
                     ),
                     const SizedBox(height: 28),
-                    Container(height: 1, color: Colors.white.withValues(alpha: 0.08)),
+                    Container(
+                      height: 1,
+                      color: Colors.white.withValues(alpha: 0.08),
+                    ),
                     const SizedBox(height: 28),
 
                     if ((post.excerpt ?? '').isNotEmpty) ...[
@@ -311,7 +321,10 @@ class _BlogDetailPageState extends State<BlogDetailPage> {
 
                     if (post.faqs.isNotEmpty) ...[
                       const SizedBox(height: 44),
-                      Container(height: 1, color: Colors.white.withValues(alpha: 0.08)),
+                      Container(
+                        height: 1,
+                        color: Colors.white.withValues(alpha: 0.08),
+                      ),
                       const SizedBox(height: 36),
                       const Text(
                         "Frequently Asked Questions",
@@ -416,7 +429,10 @@ class _RecentBlogsPanel extends StatelessWidget {
           if (posts.isEmpty)
             Text(
               "No other posts yet.",
-              style: TextStyle(fontSize: 12.5, color: Colors.white.withValues(alpha: 0.45)),
+              style: TextStyle(
+                fontSize: 12.5,
+                color: Colors.white.withValues(alpha: 0.45),
+              ),
             )
           else
             ...posts.map(
@@ -484,7 +500,10 @@ class _FaqTileState extends State<_FaqTile> {
               behavior: HitTestBehavior.opaque,
               onTap: () => setState(() => _isOpen = !_isOpen),
               child: Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 16),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 18,
+                  vertical: 16,
+                ),
                 child: Row(
                   crossAxisAlignment: CrossAxisAlignment.center,
                   children: [
@@ -513,8 +532,9 @@ class _FaqTileState extends State<_FaqTile> {
             ),
             AnimatedCrossFade(
               duration: const Duration(milliseconds: 200),
-              crossFadeState:
-                  _isOpen ? CrossFadeState.showFirst : CrossFadeState.showSecond,
+              crossFadeState: _isOpen
+                  ? CrossFadeState.showFirst
+                  : CrossFadeState.showSecond,
               firstChild: Padding(
                 padding: const EdgeInsets.fromLTRB(18, 0, 18, 18),
                 child: Text(
@@ -568,8 +588,9 @@ class _RecentBlogRowState extends State<_RecentBlogRow> {
                     ? Image.network(
                         post.coverImage!,
                         fit: BoxFit.cover,
-                        errorBuilder: (context, error, stackTrace) =>
-                            Container(color: Colors.white.withValues(alpha: 0.06)),
+                        errorBuilder: (context, error, stackTrace) => Container(
+                          color: Colors.white.withValues(alpha: 0.06),
+                        ),
                       )
                     : Container(color: Colors.white.withValues(alpha: 0.06)),
               ),
@@ -584,7 +605,9 @@ class _RecentBlogRowState extends State<_RecentBlogRow> {
                   fontSize: 13,
                   fontWeight: FontWeight.w600,
                   height: 1.3,
-                  color: _isHovered ? kBlogAccent : Colors.white.withValues(alpha: 0.85),
+                  color: _isHovered
+                      ? kBlogAccent
+                      : Colors.white.withValues(alpha: 0.85),
                 ),
               ),
             ),

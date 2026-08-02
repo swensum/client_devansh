@@ -46,14 +46,15 @@ class _HomePageState extends State<HomePage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-     
       body: Stack(
         children: [
           SingleChildScrollView(
             controller: _scrollController,
             child: Column(
               children: [
-                SizedBox(height: Header.height + TopBar.height), // reserve space
+                SizedBox(
+                  height: Header.height + TopBar.height,
+                ), // reserve space
                 const HeroCarousel(),
                 const _Divider(),
                 const StatsSection(),

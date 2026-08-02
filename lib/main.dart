@@ -13,37 +13,40 @@ import 'package:flutter_web_plugins/flutter_web_plugins.dart';
 import 'package:go_router/go_router.dart';
 
 Future<void> main() async {
-  runZonedGuarded(() async {
-    WidgetsFlutterBinding.ensureInitialized();
+  runZonedGuarded(
+    () async {
+      WidgetsFlutterBinding.ensureInitialized();
 
-    GoRouter.optionURLReflectsImperativeAPIs = true;
-    usePathUrlStrategy();
+      GoRouter.optionURLReflectsImperativeAPIs = true;
+      usePathUrlStrategy();
 
-    await dotenv.load(fileName: ".env");
+      await dotenv.load(fileName: ".env");
 
-    SystemChrome.setSystemUIOverlayStyle(
-      const SystemUiOverlayStyle(
-        statusBarColor: Color(0xFF0A1929),
-        statusBarIconBrightness: Brightness.light,
-      ),
-    );
+      SystemChrome.setSystemUIOverlayStyle(
+        const SystemUiOverlayStyle(
+          statusBarColor: Color(0xFF0A1929),
+          statusBarIconBrightness: Brightness.light,
+        ),
+      );
 
-    await Firebase.initializeApp(
-      options: DefaultFirebaseOptions.currentPlatform,
-    );
+      await Firebase.initializeApp(
+        options: DefaultFirebaseOptions.currentPlatform,
+      );
 
-    FirebaseFirestore.instance.settings = const Settings(
-      persistenceEnabled: true,
-      webExperimentalForceLongPolling: true,
-    );
+      FirebaseFirestore.instance.settings = const Settings(
+        persistenceEnabled: true,
+        webExperimentalForceLongPolling: true,
+      );
 
-    runApp(const MyApp());
-  }, (error, stack) {
-    if (kDebugMode) {
-      debugPrint('CAUGHT ERROR: $error');
-      debugPrint('STACK: $stack');
-    }
-  });
+      runApp(const MyApp());
+    },
+    (error, stack) {
+      if (kDebugMode) {
+        debugPrint('CAUGHT ERROR: $error');
+        debugPrint('STACK: $stack');
+      }
+    },
+  );
 }
 
 class MyApp extends StatelessWidget {

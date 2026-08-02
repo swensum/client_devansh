@@ -5,8 +5,18 @@ import 'package:go_router/go_router.dart';
 const Color kBlogAccent = Color.fromRGBO(245, 171, 30, 1);
 
 const List<String> _kMonths = [
-  'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
-  'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec',
+  'Jan',
+  'Feb',
+  'Mar',
+  'Apr',
+  'May',
+  'Jun',
+  'Jul',
+  'Aug',
+  'Sep',
+  'Oct',
+  'Nov',
+  'Dec',
 ];
 
 String formatBlogDate(DateTime? date) {
@@ -89,8 +99,9 @@ class _BlogPostCardState extends State<BlogPostCard> {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               ClipRRect(
-                borderRadius:
-                    const BorderRadius.vertical(top: Radius.circular(10)),
+                borderRadius: const BorderRadius.vertical(
+                  top: Radius.circular(10),
+                ),
                 child: AspectRatio(
                   aspectRatio: 15 / 10,
                   child: Stack(

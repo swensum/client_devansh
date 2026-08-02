@@ -7,10 +7,13 @@ class CatalogService {
 
   // ---- Categories ----
   Stream<List<Category>> watchCategories() {
-    return _db.collection('categories').orderBy('name').snapshots().map(
-          (snap) => snap.docs
-              .map((d) => Category.fromMap(d.id, d.data()))
-              .toList(),
+    return _db
+        .collection('categories')
+        .orderBy('name')
+        .snapshots()
+        .map(
+          (snap) =>
+              snap.docs.map((d) => Category.fromMap(d.id, d.data())).toList(),
         );
   }
 
@@ -22,7 +25,11 @@ class CatalogService {
 
   // ---- Companies ----
   Stream<List<Company>> watchCompanies() {
-    return _db.collection('companies').orderBy('name').snapshots().map(
+    return _db
+        .collection('companies')
+        .orderBy('name')
+        .snapshots()
+        .map(
           (snap) =>
               snap.docs.map((d) => Company.fromMap(d.id, d.data())).toList(),
         );
@@ -36,7 +43,11 @@ class CatalogService {
 
   // ---- Materials ----
   Stream<List<MaterialType>> watchMaterials() {
-    return _db.collection('materials').orderBy('name').snapshots().map(
+    return _db
+        .collection('materials')
+        .orderBy('name')
+        .snapshots()
+        .map(
           (snap) => snap.docs
               .map((d) => MaterialType.fromMap(d.id, d.data()))
               .toList(),
@@ -51,7 +62,11 @@ class CatalogService {
 
   // ---- Product Types ----
   Stream<List<ProductType>> watchProductTypes() {
-    return _db.collection('productTypes').orderBy('name').snapshots().map(
+    return _db
+        .collection('productTypes')
+        .orderBy('name')
+        .snapshots()
+        .map(
           (snap) => snap.docs
               .map((d) => ProductType.fromMap(d.id, d.data()))
               .toList(),
@@ -83,8 +98,10 @@ class CatalogService {
         .collection('products')
         .where('categoryId', isEqualTo: categoryId)
         .snapshots()
-        .map((snap) =>
-            snap.docs.map((d) => Product.fromMap(d.id, d.data())).toList());
+        .map(
+          (snap) =>
+              snap.docs.map((d) => Product.fromMap(d.id, d.data())).toList(),
+        );
   }
 
   /// Products flagged as top products (isTopProduct == true).

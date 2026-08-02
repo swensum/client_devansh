@@ -104,7 +104,7 @@ class _TopProductsSectionState extends State<TopProductsSection> {
                   horizontal: r.sectionHPadding,
                   vertical: r.sectionVPadding,
                 ),
-                 color: const Color(0xFF0F0F0F),
+                color: const Color(0xFF0F0F0F),
                 child: Center(
                   child: SizedBox(
                     width: double.infinity,
@@ -558,6 +558,7 @@ class _PremiumProductCardState extends State<_PremiumProductCard>
     _hoverController.dispose();
     super.dispose();
   }
+
   void _setHovered(bool value) {
     value ? _hoverController.forward() : _hoverController.reverse();
   }
@@ -576,7 +577,6 @@ class _PremiumProductCardState extends State<_PremiumProductCard>
         if (progress == null) {
           if (!_hasLoggedLoad) {
             _hasLoggedLoad = true;
-          
           }
           return child;
         }
@@ -588,14 +588,19 @@ class _PremiumProductCardState extends State<_PremiumProductCard>
               strokeWidth: 2,
               color: Colors.grey.shade400,
               value: progress.expectedTotalBytes != null
-                  ? progress.cumulativeBytesLoaded / (progress.expectedTotalBytes ?? 1)
+                  ? progress.cumulativeBytesLoaded /
+                        (progress.expectedTotalBytes ?? 1)
                   : null,
             ),
           ),
         );
       },
       errorBuilder: (context, error, stackTrace) => Center(
-        child: Icon(Icons.image_not_supported_outlined, color: Colors.grey.shade400, size: 40),
+        child: Icon(
+          Icons.image_not_supported_outlined,
+          color: Colors.grey.shade400,
+          size: 40,
+        ),
       ),
     );
 
@@ -610,7 +615,7 @@ class _PremiumProductCardState extends State<_PremiumProductCard>
             animation: _hoverController,
             child: staticImage,
             builder: (context, image) {
-              final t = _hoverController.value; 
+              final t = _hoverController.value;
               return Transform.scale(
                 scale: 1.0 + (0.03 * t),
                 child: Container(
@@ -627,7 +632,9 @@ class _PremiumProductCardState extends State<_PremiumProductCard>
                     ),
                     boxShadow: [
                       BoxShadow(
-                        color: Colors.black.withValues(alpha: 0.06 + (0.09 * t)),
+                        color: Colors.black.withValues(
+                          alpha: 0.06 + (0.09 * t),
+                        ),
                         blurRadius: 8 + (12 * t),
                         offset: Offset(0, 4 + (4 * t)),
                         spreadRadius: 2 * t,
@@ -658,7 +665,10 @@ class _PremiumProductCardState extends State<_PremiumProductCard>
                                       gradient: LinearGradient(
                                         begin: Alignment.topCenter,
                                         end: Alignment.bottomCenter,
-                                        colors: [Colors.transparent, Colors.black.withValues(alpha: 0.7)],
+                                        colors: [
+                                          Colors.transparent,
+                                          Colors.black.withValues(alpha: 0.7),
+                                        ],
                                       ),
                                     ),
                                   ),
@@ -668,16 +678,27 @@ class _PremiumProductCardState extends State<_PremiumProductCard>
                                   right: 10,
                                   child: Opacity(
                                     opacity: t,
-                                    child: _buildQuickActionButton(Icons.favorite_border, Colors.white),
+                                    child: _buildQuickActionButton(
+                                      Icons.favorite_border,
+                                      Colors.white,
+                                    ),
                                   ),
                                 ),
                                 Positioned(
                                   top: 10,
                                   left: 10,
                                   child: Container(
-                                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                                    padding: const EdgeInsets.symmetric(
+                                      horizontal: 10,
+                                      vertical: 4,
+                                    ),
                                     decoration: BoxDecoration(
-                                      color: const Color.fromRGBO(245, 171, 30, 1),
+                                      color: const Color.fromRGBO(
+                                        245,
+                                        171,
+                                        30,
+                                        1,
+                                      ),
                                       borderRadius: BorderRadius.circular(20),
                                     ),
                                     child: const Text(
@@ -696,7 +717,7 @@ class _PremiumProductCardState extends State<_PremiumProductCard>
                           ),
                         ),
                       ),
-                     Container(
+                      Container(
                         height: r.cardContentHeight,
                         padding: const EdgeInsets.all(14),
                         child: Row(
@@ -726,12 +747,23 @@ class _PremiumProductCardState extends State<_PremiumProductCard>
                                           Icons.star,
                                           size: 13,
                                           color: index < 4
-                                              ? const Color.fromRGBO(245, 171, 30, 1)
+                                              ? const Color.fromRGBO(
+                                                  245,
+                                                  171,
+                                                  30,
+                                                  1,
+                                                )
                                               : Colors.grey.shade300,
                                         ),
                                       ),
                                       const SizedBox(width: 4),
-                                      Text("(124)", style: TextStyle(fontSize: 11, color: Colors.grey.shade500)),
+                                      Text(
+                                        "(124)",
+                                        style: TextStyle(
+                                          fontSize: 11,
+                                          color: Colors.grey.shade500,
+                                        ),
+                                      ),
                                     ],
                                   ),
                                 ],
@@ -743,20 +775,35 @@ class _PremiumProductCardState extends State<_PremiumProductCard>
                               child: GestureDetector(
                                 onTap: () async {
                                   final catalogService = CatalogService();
-                                  final allProducts = await catalogService.watchProducts().first;
+                                  final allProducts = await catalogService
+                                      .watchProducts()
+                                      .first;
                                   final related = allProducts
-                                      .where((p) =>
-                                          p.categoryId == product.categoryId && p.id != product.id)
+                                      .where(
+                                        (p) =>
+                                            p.categoryId ==
+                                                product.categoryId &&
+                                            p.id != product.id,
+                                      )
                                       .toList();
 
                                   if (context.mounted) {
-                                    handleOrderTap(context, product, relatedProducts: related);
+                                    handleOrderTap(
+                                      context,
+                                      product,
+                                      relatedProducts: related,
+                                    );
                                   }
                                 },
                                 child: _buildQuickActionButton(
                                   Icons.shopping_bag_outlined,
                                   Colors.black,
-                                  backgroundColor: const Color.fromRGBO(245, 171, 30, 1),
+                                  backgroundColor: const Color.fromRGBO(
+                                    245,
+                                    171,
+                                    30,
+                                    1,
+                                  ),
                                   borderColor: Colors.transparent,
                                 ),
                               ),
@@ -786,13 +833,15 @@ class _PremiumProductCardState extends State<_PremiumProductCard>
       decoration: BoxDecoration(
         color: backgroundColor ?? Colors.black.withValues(alpha: 0.7),
         shape: BoxShape.circle,
-        border: Border.all(color: borderColor ?? Colors.white.withValues(alpha: 0.2), width: 1),
+        border: Border.all(
+          color: borderColor ?? Colors.white.withValues(alpha: 0.2),
+          width: 1,
+        ),
       ),
       child: Icon(icon, size: 16, color: color),
     );
   }
 }
-
 
 class _ViewAllProductsButton extends StatefulWidget {
   const _ViewAllProductsButton();

@@ -46,7 +46,6 @@ class StatsSection extends StatelessWidget {
       padding: const EdgeInsets.symmetric(horizontal: 40, vertical: 50),
       child: LayoutBuilder(
         builder: (context, constraints) {
-          
           final isNarrow = constraints.maxWidth < 700;
 
           return Wrap(
@@ -78,21 +77,17 @@ class _StatTile extends StatelessWidget {
     return Column(
       mainAxisSize: MainAxisSize.min,
       children: [
-        Icon(
-          stat.icon,
-          size: 34,
-          color: const Color.fromRGBO(245, 171, 30, 1),
-        ),
+        Icon(stat.icon, size: 34, color: const Color.fromRGBO(245, 171, 30, 1)),
         const SizedBox(height: 12),
-       Text(
-  stat.value,
-  style: const TextStyle(
-    fontFamily: 'BrandonGrotesque',
-    fontSize: 30,
-    fontWeight: FontWeight.w900,
-    color: Colors.white,
-  ),
-),
+        Text(
+          stat.value,
+          style: const TextStyle(
+            fontFamily: 'BrandonGrotesque',
+            fontSize: 30,
+            fontWeight: FontWeight.w900,
+            color: Colors.white,
+          ),
+        ),
         const SizedBox(height: 6),
         Text(
           stat.label,

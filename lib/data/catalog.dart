@@ -1,7 +1,5 @@
 import 'package:devansh/models/catalogmodels.dart';
 
-
-
 class Catalog {
   /// Products in a given category.
   static List<Product> byCategory(List<Product> products, String categoryId) =>
@@ -98,8 +96,10 @@ class Catalog {
     List<MaterialType> allMaterials,
     String categoryId,
   ) {
-    final materialIds =
-        byCategory(products, categoryId).map((p) => p.materialId).toSet();
+    final materialIds = byCategory(
+      products,
+      categoryId,
+    ).map((p) => p.materialId).toSet();
     return allMaterials.where((m) => materialIds.contains(m.id)).toList();
   }
 }

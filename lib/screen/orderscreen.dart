@@ -86,7 +86,9 @@ class _OrdersPageState extends State<OrdersPage> {
 
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
-        content: const Text('Your order has been submitted. We\'ll contact you to confirm.'),
+        content: const Text(
+          'Your order has been submitted. We\'ll contact you to confirm.',
+        ),
         backgroundColor: _kSurfaceRaised,
         behavior: SnackBarBehavior.floating,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
@@ -112,7 +114,8 @@ class _OrdersPageState extends State<OrdersPage> {
             return ValueListenableBuilder<AppUser?>(
               valueListenable: AuthService.instance.currentUser,
               builder: (context, user, _) {
-                final canSubmit = user != null &&
+                final canSubmit =
+                    user != null &&
                     items.isNotEmpty &&
                     _termsAccepted &&
                     _shopNameController.text.trim().isNotEmpty &&
@@ -128,33 +131,40 @@ class _OrdersPageState extends State<OrdersPage> {
                     return SingleChildScrollView(
                       child: Center(
                         child: ConstrainedBox(
-                          constraints: const BoxConstraints(maxWidth: _kMaxContentWidth),
+                          constraints: const BoxConstraints(
+                            maxWidth: _kMaxContentWidth,
+                          ),
                           child: Padding(
-                            padding: EdgeInsets.symmetric(horizontal: r.pageHPadding, vertical: r.pageVPadding),
+                            padding: EdgeInsets.symmetric(
+                              horizontal: r.pageHPadding,
+                              vertical: r.pageVPadding,
+                            ),
                             child: Column(
                               crossAxisAlignment: CrossAxisAlignment.stretch,
                               children: [
-                               _TopBar(
-  onBack: () => context.pop(),
-  r: r,
-),
+                                _TopBar(onBack: () => context.pop(), r: r),
                                 SizedBox(height: r.sectionGap),
                                 r.stacked
                                     ? Column(
-                                        crossAxisAlignment: CrossAxisAlignment.stretch,
+                                        crossAxisAlignment:
+                                            CrossAxisAlignment.stretch,
                                         children: [
                                           _DetailsPane(
                                             r: r,
                                             signedIn: user != null,
-                                            shopNameController: _shopNameController,
-                                            ownerNameController: _ownerNameController,
+                                            shopNameController:
+                                                _shopNameController,
+                                            ownerNameController:
+                                                _ownerNameController,
                                             phoneController: _phoneController,
                                             emailController: _emailController,
-                                            addressController: _addressController,
+                                            addressController:
+                                                _addressController,
                                             cityController: _cityController,
                                             taxIdController: _taxIdController,
                                             noteController: _noteController,
-                                            onSignIn: () => _goToSignIn(context),
+                                            onSignIn: () =>
+                                                _goToSignIn(context),
                                             onChanged: () => setState(() {}),
                                           ),
                                           SizedBox(height: r.sectionGap),
@@ -167,22 +177,27 @@ class _OrdersPageState extends State<OrdersPage> {
                                         ],
                                       )
                                     : Row(
-                                        crossAxisAlignment: CrossAxisAlignment.start,
+                                        crossAxisAlignment:
+                                            CrossAxisAlignment.start,
                                         children: [
                                           Expanded(
                                             flex: 5,
                                             child: _DetailsPane(
                                               r: r,
                                               signedIn: user != null,
-                                              shopNameController: _shopNameController,
-                                              ownerNameController: _ownerNameController,
+                                              shopNameController:
+                                                  _shopNameController,
+                                              ownerNameController:
+                                                  _ownerNameController,
                                               phoneController: _phoneController,
                                               emailController: _emailController,
-                                              addressController: _addressController,
+                                              addressController:
+                                                  _addressController,
                                               cityController: _cityController,
                                               taxIdController: _taxIdController,
                                               noteController: _noteController,
-                                              onSignIn: () => _goToSignIn(context),
+                                              onSignIn: () =>
+                                                  _goToSignIn(context),
                                               onChanged: () => setState(() {}),
                                             ),
                                           ),
@@ -202,7 +217,8 @@ class _OrdersPageState extends State<OrdersPage> {
                                 _TermsAndSubmit(
                                   r: r,
                                   termsAccepted: _termsAccepted,
-                                  onTermsChanged: (v) => setState(() => _termsAccepted = v),
+                                  onTermsChanged: (v) =>
+                                      setState(() => _termsAccepted = v),
                                   canSubmit: canSubmit,
                                   submitting: _submitting,
                                   user: user,
@@ -342,7 +358,10 @@ class _TopBar extends StatelessWidget {
           padding: const EdgeInsets.only(left: 58),
           child: Text(
             'Fill in your shop details and review your order before submitting.',
-            style: TextStyle(color: Colors.white.withValues(alpha: 0.5), fontSize: r.bodySize),
+            style: TextStyle(
+              color: Colors.white.withValues(alpha: 0.5),
+              fontSize: r.bodySize,
+            ),
           ),
         ),
       ],
@@ -377,9 +396,17 @@ class _RoundIconButtonState extends State<_RoundIconButton> {
           decoration: BoxDecoration(
             color: _isHovered ? _kSurfaceRaised : _kSurface,
             shape: BoxShape.circle,
-            border: Border.all(color: _isHovered ? _kAmber.withValues(alpha: 0.5) : _kBorderSubtle),
+            border: Border.all(
+              color: _isHovered
+                  ? _kAmber.withValues(alpha: 0.5)
+                  : _kBorderSubtle,
+            ),
           ),
-          child: Icon(widget.icon, color: _isHovered ? _kAmber : Colors.white70, size: 20),
+          child: Icon(
+            widget.icon,
+            color: _isHovered ? _kAmber : Colors.white70,
+            size: 20,
+          ),
         ),
       ),
     );
@@ -425,13 +452,21 @@ class _DetailsPane extends StatelessWidget {
         borderRadius: BorderRadius.circular(16),
         border: Border.all(color: _kBorderSubtle),
         boxShadow: [
-          BoxShadow(color: Colors.black.withValues(alpha: 0.4), blurRadius: 24, offset: const Offset(0, 10)),
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.4),
+            blurRadius: 24,
+            offset: const Offset(0, 10),
+          ),
         ],
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          _PaneHeading(icon: Icons.storefront_outlined, label: 'Business & Delivery Details', r: r),
+          _PaneHeading(
+            icon: Icons.storefront_outlined,
+            label: 'Business & Delivery Details',
+            r: r,
+          ),
           SizedBox(height: r.sectionGap * 0.8),
           if (!signedIn)
             _SignInGate(onSignIn: onSignIn, r: r)
@@ -447,7 +482,12 @@ class _DetailsPane extends StatelessWidget {
               stacked: r.stacked,
               r: r,
               children: [
-                _FormField(label: 'Owner / Contact Name', controller: ownerNameController, r: r, onChanged: onChanged),
+                _FormField(
+                  label: 'Owner / Contact Name',
+                  controller: ownerNameController,
+                  r: r,
+                  onChanged: onChanged,
+                ),
                 _FormField(
                   label: 'Phone Number',
                   controller: phoneController,
@@ -466,18 +506,40 @@ class _DetailsPane extends StatelessWidget {
               onChanged: onChanged,
             ),
             SizedBox(height: r.sectionGap * 0.6),
-            _FormField(label: 'Shop / Delivery Address', controller: addressController, maxLines: 2, r: r, onChanged: onChanged),
+            _FormField(
+              label: 'Shop / Delivery Address',
+              controller: addressController,
+              maxLines: 2,
+              r: r,
+              onChanged: onChanged,
+            ),
             SizedBox(height: r.sectionGap * 0.6),
             _ResponsiveFieldRow(
               stacked: r.stacked,
               r: r,
               children: [
-                _FormField(label: 'City / Area', controller: cityController, r: r, onChanged: onChanged),
-                _FormField(label: 'VAT / PAN Number (optional)', controller: taxIdController, r: r, onChanged: onChanged),
+                _FormField(
+                  label: 'City / Area',
+                  controller: cityController,
+                  r: r,
+                  onChanged: onChanged,
+                ),
+                _FormField(
+                  label: 'VAT / PAN Number (optional)',
+                  controller: taxIdController,
+                  r: r,
+                  onChanged: onChanged,
+                ),
               ],
             ),
             SizedBox(height: r.sectionGap * 0.6),
-            _FormField(label: 'Order Note (optional)', controller: noteController, maxLines: 2, r: r, onChanged: onChanged),
+            _FormField(
+              label: 'Order Note (optional)',
+              controller: noteController,
+              maxLines: 2,
+              r: r,
+              onChanged: onChanged,
+            ),
           ],
         ],
       ),
@@ -491,7 +553,11 @@ class _ResponsiveFieldRow extends StatelessWidget {
   final bool stacked;
   final _OrdersResponsive r;
   final List<Widget> children;
-  const _ResponsiveFieldRow({required this.stacked, required this.r, required this.children});
+  const _ResponsiveFieldRow({
+    required this.stacked,
+    required this.r,
+    required this.children,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -519,17 +585,29 @@ class _PaneHeading extends StatelessWidget {
   final IconData icon;
   final String label;
   final _OrdersResponsive r;
-  const _PaneHeading({required this.icon, required this.label, required this.r});
+  const _PaneHeading({
+    required this.icon,
+    required this.label,
+    required this.r,
+  });
 
   @override
   Widget build(BuildContext context) {
     return Row(
       children: [
-        Icon(icon, color: _kAmber.withValues(alpha: 0.9), size: r.sectionHeadingSize + 3),
+        Icon(
+          icon,
+          color: _kAmber.withValues(alpha: 0.9),
+          size: r.sectionHeadingSize + 3,
+        ),
         const SizedBox(width: 10),
         Text(
           label,
-          style: TextStyle(color: Colors.white, fontSize: r.sectionHeadingSize, fontWeight: FontWeight.w700),
+          style: TextStyle(
+            color: Colors.white,
+            fontSize: r.sectionHeadingSize,
+            fontWeight: FontWeight.w700,
+          ),
         ),
       ],
     );
@@ -545,7 +623,10 @@ class _SignInGate extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       width: double.infinity,
-      padding: EdgeInsets.symmetric(vertical: r.cardPadding * 1.6, horizontal: r.cardPadding),
+      padding: EdgeInsets.symmetric(
+        vertical: r.cardPadding * 1.6,
+        horizontal: r.cardPadding,
+      ),
       decoration: BoxDecoration(
         color: Colors.white.withValues(alpha: 0.02),
         borderRadius: BorderRadius.circular(12),
@@ -555,14 +636,25 @@ class _SignInGate extends StatelessWidget {
         children: [
           Container(
             padding: const EdgeInsets.all(16),
-            decoration: BoxDecoration(color: _kAmber.withValues(alpha: 0.08), shape: BoxShape.circle),
-            child: Icon(Icons.lock_outline, color: _kAmber.withValues(alpha: 0.8), size: 28),
+            decoration: BoxDecoration(
+              color: _kAmber.withValues(alpha: 0.08),
+              shape: BoxShape.circle,
+            ),
+            child: Icon(
+              Icons.lock_outline,
+              color: _kAmber.withValues(alpha: 0.8),
+              size: 28,
+            ),
           ),
           const SizedBox(height: 18),
           Text(
             'Sign in to enter your shop and delivery details',
             textAlign: TextAlign.center,
-            style: TextStyle(color: Colors.white.withValues(alpha: 0.7), fontSize: r.bodySize, height: 1.4),
+            style: TextStyle(
+              color: Colors.white.withValues(alpha: 0.7),
+              fontSize: r.bodySize,
+              height: 1.4,
+            ),
           ),
           const SizedBox(height: 22),
           SizedBox(
@@ -574,9 +666,14 @@ class _SignInGate extends StatelessWidget {
                 foregroundColor: Colors.black,
                 padding: const EdgeInsets.symmetric(vertical: 14),
                 elevation: 0,
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(9)),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(9),
+                ),
               ),
-              child: const Text('Sign In', style: TextStyle(fontWeight: FontWeight.w700)),
+              child: const Text(
+                'Sign In',
+                style: TextStyle(fontWeight: FontWeight.w700),
+              ),
             ),
           ),
         ],
@@ -609,7 +706,11 @@ class _FormField extends StatelessWidget {
       children: [
         Text(
           label,
-          style: TextStyle(color: Colors.white.withValues(alpha: 0.55), fontSize: r.labelSize, fontWeight: FontWeight.w600),
+          style: TextStyle(
+            color: Colors.white.withValues(alpha: 0.55),
+            fontSize: r.labelSize,
+            fontWeight: FontWeight.w600,
+          ),
         ),
         const SizedBox(height: 7),
         TextField(
@@ -622,14 +723,21 @@ class _FormField extends StatelessWidget {
           decoration: InputDecoration(
             filled: true,
             fillColor: Colors.white.withValues(alpha: 0.04),
-            contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 13),
+            contentPadding: const EdgeInsets.symmetric(
+              horizontal: 14,
+              vertical: 13,
+            ),
             border: OutlineInputBorder(
               borderRadius: BorderRadius.circular(9),
-              borderSide: BorderSide(color: Colors.white.withValues(alpha: 0.08)),
+              borderSide: BorderSide(
+                color: Colors.white.withValues(alpha: 0.08),
+              ),
             ),
             enabledBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(9),
-              borderSide: BorderSide(color: Colors.white.withValues(alpha: 0.08)),
+              borderSide: BorderSide(
+                color: Colors.white.withValues(alpha: 0.08),
+              ),
             ),
             focusedBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(9),
@@ -688,7 +796,11 @@ class _OrdersSummaryPane extends StatelessWidget {
               child: Text(
                 'No items yet — browse products and tap "Place Order" to add one here.',
                 textAlign: TextAlign.center,
-                style: TextStyle(color: Colors.white.withValues(alpha: 0.45), fontSize: r.bodySize, height: 1.5),
+                style: TextStyle(
+                  color: Colors.white.withValues(alpha: 0.45),
+                  fontSize: r.bodySize,
+                  height: 1.5,
+                ),
               ),
             )
           else ...[
@@ -696,12 +808,16 @@ class _OrdersSummaryPane extends StatelessWidget {
               shrinkWrap: true,
               physics: const NeverScrollableScrollPhysics(),
               itemCount: items.length,
-              separatorBuilder: (_, _) => Divider(color: Colors.white.withValues(alpha: 0.06), height: r.sectionGap * 0.75),
+              separatorBuilder: (_, _) => Divider(
+                color: Colors.white.withValues(alpha: 0.06),
+                height: r.sectionGap * 0.75,
+              ),
               itemBuilder: (context, index) => _OrderRow(
                 index: index,
                 item: items[index],
                 r: r,
-                categoryName: categoryNames[items[index].product.categoryId] ??
+                categoryName:
+                    categoryNames[items[index].product.categoryId] ??
                     items[index].product.categoryId,
               ),
             ),
@@ -713,11 +829,18 @@ class _OrdersSummaryPane extends StatelessWidget {
               children: [
                 Text(
                   'Total quantity',
-                  style: TextStyle(color: Colors.white.withValues(alpha: 0.45), fontSize: r.labelSize),
+                  style: TextStyle(
+                    color: Colors.white.withValues(alpha: 0.45),
+                    fontSize: r.labelSize,
+                  ),
                 ),
                 Text(
                   '$totalUnits ${totalUnits == 1 ? 'unit' : 'units'}',
-                  style: TextStyle(color: Colors.white.withValues(alpha: 0.85), fontSize: r.bodySize, fontWeight: FontWeight.w600),
+                  style: TextStyle(
+                    color: Colors.white.withValues(alpha: 0.85),
+                    fontSize: r.bodySize,
+                    fontWeight: FontWeight.w600,
+                  ),
                 ),
               ],
             ),
@@ -733,7 +856,12 @@ class _OrderRow extends StatelessWidget {
   final PendingOrderItem item;
   final _OrdersResponsive r;
   final String categoryName;
-  const _OrderRow({required this.index, required this.item, required this.r, required this.categoryName});
+  const _OrderRow({
+    required this.index,
+    required this.item,
+    required this.r,
+    required this.categoryName,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -754,10 +882,17 @@ class _OrderRow extends StatelessWidget {
                     product.imageUrl,
                     fit: BoxFit.cover,
                     cacheWidth: (thumbSize * 2).round(),
-                    errorBuilder: (context, error, stackTrace) =>
-                        const Icon(Icons.image_not_supported_outlined, color: Colors.white38, size: 20),
+                    errorBuilder: (context, error, stackTrace) => const Icon(
+                      Icons.image_not_supported_outlined,
+                      color: Colors.white38,
+                      size: 20,
+                    ),
                   )
-                : const Icon(Icons.image_not_supported_outlined, color: Colors.white38, size: 20),
+                : const Icon(
+                    Icons.image_not_supported_outlined,
+                    color: Colors.white38,
+                    size: 20,
+                  ),
           ),
         ),
         const SizedBox(width: 16),
@@ -769,12 +904,19 @@ class _OrderRow extends StatelessWidget {
                 product.name,
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
-                style: TextStyle(color: Colors.white, fontSize: r.bodySize + 0.5, fontWeight: FontWeight.w600),
+                style: TextStyle(
+                  color: Colors.white,
+                  fontSize: r.bodySize + 0.5,
+                  fontWeight: FontWeight.w600,
+                ),
               ),
               const SizedBox(height: 4),
               Text(
                 categoryName,
-                style: TextStyle(color: Colors.white.withValues(alpha: 0.45), fontSize: r.labelSize),
+                style: TextStyle(
+                  color: Colors.white.withValues(alpha: 0.45),
+                  fontSize: r.labelSize,
+                ),
               ),
             ],
           ),
@@ -788,7 +930,11 @@ class _OrderRow extends StatelessWidget {
           ),
           child: Text(
             'x${item.quantity}',
-            style: TextStyle(color: Colors.white.withValues(alpha: 0.75), fontSize: r.labelSize, fontWeight: FontWeight.w600),
+            style: TextStyle(
+              color: Colors.white.withValues(alpha: 0.75),
+              fontSize: r.labelSize,
+              fontWeight: FontWeight.w600,
+            ),
           ),
         ),
         const SizedBox(width: 10),
@@ -820,7 +966,9 @@ class _RemoveButtonState extends State<_RemoveButton> {
         child: Icon(
           Icons.close,
           size: 18,
-          color: _isHovered ? Colors.redAccent : Colors.white.withValues(alpha: 0.3),
+          color: _isHovered
+              ? Colors.redAccent
+              : Colors.white.withValues(alpha: 0.3),
         ),
       ),
     );
@@ -868,7 +1016,9 @@ class _TermsAndSubmit extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           InkWell(
-            onTap: (user == null || itemsEmpty) ? null : () => onTermsChanged(!termsAccepted),
+            onTap: (user == null || itemsEmpty)
+                ? null
+                : () => onTermsChanged(!termsAccepted),
             borderRadius: BorderRadius.circular(8),
             child: Row(
               children: [
@@ -877,17 +1027,24 @@ class _TermsAndSubmit extends StatelessWidget {
                   height: 22,
                   child: Checkbox(
                     value: termsAccepted,
-                    onChanged: (user == null || itemsEmpty) ? null : (v) => onTermsChanged(v ?? false),
+                    onChanged: (user == null || itemsEmpty)
+                        ? null
+                        : (v) => onTermsChanged(v ?? false),
                     activeColor: _kAmber,
                     checkColor: Colors.black,
-                    side: BorderSide(color: Colors.white.withValues(alpha: 0.3)),
+                    side: BorderSide(
+                      color: Colors.white.withValues(alpha: 0.3),
+                    ),
                   ),
                 ),
                 const SizedBox(width: 12),
                 Expanded(
                   child: Text(
                     'I confirm the shop and delivery details above are correct.',
-                    style: TextStyle(color: Colors.white.withValues(alpha: 0.7), fontSize: r.bodySize),
+                    style: TextStyle(
+                      color: Colors.white.withValues(alpha: 0.7),
+                      fontSize: r.bodySize,
+                    ),
                   ),
                 ),
               ],
@@ -905,15 +1062,26 @@ class _TermsAndSubmit extends StatelessWidget {
                 disabledForegroundColor: Colors.black.withValues(alpha: 0.6),
                 padding: EdgeInsets.symmetric(vertical: r.cardPadding * 0.55),
                 elevation: 0,
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(10),
+                ),
               ),
               child: submitting
                   ? const SizedBox(
                       width: 20,
                       height: 20,
-                      child: CircularProgressIndicator(strokeWidth: 2.4, color: Colors.black),
+                      child: CircularProgressIndicator(
+                        strokeWidth: 2.4,
+                        color: Colors.black,
+                      ),
                     )
-                  : Text(_buttonLabel, style: TextStyle(fontWeight: FontWeight.w700, fontSize: r.bodySize + 1)),
+                  : Text(
+                      _buttonLabel,
+                      style: TextStyle(
+                        fontWeight: FontWeight.w700,
+                        fontSize: r.bodySize + 1,
+                      ),
+                    ),
             ),
           ),
         ],

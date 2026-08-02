@@ -21,6 +21,7 @@ class Category {
     );
   }
 }
+
 class Company {
   final String id;
   final String name;

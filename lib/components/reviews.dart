@@ -25,7 +25,10 @@ class _ReviewsSectionState extends State<ReviewsSection> {
   @override
   void initState() {
     super.initState();
-    _pageController = PageController(initialPage: _initialPage, viewportFraction: 1);
+    _pageController = PageController(
+      initialPage: _initialPage,
+      viewportFraction: 1,
+    );
 
     _reviewsSub = _reviewService.watchReviews().listen(
       (data) {
@@ -384,6 +387,7 @@ Widget userAvatar({
     ),
   );
 }
+
 String getInitials(String name) {
   final trimmed = name.trim();
   if (trimmed.isEmpty) return '?';
@@ -392,8 +396,10 @@ String getInitials(String name) {
   if (parts.length == 1) {
     return parts.first.substring(0, 1).toUpperCase();
   }
-  return (parts.first.substring(0, 1) + parts.last.substring(0, 1)).toUpperCase();
+  return (parts.first.substring(0, 1) + parts.last.substring(0, 1))
+      .toUpperCase();
 }
+
 class _ReviewCard extends StatefulWidget {
   final Review review;
   final _ReviewsResponsive r;
@@ -469,7 +475,11 @@ class _ReviewCardState extends State<_ReviewCard> {
             const SizedBox(height: 14),
             Row(
               children: [
-                userAvatar(photoUrl: widget.review.photoUrl, name: widget.review.name, radius: 18),
+                userAvatar(
+                  photoUrl: widget.review.photoUrl,
+                  name: widget.review.name,
+                  radius: 18,
+                ),
                 const SizedBox(width: 10),
                 Expanded(
                   child: Column(

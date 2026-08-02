@@ -1,4 +1,3 @@
-
 import 'package:devansh/models/catalogmodels.dart';
 import 'package:devansh/services/catalogservice.dart';
 import 'package:flutter/material.dart';
@@ -213,7 +212,7 @@ class _CompanyLogoBoxState extends State<_CompanyLogoBox> {
 
   @override
   Widget build(BuildContext context) {
-    final logoAsset = widget.company.imageUrl; 
+    final logoAsset = widget.company.imageUrl;
     final isNetworkImage = logoAsset != null && logoAsset.startsWith('http');
 
     return MouseRegion(
@@ -243,8 +242,9 @@ class _CompanyLogoBoxState extends State<_CompanyLogoBox> {
               ),
               boxShadow: [
                 BoxShadow(
-                  color:
-                      Colors.black.withValues(alpha: _isHovered ? 0.25 : 0.12),
+                  color: Colors.black.withValues(
+                    alpha: _isHovered ? 0.25 : 0.12,
+                  ),
                   blurRadius: _isHovered ? 16 : 8,
                   offset: const Offset(0, 4),
                 ),
@@ -262,33 +262,33 @@ class _CompanyLogoBoxState extends State<_CompanyLogoBox> {
                       ),
                     )
                   : isNetworkImage
-                      ? Image.network(
-                          logoAsset,
-                          fit: BoxFit.contain,
-                          cacheWidth: 280,
-                          errorBuilder: (context, error, stackTrace) => Text(
-                            widget.company.name,
-                            textAlign: TextAlign.center,
-                            style: const TextStyle(
-                              fontSize: 14,
-                              fontWeight: FontWeight.w600,
-                              color: Colors.black87,
-                            ),
-                          ),
-                        )
-                      : Image.asset(
-                          logoAsset,
-                          fit: BoxFit.contain,
-                          errorBuilder: (context, error, stackTrace) => Text(
-                            widget.company.name,
-                            textAlign: TextAlign.center,
-                            style: const TextStyle(
-                              fontSize: 14,
-                              fontWeight: FontWeight.w600,
-                              color: Colors.black87,
-                            ),
-                          ),
+                  ? Image.network(
+                      logoAsset,
+                      fit: BoxFit.contain,
+                      cacheWidth: 280,
+                      errorBuilder: (context, error, stackTrace) => Text(
+                        widget.company.name,
+                        textAlign: TextAlign.center,
+                        style: const TextStyle(
+                          fontSize: 14,
+                          fontWeight: FontWeight.w600,
+                          color: Colors.black87,
                         ),
+                      ),
+                    )
+                  : Image.asset(
+                      logoAsset,
+                      fit: BoxFit.contain,
+                      errorBuilder: (context, error, stackTrace) => Text(
+                        widget.company.name,
+                        textAlign: TextAlign.center,
+                        style: const TextStyle(
+                          fontSize: 14,
+                          fontWeight: FontWeight.w600,
+                          color: Colors.black87,
+                        ),
+                      ),
+                    ),
             ),
           ),
         ),

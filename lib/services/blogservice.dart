@@ -1,8 +1,6 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:devansh/models/blogmodel.dart';
 
-
-
 class BlogService {
   final FirebaseFirestore _db = FirebaseFirestore.instance;
 
@@ -12,9 +10,8 @@ class BlogService {
         .orderBy('createdAt', descending: true)
         .snapshots()
         .map(
-          (snap) => snap.docs
-              .map((d) => BlogPost.fromMap(d.id, d.data()))
-              .toList(),
+          (snap) =>
+              snap.docs.map((d) => BlogPost.fromMap(d.id, d.data())).toList(),
         );
   }
 
