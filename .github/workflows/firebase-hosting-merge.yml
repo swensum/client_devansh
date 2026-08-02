@@ -15,7 +15,10 @@ jobs:
       - uses: subosito/flutter-action@v2
         with:
           channel: stable
-
+      - name: Create .env
+        run: |
+          echo "${{ secrets.DOT_ENV }}" > .env
+          
       - run: flutter pub get
 
       - run: flutter build web
