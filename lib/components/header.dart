@@ -13,10 +13,131 @@ import 'package:devansh/services/orderservice.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
+const _gold = Color.fromRGBO(245, 171, 30, 1);
+
+/// -------------------------------------------------------------------------
+/// Single source of truth for every size/spacing value the header uses.
+///
+/// Instead of repeating `isTight ? a : (isCompact ? b : c)` all over build(),
+/// we compute ONE of these from the available width, then every widget below
+/// just reads plain fields like `m.logoHeight` or `m.iconSize`.
+///
+/// To change how the header looks at a given width, edit this class only —
+/// nothing else in the file needs to know about breakpoints at all.
+/// -------------------------------------------------------------------------
+class _HeaderMetrics {
+  final bool showNavRow; // full desktop nav vs hamburger menu
+  final bool showAccountText; // name/register/login text next to person icon
+  final bool showSearchInHeader; // false on mobile — search moves into the sidebar instead
+  final double horizontalPadding;
+  final double logoHeight;
+  final double logoWidth;
+  final double searchWidth; // null-ish sentinel: -1 means "flexible/Expanded"
+  final double iconSize;
+  final double orderIconSize;
+  final double hamburgerSize;
+  final double gapSmall;
+  final double gapMedium;
+  final double gapLarge;
+
+  const _HeaderMetrics({
+    required this.showNavRow,
+    required this.showAccountText,
+    required this.showSearchInHeader,
+    required this.horizontalPadding,
+    required this.logoHeight,
+    required this.logoWidth,
+    required this.searchWidth,
+    required this.iconSize,
+    required this.orderIconSize,
+    required this.hamburgerSize,
+    required this.gapSmall,
+    required this.gapMedium,
+    required this.gapLarge,
+  });
+
+  bool get searchIsFlexible => searchWidth < 0;
+
+  /// The three tiers below are the only breakpoints in the whole header.
+  /// Add/adjust a tier here if you need a new size step.
+  factory _HeaderMetrics.of(double width) {
+    if (width >= 1120) {
+      // Full desktop
+      return const _HeaderMetrics(
+        showNavRow: true,
+        showAccountText: true,
+        showSearchInHeader: true,
+        horizontalPadding: 30,
+        logoHeight: 50,
+        logoWidth: 250,
+        searchWidth: 250,
+        iconSize: 40,
+        orderIconSize: 30,
+        hamburgerSize: 32,
+        gapSmall: 20,
+        gapMedium: 40,
+        gapLarge: 60,
+      );
+    }
+    if (width >= 700) {
+      // Tablet / compact desktop — nav hidden, account text still shown
+      return const _HeaderMetrics(
+        showNavRow: false,
+        showAccountText: true,
+        showSearchInHeader: true,
+        horizontalPadding: 30,
+        logoHeight: 50,
+        logoWidth: 250,
+        searchWidth: 170,
+        iconSize: 40,
+        orderIconSize: 30,
+        hamburgerSize: 32,
+        gapSmall: 20,
+        gapMedium: 40,
+        gapLarge: 60,
+      );
+    }
+    if (width >= 480) {
+      // Tight phones/small tablets in landscape — search still fits, keep it
+      return const _HeaderMetrics(
+        showNavRow: false,
+        showAccountText: false,
+        showSearchInHeader: true,
+        horizontalPadding: 10,
+        logoHeight: 40,
+        logoWidth: 150,
+        searchWidth: 140,
+        iconSize: 35,
+        orderIconSize: 25,
+        hamburgerSize: 32,
+        gapSmall: 10,
+        gapMedium: 10,
+        gapLarge: 10,
+      );
+    }
+    // True mobile — search field moves into the sidebar entirely, so the
+    // header row only has logo + account icon + order icon + hamburger,
+    // none of which can overflow.
+    return const _HeaderMetrics(
+      showNavRow: false,
+      showAccountText: false,
+      showSearchInHeader: false,
+      horizontalPadding: 10,
+      logoHeight: 32,
+      logoWidth: 110,
+      searchWidth: -1,
+      iconSize: 28,
+      orderIconSize: 22,
+      hamburgerSize: 28,
+      gapSmall: 6,
+      gapMedium: 8,
+      gapLarge: 8,
+    );
+  }
+}
+
 class SiteHeader extends StatefulWidget {
   final ScrollController scrollController;
-
-  /// Scroll offset (in px) below which the top bar stays visible.
   final double revealThreshold;
 
   const SiteHeader({
@@ -36,7 +157,6 @@ class _SiteHeaderState extends State<SiteHeader> {
   void initState() {
     super.initState();
     widget.scrollController.addListener(_onScroll);
-    // Initialize from current position in case the page starts pre-scrolled.
     WidgetsBinding.instance.addPostFrameCallback((_) => _onScroll());
   }
 
@@ -66,14 +186,12 @@ class _SiteHeaderState extends State<SiteHeader> {
 
   @override
   Widget build(BuildContext context) {
-   
     const totalHeight = TopBar.height + Header.height;
 
     return ClipRect(
       child: AnimatedSlide(
         duration: const Duration(milliseconds: 320),
         curve: Curves.easeInOut,
-
         offset: _showTopBar
             ? Offset.zero
             : const Offset(0, -TopBar.height / totalHeight),
@@ -89,7 +207,6 @@ class _SiteHeaderState extends State<SiteHeader> {
 class Header extends StatefulWidget {
   const Header({super.key});
 
-  /// Fixed navbar height — kept in sync with the Container height in build().
   static const double height = 100;
 
   @override
@@ -97,9 +214,6 @@ class Header extends StatefulWidget {
 }
 
 class _HeaderState extends State<Header> {
-  static const double _navBreakpoint = 1120;
-  static const double _compactBreakpoint = 880;
-  static const double _tightBreakpoint = 700;
   bool _isDisposed = false;
   int _hoveredIndex = -1;
   bool _hoveredAccount = false;
@@ -131,11 +245,8 @@ class _HeaderState extends State<Header> {
     "Blogs": '/blog',
     "FAQs": '/faq',
   };
-  final Map<int, LayerLink> _layerLinks = {
-    1: LayerLink(),
-    2: LayerLink(),
-    3: LayerLink(),
-  };
+  final Map<int, LayerLink> _layerLinks = {1: LayerLink(), 2: LayerLink(), 3: LayerLink()};
+
   String _shortLabel(String value, {int maxChars = 8}) {
     final trimmed = value.trim();
     if (trimmed.length <= maxChars) return trimmed;
@@ -145,10 +256,8 @@ class _HeaderState extends State<Header> {
   OverlayEntry? _overlayEntry;
   Timer? _closeTimer;
 
-  // Mobile sidebar menu
   OverlayEntry? _mobileMenuOverlay;
-  final GlobalKey<_MobileSidebarState> _mobileSidebarKey =
-      GlobalKey<_MobileSidebarState>();
+  final GlobalKey<_MobileSidebarState> _mobileSidebarKey = GlobalKey<_MobileSidebarState>();
 
   @override
   void initState() {
@@ -174,14 +283,12 @@ class _HeaderState extends State<Header> {
 
   void _scheduleClose() {
     _closeTimer?.cancel();
-    _closeTimer = Timer(const Duration(milliseconds: 150), () {
-      _closeDropdown();
-    });
+    _closeTimer = Timer(const Duration(milliseconds: 150), _closeDropdown);
   }
 
   void _showDropdown(int index) {
     _cancelClose();
-    if (_overlayEntry != null && _openIndex == index) return; // already open
+    if (_overlayEntry != null && _openIndex == index) return;
     _removeOverlay();
     _openIndex = index;
 
@@ -202,14 +309,13 @@ class _HeaderState extends State<Header> {
                   showWhenUnlinked: false,
                   targetAnchor: Alignment.bottomLeft,
                   followerAnchor: Alignment.topLeft,
-                  offset: const Offset(0, 15), // small gap below the menu item
+                  offset: const Offset(0, 15),
                   child: MouseRegion(
                     onEnter: (_) => _cancelClose(),
                     onExit: (_) => _scheduleClose(),
                     child: Material(
                       elevation: 8,
-                      color: Colors
-                          .transparent, // let the glass show through, not Material's default surface
+                      color: Colors.transparent,
                       borderRadius: BorderRadius.circular(8),
                       child: ClipRRect(
                         borderRadius: BorderRadius.circular(8),
@@ -218,20 +324,11 @@ class _HeaderState extends State<Header> {
                           child: Container(
                             width: (isShop || isCollection) ? 220 : 180,
                             decoration: BoxDecoration(
-                              color: Colors.white.withValues(
-                                alpha: 0.15,
-                              ), // frosted glass tint
+                              color: Colors.white.withValues(alpha: 0.15),
                               borderRadius: BorderRadius.circular(8),
-                              border: Border.all(
-                                color: Colors.white.withValues(alpha: 0.3),
-                                width: 1,
-                              ),
+                              border: Border.all(color: Colors.white.withValues(alpha: 0.3), width: 1),
                               boxShadow: [
-                                BoxShadow(
-                                  color: Colors.black.withValues(alpha: 0.25),
-                                  blurRadius: 20,
-                                  offset: const Offset(2, 4),
-                                ),
+                                BoxShadow(color: Colors.black.withValues(alpha: 0.25), blurRadius: 20, offset: const Offset(2, 4)),
                               ],
                             ),
                             clipBehavior: Clip.antiAlias,
@@ -246,23 +343,21 @@ class _HeaderState extends State<Header> {
                                     },
                                   )
                                 : isCollection
-                                ? _CollectionDropdownContent(
-                                    companies: _companies,
-                                    onNavigate: (route) {
-                                      _closeDropdown();
-                                      context.push(route);
-                                    },
-                                  )
-                                : _DropdownList(
-                                    items: _dropdownItems[index] ?? [],
-                                    onSelect: (item) {
-                                      _closeDropdown();
-                                      final route = _pageRoutes[item];
-                                      if (route != null) {
-                                        context.push(route);
-                                      }
-                                    },
-                                  ),
+                                    ? _CollectionDropdownContent(
+                                        companies: _companies,
+                                        onNavigate: (route) {
+                                          _closeDropdown();
+                                          context.push(route);
+                                        },
+                                      )
+                                    : _DropdownList(
+                                        items: _dropdownItems[index] ?? [],
+                                        onSelect: (item) {
+                                          _closeDropdown();
+                                          final route = _pageRoutes[item];
+                                          if (route != null) context.push(route);
+                                        },
+                                      ),
                           ),
                         ),
                       ),
@@ -314,9 +409,7 @@ class _HeaderState extends State<Header> {
           onSelect: (item) {
             _mobileSidebarKey.currentState?.close();
             final route = _pageRoutes[item];
-            if (route != null) {
-              context.push(route);
-            }
+            if (route != null) context.push(route);
           },
           onNavigate: (route) {
             _mobileSidebarKey.currentState?.close();
@@ -334,23 +427,15 @@ class _HeaderState extends State<Header> {
   void _removeMobileOverlay() {
     _mobileMenuOverlay?.remove();
     _mobileMenuOverlay = null;
-    if (!_isDisposed) {
-      setState(() {});
-    }
+    if (!_isDisposed) setState(() {});
   }
 
-  /// Signs the user out, then hard-reloads the whole website (like pressing
-  /// F5). This guarantees every bit of in-memory state — cart, catalog
-  /// listeners, cached widgets, everything — is wiped clean, not just the
-  /// auth state.
   Future<void> _handleSignOut() async {
     await AuthService.instance.signOut();
     web.window.location.reload();
   }
 
-  void _reloadHome() {
-    web.window.location.reload();
-  }
+  void _reloadHome() => web.window.location.reload();
 
   @override
   void dispose() {
@@ -369,32 +454,29 @@ class _HeaderState extends State<Header> {
   Widget build(BuildContext context) {
     return LayoutBuilder(
       builder: (context, constraints) {
-        final bool isNarrow = constraints.maxWidth < _navBreakpoint;
-        final bool isCompact = constraints.maxWidth < _compactBreakpoint;
-        final bool isTight = constraints.maxWidth < _tightBreakpoint;
+        final m = _HeaderMetrics.of(constraints.maxWidth);
 
         return Container(
-          height: 100,
-          padding: EdgeInsets.symmetric(horizontal: isTight ? 10 : 30),
+          height: Header.height,
+          padding: EdgeInsets.symmetric(horizontal: m.horizontalPadding),
           color: const Color(0xFF1A1A1A),
           child: Row(
             children: [
               Image.asset(
                 'assets/logo.png',
-                height: isTight ? 40 : 50,
-                width: isTight ? 150 : 250,
+                height: m.logoHeight,
+                width: m.logoWidth,
                 fit: BoxFit.contain,
               ),
 
-              const Spacer(flex: 2),
+              if (m.showNavRow) const Spacer(flex: 2) else const Spacer(),
 
-              // Navigation Menus — hidden below the breakpoint
-              if (!isNarrow)
+              if (m.showNavRow)
                 Row(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
                     _buildMenuItem("Home", showArrow: false, index: 0),
-                    const SizedBox(width: 40),
+                    SizedBox(width: m.gapMedium),
                     _buildMenuItem("Shop", showArrow: true, index: 1),
                     const SizedBox(width: 30),
                     _buildMenuItem("Collection", showArrow: true, index: 2),
@@ -403,160 +485,37 @@ class _HeaderState extends State<Header> {
                   ],
                 ),
 
-              SizedBox(width: isTight ? 10 : 60),
-              SizedBox(
-                width: isTight ? 170 : (isCompact ? 170 : 250),
-                height: 38,
-                child: TextField(
-                  decoration: InputDecoration(
-                    hintText: "Search...",
-                    hintStyle: const TextStyle(color: Colors.grey),
-                    filled: true,
-                    fillColor: Colors.white,
-                    prefixIcon: Container(
-                      margin: const EdgeInsets.all(2),
-                      decoration: const BoxDecoration(
-                        color: Colors.black,
-                        shape: BoxShape.circle,
-                      ),
-                      child: const Icon(
-                        Icons.search,
-                        color: Colors.white,
-                        size: 18,
-                      ),
-                    ),
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(30),
-                      borderSide: BorderSide.none,
-                    ),
-                    contentPadding: const EdgeInsets.symmetric(vertical: 8),
-                  ),
-                ),
+              if (m.showSearchInHeader) ...[
+                SizedBox(width: m.gapLarge),
+                _SearchField(flexible: m.searchIsFlexible, width: m.searchWidth),
+              ],
+
+              SizedBox(width: m.gapMedium),
+
+              _AccountSection(
+                showText: m.showAccountText,
+                iconSize: m.iconSize,
+                hoveredPersonIcon: _hoveredPersonIcon,
+                hoveredAccount: _hoveredAccount,
+                hoveredSignOut: _hoveredSignOut,
+                hoveredRegister: _hoveredRegister,
+                hoveredLogin: _hoveredLogin,
+                shortLabel: _shortLabel,
+                onPersonEnter: () => setState(() => _hoveredPersonIcon = true),
+                onPersonExit: () => setState(() => _hoveredPersonIcon = false),
+                onAccountEnter: () => setState(() => _hoveredAccount = true),
+                onAccountExit: () => setState(() => _hoveredAccount = false),
+                onSignOutEnter: () => setState(() => _hoveredSignOut = true),
+                onSignOutExit: () => setState(() => _hoveredSignOut = false),
+                onRegisterEnter: () => setState(() => _hoveredRegister = true),
+                onRegisterExit: () => setState(() => _hoveredRegister = false),
+                onLoginEnter: () => setState(() => _hoveredLogin = true),
+                onLoginExit: () => setState(() => _hoveredLogin = false),
+                onSignOut: _handleSignOut,
+                onGoAuth: () => context.push('/auth'),
               ),
 
-              SizedBox(width: isTight ? 10 : 40),
-
-              //account section
-              // Account Section
-              ValueListenableBuilder<AppUser?>(
-                valueListenable: AuthService.instance.currentUser,
-                builder: (context, user, _) {
-                  final signedIn = user != null;
-                  final accountLabel = signedIn
-                      ? _shortLabel(
-                          user.name?.isNotEmpty == true
-                              ? user.name!
-                              : (user.email ?? 'My Account'),
-                        )
-                      : 'Account';
-
-                  return SizedBox(
-                    height: 80,
-                    child: Row(
-                      crossAxisAlignment: CrossAxisAlignment.stretch,
-                      children: [
-                        GestureDetector(
-                          onTap: () {
-                            if (!signedIn) context.push('/auth');
-                          },
-                          child: MouseRegion(
-                            cursor: SystemMouseCursors.click,
-                            onEnter: (_) =>
-                                setState(() => _hoveredPersonIcon = true),
-                            onExit: (_) =>
-                                setState(() => _hoveredPersonIcon = false),
-                            child: Icon(
-                              Icons.person,
-                              color: (_hoveredPersonIcon || signedIn)
-                                  ? const Color.fromRGBO(245, 171, 30, 1)
-                                  : Colors.white,
-                              size: isTight ? 35 : 40,
-                            ),
-                          ),
-                        ),
-                        if (!isCompact) ...[
-                          const SizedBox(width: 5),
-                          Column(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              GestureDetector(
-                                onTap: () {
-                                  if (!signedIn) context.push('/auth');
-                                },
-                                child: MouseRegion(
-                                  cursor: SystemMouseCursors.click,
-                                  onEnter: (_) =>
-                                      setState(() => _hoveredAccount = true),
-                                  onExit: (_) =>
-                                      setState(() => _hoveredAccount = false),
-                                  child: Text(
-                                    accountLabel,
-                                    style: TextStyle(
-                                      color: _hoveredAccount
-                                          ? const Color.fromRGBO(
-                                              245,
-                                              171,
-                                              30,
-                                              1,
-                                            )
-                                          : Colors.white,
-                                      fontSize: 16,
-                                      fontWeight: FontWeight.w500,
-                                    ),
-                                  ),
-                                ),
-                              ),
-                              const SizedBox(height: 0),
-                              if (!signedIn)
-                                Row(
-                                  children: [
-                                    _buildAuthLink("Register"),
-                                    const Text(
-                                      " | ",
-                                      style: TextStyle(
-                                        color: Colors.white70,
-                                        fontSize: 12,
-                                      ),
-                                    ),
-                                    _buildAuthLink("Login"),
-                                  ],
-                                )
-                              else
-                                GestureDetector(
-                                  onTap: _handleSignOut,
-                                  child: MouseRegion(
-                                    cursor: SystemMouseCursors.click,
-                                    onEnter: (_) =>
-                                        setState(() => _hoveredSignOut = true),
-                                    onExit: (_) =>
-                                        setState(() => _hoveredSignOut = false),
-                                    child: Text(
-                                      "Sign out",
-                                      style: TextStyle(
-                                        color: _hoveredSignOut
-                                            ? const Color.fromRGBO(
-                                                245,
-                                                171,
-                                                30,
-                                                1,
-                                              )
-                                            : Colors.white70,
-                                        fontSize: 11,
-                                      ),
-                                    ),
-                                  ),
-                                ),
-                            ],
-                          ),
-                        ],
-                      ],
-                    ),
-                  );
-                },
-              ),
-
-              SizedBox(width: isTight ? 10 : 20),
+              SizedBox(width: m.gapSmall),
 
               GestureDetector(
                 onTap: () => context.push('/orders'),
@@ -573,31 +532,20 @@ class _HeaderState extends State<Header> {
                         children: [
                           Icon(
                             Icons.receipt_long,
-                            color: _hoveredOrder
-                                ? const Color.fromRGBO(245, 171, 30, 1)
-                                : Colors.white,
-                            size: isTight ? 25 : 30,
+                            color: _hoveredOrder ? _gold : Colors.white,
+                            size: m.orderIconSize,
                           ),
                           if (count > 0)
                             Positioned(
                               right: -6,
                               top: -6,
                               child: Container(
-                                padding: const EdgeInsets.symmetric(
-                                  horizontal: 5,
-                                  vertical: 1,
-                                ),
-                                constraints: const BoxConstraints(
-                                  minWidth: 16,
-                                  minHeight: 16,
-                                ),
+                                padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 1),
+                                constraints: const BoxConstraints(minWidth: 16, minHeight: 16),
                                 decoration: BoxDecoration(
-                                  color: const Color.fromRGBO(245, 171, 30, 1),
+                                  color: _gold,
                                   borderRadius: BorderRadius.circular(10),
-                                  border: Border.all(
-                                    color: const Color(0xFF1A1A1A),
-                                    width: 1.5,
-                                  ),
+                                  border: Border.all(color: const Color(0xFF1A1A1A), width: 1.5),
                                 ),
                                 child: Text(
                                   '$count',
@@ -617,8 +565,9 @@ class _HeaderState extends State<Header> {
                   ),
                 ),
               ),
-              if (isNarrow) ...[
-                SizedBox(width: isTight ? 14 : 16),
+
+              if (!m.showNavRow) ...[
+                SizedBox(width: m.gapSmall),
                 MouseRegion(
                   cursor: SystemMouseCursors.click,
                   onEnter: (_) => setState(() => _hoveredHamburger = true),
@@ -627,10 +576,8 @@ class _HeaderState extends State<Header> {
                     onTap: _toggleMobileMenu,
                     child: Icon(
                       Icons.menu,
-                      color: _hoveredHamburger
-                          ? const Color.fromRGBO(245, 171, 30, 1)
-                          : Colors.white,
-                      size: isTight ? 32 : 32,
+                      color: _hoveredHamburger ? _gold : Colors.white,
+                      size: m.hamburgerSize,
                     ),
                   ),
                 ),
@@ -642,34 +589,17 @@ class _HeaderState extends State<Header> {
     );
   }
 
-  Widget _buildMenuItem(
-    String title, {
-    required bool showArrow,
-    required int index,
-  }) {
+  Widget _buildMenuItem(String title, {required bool showArrow, required int index}) {
     final isHovered = _hoveredIndex == index;
-    final Color itemColor = isHovered
-        ? const Color.fromRGBO(245, 171, 30, 1)
-        : Colors.white;
+    final Color itemColor = isHovered ? _gold : Colors.white;
 
     Widget content = Row(
       mainAxisSize: MainAxisSize.min,
       children: [
-        Text(
-          title,
-          style: TextStyle(
-            color: itemColor,
-            fontSize: 16,
-            fontWeight: FontWeight.w500,
-          ),
-        ),
+        Text(title, style: TextStyle(color: itemColor, fontSize: 16, fontWeight: FontWeight.w500)),
         if (showArrow) ...[
           const SizedBox(width: 2),
-          Icon(
-            isHovered ? Icons.arrow_drop_up : Icons.arrow_drop_down,
-            color: itemColor,
-            size: 22,
-          ),
+          Icon(isHovered ? Icons.arrow_drop_up : Icons.arrow_drop_down, color: itemColor, size: 22),
         ],
       ],
     );
@@ -693,40 +623,185 @@ class _HeaderState extends State<Header> {
       ),
     );
   }
+}
 
-  Widget _buildAuthLink(String title) {
+/// Search box — either a fixed width (tablet/desktop) or Expanded/flexible
+/// (mobile), controlled entirely by the metrics object above.
+class _SearchField extends StatelessWidget {
+  final bool flexible;
+  final double width;
+
+  const _SearchField({required this.flexible, required this.width});
+
+  @override
+  Widget build(BuildContext context) {
+    final field = TextField(
+      decoration: InputDecoration(
+        hintText: "Search...",
+        hintStyle: TextStyle(color: Colors.grey, fontSize: flexible ? 13 : 14),
+        filled: true,
+        fillColor: Colors.white,
+        isDense: flexible,
+        prefixIcon: Container(
+          margin: const EdgeInsets.all(2),
+          decoration: const BoxDecoration(color: Colors.black, shape: BoxShape.circle),
+          child: Icon(Icons.search, color: Colors.white, size: flexible ? 16 : 18),
+        ),
+        border: OutlineInputBorder(borderRadius: BorderRadius.circular(30), borderSide: BorderSide.none),
+        contentPadding: const EdgeInsets.symmetric(vertical: 8),
+      ),
+    );
+
+    final sized = SizedBox(height: flexible ? 36 : 38, child: field);
+
+    return flexible ? Expanded(child: sized) : SizedBox(width: width, child: sized);
+  }
+}
+
+/// Account/person section — collapses to icon-only on narrow widths.
+class _AccountSection extends StatelessWidget {
+  final bool showText;
+  final double iconSize;
+  final bool hoveredPersonIcon;
+  final bool hoveredAccount;
+  final bool hoveredSignOut;
+  final bool hoveredRegister;
+  final bool hoveredLogin;
+  final String Function(String, {int maxChars}) shortLabel;
+  final VoidCallback onPersonEnter;
+  final VoidCallback onPersonExit;
+  final VoidCallback onAccountEnter;
+  final VoidCallback onAccountExit;
+  final VoidCallback onSignOutEnter;
+  final VoidCallback onSignOutExit;
+  final VoidCallback onRegisterEnter;
+  final VoidCallback onRegisterExit;
+  final VoidCallback onLoginEnter;
+  final VoidCallback onLoginExit;
+  final VoidCallback onSignOut;
+  final VoidCallback onGoAuth;
+
+  const _AccountSection({
+    required this.showText,
+    required this.iconSize,
+    required this.hoveredPersonIcon,
+    required this.hoveredAccount,
+    required this.hoveredSignOut,
+    required this.hoveredRegister,
+    required this.hoveredLogin,
+    required this.shortLabel,
+    required this.onPersonEnter,
+    required this.onPersonExit,
+    required this.onAccountEnter,
+    required this.onAccountExit,
+    required this.onSignOutEnter,
+    required this.onSignOutExit,
+    required this.onRegisterEnter,
+    required this.onRegisterExit,
+    required this.onLoginEnter,
+    required this.onLoginExit,
+    required this.onSignOut,
+    required this.onGoAuth,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return ValueListenableBuilder<AppUser?>(
+      valueListenable: AuthService.instance.currentUser,
+      builder: (context, user, _) {
+        final signedIn = user != null;
+        final accountLabel = signedIn
+            ? shortLabel(user.name?.isNotEmpty == true ? user.name! : (user.email ?? 'My Account'))
+            : 'Account';
+
+        return SizedBox(
+          height: 80,
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              GestureDetector(
+                onTap: () {
+                  if (!signedIn) onGoAuth();
+                },
+                child: MouseRegion(
+                  cursor: SystemMouseCursors.click,
+                  onEnter: (_) => onPersonEnter(),
+                  onExit: (_) => onPersonExit(),
+                  child: Icon(
+                    Icons.person,
+                    color: (hoveredPersonIcon || signedIn) ? _gold : Colors.white,
+                    size: iconSize,
+                  ),
+                ),
+              ),
+              if (showText) ...[
+                const SizedBox(width: 5),
+                Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    GestureDetector(
+                      onTap: () {
+                        if (!signedIn) onGoAuth();
+                      },
+                      child: MouseRegion(
+                        cursor: SystemMouseCursors.click,
+                        onEnter: (_) => onAccountEnter(),
+                        onExit: (_) => onAccountExit(),
+                        child: Text(
+                          accountLabel,
+                          style: TextStyle(
+                            color: hoveredAccount ? _gold : Colors.white,
+                            fontSize: 16,
+                            fontWeight: FontWeight.w500,
+                          ),
+                        ),
+                      ),
+                    ),
+                    if (!signedIn)
+                      Row(
+                        children: [
+                          _authLink("Register", hoveredRegister, onRegisterEnter, onRegisterExit, onGoAuth),
+                          const Text(" | ", style: TextStyle(color: Colors.white70, fontSize: 12)),
+                          _authLink("Login", hoveredLogin, onLoginEnter, onLoginExit, onGoAuth),
+                        ],
+                      )
+                    else
+                      GestureDetector(
+                        onTap: onSignOut,
+                        child: MouseRegion(
+                          cursor: SystemMouseCursors.click,
+                          onEnter: (_) => onSignOutEnter(),
+                          onExit: (_) => onSignOutExit(),
+                          child: Text(
+                            "Sign out",
+                            style: TextStyle(
+                              color: hoveredSignOut ? _gold : Colors.white70,
+                              fontSize: 11,
+                            ),
+                          ),
+                        ),
+                      ),
+                  ],
+                ),
+              ],
+            ],
+          ),
+        );
+      },
+    );
+  }
+
+  Widget _authLink(String title, bool hovered, VoidCallback onEnter, VoidCallback onExit, VoidCallback onTap) {
     return GestureDetector(
-      onTap: () => context.push('/auth'),
+      onTap: onTap,
       child: MouseRegion(
         cursor: SystemMouseCursors.click,
-        onEnter: (_) {
-          setState(() {
-            if (title == "Register") {
-              _hoveredRegister = true;
-            } else {
-              _hoveredLogin = true;
-            }
-          });
-        },
-        onExit: (_) {
-          setState(() {
-            if (title == "Register") {
-              _hoveredRegister = false;
-            } else {
-              _hoveredLogin = false;
-            }
-          });
-        },
+        onEnter: (_) => onEnter(),
+        onExit: (_) => onExit(),
         child: Text(
           title,
-          style: TextStyle(
-            color:
-                (title == "Register" && _hoveredRegister) ||
-                    (title == "Login" && _hoveredLogin)
-                ? const Color.fromRGBO(245, 171, 30, 1)
-                : Colors.white70,
-            fontSize: 11,
-          ),
+          style: TextStyle(color: hovered ? _gold : Colors.white70, fontSize: 11),
         ),
       ),
     );
@@ -758,17 +833,11 @@ class _ShopDropdownContent extends StatelessWidget {
               onTap: () => onNavigate('/products?category=${category.id}'),
             ),
           ),
-          for (final type in Catalog.typesInCategory(
-            products,
-            types,
-            category.id,
-          ))
+          for (final type in Catalog.typesInCategory(products, types, category.id))
             _DropdownColumnRow(
               item: _DropdownColumnItem(
                 label: '- ${type.name}',
-                onTap: () => onNavigate(
-                  '/products?category=${category.id}&type=${type.id}',
-                ),
+                onTap: () => onNavigate('/products?category=${category.id}&type=${type.id}'),
               ),
               isSubItem: true,
             ),
@@ -782,17 +851,11 @@ class _CollectionDropdownContent extends StatelessWidget {
   final List<Company> companies;
   final void Function(String route) onNavigate;
 
-  const _CollectionDropdownContent({
-    required this.companies,
-    required this.onNavigate,
-  });
+  const _CollectionDropdownContent({required this.companies, required this.onNavigate});
 
   @override
   Widget build(BuildContext context) {
-    // Exclude generic/placeholder companies from the nav dropdown.
-    final visibleCompanies = companies
-        .where((c) => c.id != 'unknown' && c.id != 'others')
-        .toList();
+    final visibleCompanies = companies.where((c) => c.id != 'unknown' && c.id != 'others').toList();
 
     return _DropdownColumn(
       title: 'Companies',
@@ -812,7 +875,6 @@ class _CollectionDropdownContent extends StatelessWidget {
 class _DropdownColumnItem {
   final String label;
   final VoidCallback onTap;
-
   const _DropdownColumnItem({required this.label, required this.onTap});
 }
 
@@ -831,12 +893,7 @@ class _DropdownColumn extends StatelessWidget {
           padding: const EdgeInsets.fromLTRB(16, 14, 16, 8),
           child: Text(
             title,
-            style: const TextStyle(
-              fontSize: 15,
-              fontWeight: FontWeight.w700,
-              letterSpacing: 0.6,
-              color: Color.fromRGBO(245, 171, 30, 1),
-            ),
+            style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w700, letterSpacing: 0.6, color: _gold),
           ),
         ),
         ...children,
@@ -848,7 +905,7 @@ class _DropdownColumn extends StatelessWidget {
 
 class _DropdownColumnRow extends StatefulWidget {
   final _DropdownColumnItem item;
-  final bool isSubItem; // true for nested type rows under a category
+  final bool isSubItem;
 
   const _DropdownColumnRow({required this.item, this.isSubItem = false});
 
@@ -876,24 +933,13 @@ class _DropdownColumnRowState extends State<_DropdownColumnRow> {
             bottom: widget.isSubItem ? 6 : 8,
           ),
           decoration: BoxDecoration(
-            color: _isHovered
-                ? const Color.fromRGBO(245, 171, 30, 0.15)
-                : Colors.transparent,
-            border: Border(
-              left: BorderSide(
-                color: _isHovered
-                    ? const Color.fromRGBO(245, 171, 30, 1)
-                    : Colors.transparent,
-                width: 3,
-              ),
-            ),
+            color: _isHovered ? _gold.withValues(alpha: 0.15) : Colors.transparent,
+            border: Border(left: BorderSide(color: _isHovered ? _gold : Colors.transparent, width: 3)),
           ),
           child: Text(
             widget.item.label,
             style: TextStyle(
-              color: _isHovered
-                  ? const Color.fromRGBO(245, 171, 30, 1)
-                  : (widget.isSubItem ? Colors.white70 : Colors.white),
+              color: _isHovered ? _gold : (widget.isSubItem ? Colors.white70 : Colors.white),
               fontSize: widget.isSubItem ? 12.5 : 13.5,
               fontWeight: widget.isSubItem ? FontWeight.w400 : FontWeight.w500,
             ),
@@ -936,27 +982,10 @@ class _DropdownListState extends State<_DropdownList> {
               width: double.infinity,
               padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
               decoration: BoxDecoration(
-                color: isHovered
-                    ? const Color.fromRGBO(245, 171, 30, 0.1)
-                    : Colors.transparent,
-                border: Border(
-                  right: BorderSide(
-                    color: isHovered
-                        ? const Color.fromRGBO(245, 171, 30, 1)
-                        : Colors.transparent,
-                    width: 3,
-                  ),
-                ),
+                color: isHovered ? _gold.withValues(alpha: 0.1) : Colors.transparent,
+                border: Border(right: BorderSide(color: isHovered ? _gold : Colors.transparent, width: 3)),
               ),
-              child: Text(
-                item,
-                style: TextStyle(
-                  color: isHovered
-                      ? const Color.fromRGBO(245, 171, 30, 1)
-                      : Colors.white,
-                  fontSize: 14,
-                ),
-              ),
+              child: Text(item, style: TextStyle(color: isHovered ? _gold : Colors.white, fontSize: 14)),
             ),
           ),
         );
@@ -991,8 +1020,7 @@ class _MobileSidebar extends StatefulWidget {
   State<_MobileSidebar> createState() => _MobileSidebarState();
 }
 
-class _MobileSidebarState extends State<_MobileSidebar>
-    with SingleTickerProviderStateMixin {
+class _MobileSidebarState extends State<_MobileSidebar> with SingleTickerProviderStateMixin {
   late final AnimationController _controller;
   late final Animation<Offset> _slide;
 
@@ -1001,20 +1029,14 @@ class _MobileSidebarState extends State<_MobileSidebar>
   @override
   void initState() {
     super.initState();
-    _controller = AnimationController(
-      vsync: this,
-      duration: const Duration(milliseconds: 220),
-    );
-    _slide = Tween<Offset>(
-      begin: const Offset(1, 0),
-      end: Offset.zero,
-    ).animate(CurvedAnimation(parent: _controller, curve: Curves.easeOut));
+    _controller = AnimationController(vsync: this, duration: const Duration(milliseconds: 220));
+    _slide = Tween<Offset>(begin: const Offset(1, 0), end: Offset.zero)
+        .animate(CurvedAnimation(parent: _controller, curve: Curves.easeOut));
     _controller.forward();
   }
 
   Future<void> close() async {
-    if (_controller.status == AnimationStatus.reverse ||
-        _controller.status == AnimationStatus.dismissed) {
+    if (_controller.status == AnimationStatus.reverse || _controller.status == AnimationStatus.dismissed) {
       return;
     }
     await _controller.reverse();
@@ -1032,7 +1054,6 @@ class _MobileSidebarState extends State<_MobileSidebar>
     return Positioned.fill(
       child: Stack(
         children: [
-          // Dimmed scrim – tap anywhere to dismiss.
           FadeTransition(
             opacity: _controller,
             child: GestureDetector(
@@ -1041,7 +1062,6 @@ class _MobileSidebarState extends State<_MobileSidebar>
               child: Container(color: Colors.black.withValues(alpha: 0.45)),
             ),
           ),
-          // Sliding panel.
           Align(
             alignment: Alignment.centerRight,
             child: SlideTransition(
@@ -1051,79 +1071,72 @@ class _MobileSidebarState extends State<_MobileSidebar>
                 height: double.infinity,
                 child: Row(
                   children: [
-                    // Gold accent strip
-                    Container(
-                      width: 3,
-                      color: const Color.fromRGBO(245, 171, 30, 1),
-                    ),
-                    // Main panel with rounded corner
+                    Container(width: 3, color: _gold),
                     Expanded(
                       child: ClipRRect(
-                        borderRadius: const BorderRadius.only(
-                          topLeft: Radius.circular(16),
-                        ),
+                        borderRadius: const BorderRadius.only(topLeft: Radius.circular(16)),
                         child: Material(
                           elevation: 16,
-                          color: const Color(0xFF1A1A1A), // Same as navbar
+                          color: const Color(0xFF1A1A1A),
                           child: SafeArea(
                             child: Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
-                                // Header with gold underline
                                 Padding(
-                                  padding: const EdgeInsets.fromLTRB(
-                                    16,
-                                    12,
-                                    8,
-                                    8,
-                                  ),
+                                  padding: const EdgeInsets.fromLTRB(16, 12, 8, 8),
                                   child: Column(
-                                    crossAxisAlignment:
-                                        CrossAxisAlignment.start,
+                                    crossAxisAlignment: CrossAxisAlignment.start,
                                     children: [
                                       Row(
-                                        mainAxisAlignment:
-                                            MainAxisAlignment.spaceBetween,
+                                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
                                         children: [
                                           const Text(
                                             "Menu",
-                                            style: TextStyle(
-                                              fontSize: 18,
-                                              fontWeight: FontWeight.w600,
-                                              color: Colors.white,
-                                            ),
+                                            style: TextStyle(fontSize: 18, fontWeight: FontWeight.w600, color: Colors.white),
                                           ),
                                           IconButton(
                                             onPressed: close,
-                                            icon: const Icon(
-                                              Icons.close,
-                                              color: Colors.white,
-                                            ),
+                                            icon: const Icon(Icons.close, color: Colors.white),
                                             splashRadius: 20,
                                           ),
                                         ],
                                       ),
                                       const SizedBox(height: 1),
-                                      Container(
-                                        height: 2,
-                                        width: 30,
-                                        color: const Color.fromRGBO(
-                                          245,
-                                          171,
-                                          30,
-                                          1,
-                                        ),
-                                      ),
+                                      Container(height: 2, width: 30, color: _gold),
                                     ],
                                   ),
                                 ),
                                 const SizedBox(height: 10),
-                                const Divider(
-                                  height: 1,
-                                  color: Color(0xFF444444),
+                                // Search — lives here instead of the header
+                                // row on mobile, where there's no room for it.
+                                Padding(
+                                  padding: const EdgeInsets.symmetric(horizontal: 16),
+                                  child: SizedBox(
+                                    height: 40,
+                                    child: TextField(
+                                      decoration: InputDecoration(
+                                        hintText: "Search...",
+                                        hintStyle: const TextStyle(color: Colors.grey, fontSize: 13),
+                                        filled: true,
+                                        fillColor: Colors.white,
+                                        isDense: true,
+                                        prefixIcon: Container(
+                                          margin: const EdgeInsets.all(2),
+                                          decoration: const BoxDecoration(color: Colors.black, shape: BoxShape.circle),
+                                          child: const Icon(Icons.search, color: Colors.white, size: 16),
+                                        ),
+                                        border: OutlineInputBorder(
+                                          borderRadius: BorderRadius.circular(30),
+                                          borderSide: BorderSide.none,
+                                        ),
+                                        contentPadding: const EdgeInsets.symmetric(vertical: 8),
+                                      ),
+                                    ),
+                                  ),
                                 ),
+                                const SizedBox(height: 14),
+                                const Divider(height: 1, color: Color(0xFF444444)),
                                 const SizedBox(height: 8),
-                                // Scrollable menu
                                 Expanded(
                                   child: SingleChildScrollView(
                                     child: _MobileNavMenu(
@@ -1189,10 +1202,7 @@ class _MobileNavMenu extends StatelessWidget {
             tilePadding: const EdgeInsets.symmetric(horizontal: 16),
             iconColor: Colors.white,
             collapsedIconColor: Colors.white70,
-            title: const Text(
-              "Shop",
-              style: TextStyle(color: Colors.white, fontSize: 14),
-            ),
+            title: const Text("Shop", style: TextStyle(color: Colors.white, fontSize: 14)),
             children: [
               for (final category in categories) ...[
                 ListTile(
@@ -1200,32 +1210,16 @@ class _MobileNavMenu extends StatelessWidget {
                   contentPadding: const EdgeInsets.only(left: 32, right: 16),
                   title: Text(
                     category.name,
-                    style: const TextStyle(
-                      color: Colors.white,
-                      fontSize: 13.5,
-                      fontWeight: FontWeight.w500,
-                    ),
+                    style: const TextStyle(color: Colors.white, fontSize: 13.5, fontWeight: FontWeight.w500),
                   ),
                   onTap: () => onNavigate('/products?category=${category.id}'),
                 ),
-                for (final type in Catalog.typesInCategory(
-                  products,
-                  types,
-                  category.id,
-                ))
+                for (final type in Catalog.typesInCategory(products, types, category.id))
                   ListTile(
                     dense: true,
                     contentPadding: const EdgeInsets.only(left: 48, right: 16),
-                    title: Text(
-                      type.name,
-                      style: const TextStyle(
-                        color: Colors.white70,
-                        fontSize: 12.5,
-                      ),
-                    ),
-                    onTap: () => onNavigate(
-                      '/products?category=${category.id}&type=${type.id}',
-                    ),
+                    title: Text(type.name, style: const TextStyle(color: Colors.white70, fontSize: 12.5)),
+                    onTap: () => onNavigate('/products?category=${category.id}&type=${type.id}'),
                   ),
               ],
             ],
@@ -1233,27 +1227,19 @@ class _MobileNavMenu extends StatelessWidget {
         }
 
         if (index == 2) {
-          final visibleCompanies = companies
-              .where((c) => c.id != 'unknown' && c.id != 'others')
-              .toList();
+          final visibleCompanies = companies.where((c) => c.id != 'unknown' && c.id != 'others').toList();
 
           return ExpansionTile(
             tilePadding: const EdgeInsets.symmetric(horizontal: 16),
             iconColor: Colors.white,
             collapsedIconColor: Colors.white70,
-            title: const Text(
-              "Collection",
-              style: TextStyle(color: Colors.white, fontSize: 14),
-            ),
+            title: const Text("Collection", style: TextStyle(color: Colors.white, fontSize: 14)),
             children: [
               for (final company in visibleCompanies)
                 ListTile(
                   dense: true,
                   contentPadding: const EdgeInsets.only(left: 32, right: 16),
-                  title: Text(
-                    company.name,
-                    style: const TextStyle(color: Colors.white70, fontSize: 13),
-                  ),
+                  title: Text(company.name, style: const TextStyle(color: Colors.white70, fontSize: 13)),
                   onTap: () => onNavigate('/products?company=${company.id}'),
                 ),
             ],
@@ -1263,35 +1249,24 @@ class _MobileNavMenu extends StatelessWidget {
         final subItems = dropdownItems[index];
 
         if (subItems == null) {
-          // "Home" – reload the whole site, just like the sign-out flow.
           return ListTile(
             dense: true,
-            title: Text(
-              label,
-              style: const TextStyle(color: Colors.white, fontSize: 14),
-            ),
+            title: Text(label, style: const TextStyle(color: Colors.white, fontSize: 14)),
             onTap: () => web.window.location.reload(),
           );
         }
 
-        // "Pages" – generic sub-items, unchanged behavior.
         return ExpansionTile(
           tilePadding: const EdgeInsets.symmetric(horizontal: 16),
           iconColor: Colors.white,
           collapsedIconColor: Colors.white70,
-          title: Text(
-            label,
-            style: const TextStyle(color: Colors.white, fontSize: 14),
-          ),
+          title: Text(label, style: const TextStyle(color: Colors.white, fontSize: 14)),
           children: subItems
               .map(
                 (item) => ListTile(
                   dense: true,
                   contentPadding: const EdgeInsets.only(left: 32, right: 16),
-                  title: Text(
-                    item,
-                    style: const TextStyle(color: Colors.white70, fontSize: 13),
-                  ),
+                  title: Text(item, style: const TextStyle(color: Colors.white70, fontSize: 13)),
                   onTap: () => onSelect(item),
                 ),
               )
