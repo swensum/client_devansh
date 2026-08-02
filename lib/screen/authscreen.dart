@@ -230,11 +230,13 @@ class _AuthScreenState extends State<AuthScreen> {
       await Future.delayed(const Duration(milliseconds: 700));
       _returnAfterSignIn();
     } on FirebaseAuthException catch (e) {
-      if (mounted)
+      if (mounted) {
         setState(() => _error = e.message ?? 'Google sign-in failed.');
+      }
     } catch (e) {
-      if (mounted)
+      if (mounted) {
         setState(() => _error = 'Google sign-in was cancelled or failed.');
+      }
     } finally {
       if (mounted) setState(() => _googleLoading = false);
     }
@@ -412,49 +414,56 @@ class _AuthScreenState extends State<AuthScreen> {
                 ),
                 TextButton(
                   onPressed: () async {
-                    if (sending) return;
-                    final email = controller.text.trim();
-                    if (email.isEmpty || !email.contains('@')) {
-                      setDialogState(
-                        () => localError = 'Enter a valid email address.',
-                      );
-                      return;
-                    }
-                    setDialogState(() {
-                      sending = true;
-                      localError = null;
-                    });
-                    try {
-                      await AuthService.instance.sendPasswordResetEmail(email);
-                      if (!context.mounted) return;
-                      context.pop(); // Close the dialog
+  if (sending) return;
 
-                      ScaffoldMessenger.of(this.context).showSnackBar(
-                        SnackBar(
-                          content: Text(
-                            'Reset link sent to $email. Check your inbox (and spam folder).',
-                          ),
-                          backgroundColor: _kSurface,
-                          behavior: SnackBarBehavior.floating,
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(8),
-                          ),
-                        ),
-                      );
-                    } on FirebaseAuthException catch (e) {
-                      setDialogState(() {
-                        localError = e.code == 'user-not-found'
-                            ? 'No account found with that email.'
-                            : (e.message ?? 'Could not send reset email.');
-                        sending = false;
-                      });
-                    } catch (e) {
-                      setDialogState(() {
-                        localError = 'Could not send reset email.';
-                        sending = false;
-                      });
-                    }
-                  },
+  final messenger = ScaffoldMessenger.of(this.context);
+
+  final email = controller.text.trim();
+  if (email.isEmpty || !email.contains('@')) {
+    setDialogState(
+      () => localError = 'Enter a valid email address.',
+    );
+    return;
+  }
+
+  setDialogState(() {
+    sending = true;
+    localError = null;
+  });
+
+  try {
+    await AuthService.instance.sendPasswordResetEmail(email);
+
+    if (!context.mounted) return;
+
+    context.pop();
+
+    messenger.showSnackBar(
+      SnackBar(
+        content: Text(
+          'Reset link sent to $email. Check your inbox (and spam folder).',
+        ),
+        backgroundColor: _kSurface,
+        behavior: SnackBarBehavior.floating,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(8),
+        ),
+      ),
+    );
+  } on FirebaseAuthException catch (e) {
+    setDialogState(() {
+      localError = e.code == 'user-not-found'
+          ? 'No account found with that email.'
+          : (e.message ?? 'Could not send reset email.');
+      sending = false;
+    });
+  } catch (e) {
+    setDialogState(() {
+      localError = 'Could not send reset email.';
+      sending = false;
+    });
+  }
+},
                   child: sending
                       ? const SizedBox(
                           width: 16,

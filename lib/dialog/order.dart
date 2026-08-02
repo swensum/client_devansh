@@ -678,7 +678,7 @@ class _QtyButtonState extends State<_QtyButton> {
 class _DetailEntry {
   final String label;
   final String value;
-  final Color? valueColor;
+  
   final bool isAvailability;
 
   const _DetailEntry({
@@ -686,7 +686,7 @@ class _DetailEntry {
     required this.value,
     // ignore: unused_element_parameter
     this.isAvailability = false,
-    this.valueColor,
+ 
   });
 }
 
@@ -752,9 +752,9 @@ class _DetailLine extends StatelessWidget {
           TextSpan(
             text: entry.value,
             style: TextStyle(
-              color: showGreen
-                  ? _kGreen
-                  : (entry.valueColor ?? const Color(0xFFF5F5F5)),
+             color: showGreen
+    ? _kGreen
+    : const Color(0xFFF5F5F5),
               fontSize: 15,
               fontWeight: FontWeight.w500,
               letterSpacing: 0.2,

@@ -324,11 +324,13 @@ class _ContactPageState extends State<ContactPage> {
                 label: "Email Address",
                 keyboardType: TextInputType.emailAddress,
                 validator: (value) {
-                  if (value == null || value.trim().isEmpty)
+                  if (value == null || value.trim().isEmpty) {
                     return "Please enter your email";
+                  }
                   final emailRegex = RegExp(r'^[\w\.\-]+@[\w\-]+\.[\w\.\-]+$');
-                  if (!emailRegex.hasMatch(value.trim()))
+                  if (!emailRegex.hasMatch(value.trim())) {
                     return "Enter a valid email";
+                  }
                   return null;
                 },
               ),

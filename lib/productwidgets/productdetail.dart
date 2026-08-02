@@ -132,8 +132,9 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
                                               fit: BoxFit.cover,
                                               loadingBuilder:
                                                   (context, child, progress) {
-                                                    if (progress == null)
+                                                    if (progress == null) {
                                                       return child;
+                                                    }
                                                     return Container(
                                                       color:
                                                           Colors.grey.shade900,
@@ -919,14 +920,13 @@ class _RelatedProductCardState extends State<_RelatedProductCard>
 class _DetailEntry {
   final String label;
   final String value;
-  final Color? valueColor;
+
   final bool isAvailability;
 
   const _DetailEntry({
     required this.label,
     required this.value,
-    // ignore: unused_element_parameter
-    this.valueColor,
+  
     this.isAvailability = false,
   });
 }
@@ -993,9 +993,9 @@ class _DetailLine extends StatelessWidget {
           TextSpan(
             text: entry.value,
             style: TextStyle(
-              color: showGreen
-                  ? _kGreen
-                  : (entry.valueColor ?? const Color(0xFFF5F5F5)),
+             color: showGreen
+    ? _kGreen
+    : const Color(0xFFF5F5F5),
               fontSize: 15,
               fontWeight: FontWeight.w500,
               letterSpacing: 0.2,
