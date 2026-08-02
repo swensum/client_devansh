@@ -121,7 +121,7 @@ class HeroSlide {
 const List<HeroSlide> _kSlides = [
   HeroSlide(
     image: 'assets/port.jpg',
-    headline: "Elevate Every Space with Premium Cabinet Handles",
+    headline: "Elegny Every Space with Premium Cabinet Handles",
     subtext:
         "Discover modern, durable, and elegant cabinet & door handles "
         "crafted to complement every interior.",
