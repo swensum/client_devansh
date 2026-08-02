@@ -50,23 +50,19 @@ dev_dependencies:
 
   flutter_lints: ^6.0.0
 
-# For information on the generic Dart part of this file, see the
-# following page: https://dart.dev/tools/pub/pubspec
-
-# The following section is specific to Flutter packages.
 flutter:
   assets:
     - assets/port.jpg
     - assets/logo.png
-    - assets/port2.png
-    - assets/port3.png
-    - assets/image1.png
-    - assets/port.png
+    - assets/port2.jpg
+    - assets/port3.jpg
+    - assets/image1.jpg
+   
     - assets/decor.jpg
-    - assets/devansh.png
-    - assets/chimney.png
-    - assets/basket.png
-    - assets/download.jpg
+    - assets/devansh.jpg
+    - assets/chimney.jpg
+    - assets/basket.jpg
+  
     - assets/png/badge.png
     - assets/png/door-handle.png
     - assets/png/money.png

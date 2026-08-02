@@ -129,7 +129,7 @@ const List<HeroSlide> _kSlides = [
     align: HeroTextAlign.left,
   ),
   HeroSlide(
-    image: 'assets/port2.png',
+    image: 'assets/port2.jpg',
     headline: "Timeless Design Meets Everyday Durability",
     subtext:
         "Designed for modern homes and premium spaces, our aldrops deliver "
@@ -137,7 +137,7 @@ const List<HeroSlide> _kSlides = [
     align: HeroTextAlign.right,
   ),
   HeroSlide(
-    image: 'assets/port3.png',
+    image: 'assets/port3.jpg',
     headline: "Crafted Details, Built to Impress",
     subtext:
         "A collection of fittings and finishes designed to bring "

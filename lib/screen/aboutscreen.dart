@@ -34,9 +34,9 @@ class _AboutPageState extends State<AboutPage> {
     if (!_precached) {
       _precached = true;
       precacheImage(const AssetImage('assets/decor.jpg'), context);
-      precacheImage(const AssetImage('assets/devansh.png'), context);
-      precacheImage(const AssetImage('assets/chimney.png'), context);
-      precacheImage(const AssetImage('assets/basket.png'), context);
+      precacheImage(const AssetImage('assets/devansh.jpg'), context);
+      precacheImage(const AssetImage('assets/chimney.jpg'), context);
+      precacheImage(const AssetImage('assets/basket.jpg'), context);
     }
   }
 
@@ -368,7 +368,7 @@ class _GallerySection extends StatelessWidget {
                       children: [
                         Expanded(
                           flex: 3,
-                          child: _GalleryImage(asset: 'assets/devansh.png'),
+                          child: _GalleryImage(asset: 'assets/devansh.jpg'),
                         ),
                         const SizedBox(width: 16),
                         Expanded(
@@ -377,13 +377,13 @@ class _GallerySection extends StatelessWidget {
                             children: [
                               Expanded(
                                 child: _GalleryImage(
-                                  asset: 'assets/chimney.png',
+                                  asset: 'assets/chimney.jpg',
                                 ),
                               ),
                               const SizedBox(height: 16),
                               Expanded(
                                 child: _GalleryImage(
-                                  asset: 'assets/basket.png',
+                                  asset: 'assets/basket.jpg',
                                 ),
                               ),
                             ],
@@ -399,7 +399,7 @@ class _GallerySection extends StatelessWidget {
                     SizedBox(
                       height: 260,
                       width: double.infinity,
-                      child: _GalleryImage(asset: 'assets/devansh.png'),
+                      child: _GalleryImage(asset: 'assets/devansh.jpg'),
                     ),
                     const SizedBox(height: 16),
                     Row(
@@ -407,14 +407,14 @@ class _GallerySection extends StatelessWidget {
                         Expanded(
                           child: SizedBox(
                             height: 140,
-                            child: _GalleryImage(asset: 'assets/chimney.png'),
+                            child: _GalleryImage(asset: 'assets/chimney.jpg'),
                           ),
                         ),
                         const SizedBox(width: 16),
                         Expanded(
                           child: SizedBox(
                             height: 140,
-                            child: _GalleryImage(asset: 'assets/basket.png'),
+                            child: _GalleryImage(asset: 'assets/basket.jpg'),
                           ),
                         ),
                       ],

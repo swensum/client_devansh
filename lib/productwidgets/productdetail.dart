@@ -409,7 +409,7 @@ class _DetailBanner extends StatelessWidget {
         fit: StackFit.expand,
         children: [
           Image.asset(
-            'assets/port3.png',
+            'assets/port3.jpg',
             fit: BoxFit.cover,
             errorBuilder: (context, error, stackTrace) =>
                 Container(color: Colors.grey.shade900),
