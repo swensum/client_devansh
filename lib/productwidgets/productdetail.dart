@@ -60,8 +60,9 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
                     final allProducts = productSnap.data ?? [];
 
                     final stillLoading =
-                        categorySnap.connectionState == ConnectionState.waiting &&
-                            categories.isEmpty;
+                        categorySnap.connectionState ==
+                            ConnectionState.waiting &&
+                        categories.isEmpty;
 
                     if (stillLoading) {
                       return const Scaffold(
@@ -76,23 +77,30 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
                     final material = Catalog.materialFor(product, materials);
                     final category = categories.firstWhere(
                       (c) => c.id == product.categoryId,
-                      orElse: () => Category(id: product.categoryId, name: 'Uncategorized'),
+                      orElse: () => Category(
+                        id: product.categoryId,
+                        name: 'Uncategorized',
+                      ),
                     );
 
-                    final specs = <String, String?>{
-                      'Thickness': product.thickness,
-                      'Size': product.size,
-                      'Quantity': product.quantity,
-                      'Brand': company?.name,
-                      'Finish': product.finish,
-                      'Material': material?.name,
-                      'Availability': product.availability,
-                    }..removeWhere((key, value) => value == null || value.trim().isEmpty);
+                    final specs =
+                        <String, String?>{
+                          'Thickness': product.thickness,
+                          'Size': product.size,
+                          'Quantity': product.quantity,
+                          'Brand': company?.name,
+                          'Finish': product.finish,
+                          'Material': material?.name,
+                          'Availability': product.availability,
+                        }..removeWhere(
+                          (key, value) => value == null || value.trim().isEmpty,
+                        );
 
                     // Same category, excluding the product currently being viewed.
-                    final relatedProducts = Catalog.byCategory(allProducts, product.categoryId)
-                        .where((p) => p.id != product.id)
-                        .toList();
+                    final relatedProducts = Catalog.byCategory(
+                      allProducts,
+                      product.categoryId,
+                    ).where((p) => p.id != product.id).toList();
 
                     return AppPageScaffold(
                       backgroundColor: Colors.black,
@@ -108,10 +116,13 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
                               child: LayoutBuilder(
                                 builder: (context, constraints) {
                                   final isNarrow =
-                                      constraints.maxWidth < _kDetailStackBreakpoint;
+                                      constraints.maxWidth <
+                                      _kDetailStackBreakpoint;
 
                                   final imageWidget = SizedBox(
-                                    height: isNarrow ? _kImageHeightNarrow : _kImageHeight,
+                                    height: isNarrow
+                                        ? _kImageHeightNarrow
+                                        : _kImageHeight,
                                     width: double.infinity,
                                     child: ClipRRect(
                                       borderRadius: BorderRadius.circular(12),
@@ -119,39 +130,52 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
                                           ? Image.network(
                                               product.imageUrl,
                                               fit: BoxFit.cover,
-                                              loadingBuilder: (context, child, progress) {
-                                                if (progress == null) return child;
-                                                return Container(
-                                                  color: Colors.grey.shade900,
-                                                  child: const Center(
-                                                    child: CircularProgressIndicator(
-                                                      color: _kAmber,
-                                                      strokeWidth: 2,
+                                              loadingBuilder:
+                                                  (context, child, progress) {
+                                                    if (progress == null)
+                                                      return child;
+                                                    return Container(
+                                                      color:
+                                                          Colors.grey.shade900,
+                                                      child: const Center(
+                                                        child:
+                                                            CircularProgressIndicator(
+                                                              color: _kAmber,
+                                                              strokeWidth: 2,
+                                                            ),
+                                                      ),
+                                                    );
+                                                  },
+                                              errorBuilder:
+                                                  (
+                                                    context,
+                                                    error,
+                                                    stackTrace,
+                                                  ) => Container(
+                                                    color: Colors.grey.shade800,
+                                                    child: const Icon(
+                                                      Icons
+                                                          .image_not_supported_outlined,
+                                                      color: Colors.white38,
+                                                      size: 32,
                                                     ),
                                                   ),
-                                                );
-                                              },
-                                              errorBuilder: (context, error, stackTrace) =>
-                                                  Container(
-                                                color: Colors.grey.shade800,
-                                                child: const Icon(
-                                                    Icons.image_not_supported_outlined,
-                                                    color: Colors.white38,
-                                                    size: 32),
-                                              ),
                                             )
                                           : Container(
                                               color: Colors.grey.shade800,
                                               child: const Icon(
-                                                  Icons.image_not_supported_outlined,
-                                                  color: Colors.white38,
-                                                  size: 32),
+                                                Icons
+                                                    .image_not_supported_outlined,
+                                                color: Colors.white38,
+                                                size: 32,
+                                              ),
                                             ),
                                     ),
                                   );
 
                                   final detailsWidget = Column(
-                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
                                     children: [
                                       Text(
                                         product.name,
@@ -165,9 +189,10 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
                                       Text(
                                         category.name,
                                         style: const TextStyle(
-                                            color: _kAmber,
-                                            fontSize: 16,
-                                            fontWeight: FontWeight.w600),
+                                          color: _kAmber,
+                                          fontSize: 16,
+                                          fontWeight: FontWeight.w600,
+                                        ),
                                       ),
 
                                       // ─────────────────────────────────────
@@ -178,13 +203,17 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
                                       // properly instead of as plain text.
                                       // ─────────────────────────────────────
                                       if (product.description != null &&
-                                          product.description!.trim().isNotEmpty) ...[
+                                          product.description!
+                                              .trim()
+                                              .isNotEmpty) ...[
                                         const SizedBox(height: 15),
                                         MarkdownBody(
                                           data: product.description!,
                                           styleSheet: MarkdownStyleSheet(
                                             p: TextStyle(
-                                              color: Colors.white.withValues(alpha: 0.75),
+                                              color: Colors.white.withValues(
+                                                alpha: 0.75,
+                                              ),
                                               fontSize: 16,
                                               height: 1.5,
                                             ),
@@ -208,10 +237,14 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
                                               fontWeight: FontWeight.bold,
                                             ),
                                             em: TextStyle(
-                                              color: Colors.white.withValues(alpha: 0.75),
+                                              color: Colors.white.withValues(
+                                                alpha: 0.75,
+                                              ),
                                               fontStyle: FontStyle.italic,
                                             ),
-                                            listBullet: const TextStyle(color: _kAmber),
+                                            listBullet: const TextStyle(
+                                              color: _kAmber,
+                                            ),
                                             listIndent: 20,
                                             tableHead: const TextStyle(
                                               color: Colors.white,
@@ -219,22 +252,32 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
                                               fontSize: 14,
                                             ),
                                             tableBody: TextStyle(
-                                              color: Colors.white.withValues(alpha: 0.75),
+                                              color: Colors.white.withValues(
+                                                alpha: 0.75,
+                                              ),
                                               fontSize: 14,
                                             ),
                                             tableBorder: TableBorder.all(
                                               color: Colors.white24,
                                             ),
-                                            tableCellsPadding: const EdgeInsets.symmetric(
-                                              horizontal: 10,
-                                              vertical: 6,
-                                            ),
-                                            tableColumnWidth: const FlexColumnWidth(),
+                                            tableCellsPadding:
+                                                const EdgeInsets.symmetric(
+                                                  horizontal: 10,
+                                                  vertical: 6,
+                                                ),
+                                            tableColumnWidth:
+                                                const FlexColumnWidth(),
                                             blockquoteDecoration: BoxDecoration(
-                                              color: Colors.white.withValues(alpha: 0.05),
-                                              borderRadius: BorderRadius.circular(6),
+                                              color: Colors.white.withValues(
+                                                alpha: 0.05,
+                                              ),
+                                              borderRadius:
+                                                  BorderRadius.circular(6),
                                               border: Border(
-                                                left: BorderSide(color: _kAmber, width: 3),
+                                                left: BorderSide(
+                                                  color: _kAmber,
+                                                  width: 3,
+                                                ),
                                               ),
                                             ),
                                             a: const TextStyle(color: _kAmber),
@@ -247,10 +290,17 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
                                         width: double.infinity,
                                         padding: const EdgeInsets.all(18),
                                         decoration: BoxDecoration(
-                                          color: Colors.white.withValues(alpha: 0.08),
-                                          borderRadius: BorderRadius.circular(12),
+                                          color: Colors.white.withValues(
+                                            alpha: 0.08,
+                                          ),
+                                          borderRadius: BorderRadius.circular(
+                                            12,
+                                          ),
                                           border: Border.all(
-                                              color: Colors.white.withValues(alpha: 0.15)),
+                                            color: Colors.white.withValues(
+                                              alpha: 0.15,
+                                            ),
+                                          ),
                                         ),
                                         child: _DetailGrid(
                                           entries: [
@@ -272,24 +322,37 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
                                           style: ElevatedButton.styleFrom(
                                             backgroundColor: _kAmber,
                                             foregroundColor: Colors.black,
-                                            minimumSize: const Size(double.infinity, 46),
+                                            minimumSize: const Size(
+                                              double.infinity,
+                                              46,
+                                            ),
                                             shape: RoundedRectangleBorder(
-                                                borderRadius: BorderRadius.circular(8)),
+                                              borderRadius:
+                                                  BorderRadius.circular(8),
+                                            ),
                                           ),
-                                          child: const Text('Place Order',
-                                              style:
-                                                  TextStyle(fontWeight: FontWeight.w600)),
+                                          child: const Text(
+                                            'Place Order',
+                                            style: TextStyle(
+                                              fontWeight: FontWeight.w600,
+                                            ),
+                                          ),
                                         ),
                                       ),
                                     ],
                                   );
 
                                   return Padding(
-                                    padding:
-                                        EdgeInsets.fromLTRB(16, isNarrow ? 24 : 50, 16, 16),
+                                    padding: EdgeInsets.fromLTRB(
+                                      16,
+                                      isNarrow ? 24 : 50,
+                                      16,
+                                      16,
+                                    ),
                                     child: isNarrow
                                         ? Column(
-                                            crossAxisAlignment: CrossAxisAlignment.stretch,
+                                            crossAxisAlignment:
+                                                CrossAxisAlignment.stretch,
                                             children: [
                                               imageWidget,
                                               const SizedBox(height: 24),
@@ -297,7 +360,8 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
                                             ],
                                           )
                                         : Row(
-                                            crossAxisAlignment: CrossAxisAlignment.start,
+                                            crossAxisAlignment:
+                                                CrossAxisAlignment.start,
                                             children: [
                                               Expanded(child: imageWidget),
                                               const SizedBox(width: 24),
@@ -335,7 +399,7 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
 class _DetailBanner extends StatelessWidget {
   const _DetailBanner();
 
-   @override
+  @override
   Widget build(BuildContext context) {
     return SizedBox(
       width: double.infinity,
@@ -344,19 +408,16 @@ class _DetailBanner extends StatelessWidget {
         fit: StackFit.expand,
         children: [
           Image.asset(
-            'assets/port3.png', 
+            'assets/port3.png',
             fit: BoxFit.cover,
-            errorBuilder: (context, error, stackTrace) => Container(
-              color: Colors.grey.shade900,
-            ),
+            errorBuilder: (context, error, stackTrace) =>
+                Container(color: Colors.grey.shade900),
           ),
-          
         ],
       ),
     );
   }
 }
-
 
 /// Same divider style as used on HomePage/ProductsPage.
 class _Divider extends StatelessWidget {
@@ -376,10 +437,14 @@ class _RelatedProductsSection extends StatefulWidget {
   final List<Product> products;
   final List<Company> companies;
 
-  const _RelatedProductsSection({required this.products, required this.companies});
+  const _RelatedProductsSection({
+    required this.products,
+    required this.companies,
+  });
 
   @override
-  State<_RelatedProductsSection> createState() => _RelatedProductsSectionState();
+  State<_RelatedProductsSection> createState() =>
+      _RelatedProductsSectionState();
 }
 
 class _RelatedProductsSectionState extends State<_RelatedProductsSection> {
@@ -419,7 +484,10 @@ class _RelatedProductsSectionState extends State<_RelatedProductsSection> {
     final start = _canSlide ? (_kLoopMultiplier ~/ 2) * _itemCount : 0;
     _virtualIndex = start;
     _currentIndex = 0;
-    _pageController = PageController(viewportFraction: 1 / itemsPerPage, initialPage: start);
+    _pageController = PageController(
+      viewportFraction: 1 / itemsPerPage,
+      initialPage: start,
+    );
   }
 
   @override
@@ -479,7 +547,9 @@ class _RelatedProductsSectionState extends State<_RelatedProductsSection> {
 
   @override
   Widget build(BuildContext context) {
-    final pageItemCount = _canSlide ? _itemCount * _kLoopMultiplier : _itemCount;
+    final pageItemCount = _canSlide
+        ? _itemCount * _kLoopMultiplier
+        : _itemCount;
 
     return Container(
       width: double.infinity,
@@ -495,14 +565,20 @@ class _RelatedProductsSectionState extends State<_RelatedProductsSection> {
                 const Text(
                   'Related Products',
                   textAlign: TextAlign.center,
-                  style: TextStyle(color: Colors.white, fontSize: 28, fontWeight: FontWeight.bold),
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontSize: 28,
+                    fontWeight: FontWeight.bold,
+                  ),
                 ),
                 const SizedBox(height: 52),
                 SizedBox(
                   height: 290,
                   child: LayoutBuilder(
                     builder: (context, constraints) {
-                      final desiredItemsPerPage = _computeItemsPerPage(constraints.maxWidth);
+                      final desiredItemsPerPage = _computeItemsPerPage(
+                        constraints.maxWidth,
+                      );
                       if (desiredItemsPerPage != _itemsPerPage) {
                         // Use the current controller for this frame; the
                         // rebuild with the new controller happens right after.
@@ -512,15 +588,20 @@ class _RelatedProductsSectionState extends State<_RelatedProductsSection> {
                       final slotWidth = constraints.maxWidth / _itemsPerPage;
                       final rawCardWidth = slotWidth - _kCardGap;
                       final cardWidth = _itemsPerPage == 1
-                          ? rawCardWidth.clamp(0, _kMaxSingleCardWidth).toDouble()
+                          ? rawCardWidth
+                                .clamp(0, _kMaxSingleCardWidth)
+                                .toDouble()
                           : rawCardWidth;
-                      final alignment =
-                          _itemsPerPage == 1 ? Alignment.center : Alignment.centerLeft;
+                      final alignment = _itemsPerPage == 1
+                          ? Alignment.center
+                          : Alignment.centerLeft;
 
                       return NotificationListener<ScrollNotification>(
                         onNotification: (notification) {
-                          if (notification is ScrollEndNotification && _pageController.hasClients) {
-                            final page = _pageController.page?.round() ?? _virtualIndex;
+                          if (notification is ScrollEndNotification &&
+                              _pageController.hasClients) {
+                            final page =
+                                _pageController.page?.round() ?? _virtualIndex;
                             _virtualIndex = page;
                             setState(() => _currentIndex = page % _itemCount);
                           }
@@ -538,7 +619,12 @@ class _RelatedProductsSectionState extends State<_RelatedProductsSection> {
                               child: SizedBox(
                                 width: cardWidth,
                                 child: Padding(
-                                  padding: EdgeInsets.fromLTRB(_kCardGap / 2, 8, _kCardGap / 2, 8),
+                                  padding: EdgeInsets.fromLTRB(
+                                    _kCardGap / 2,
+                                    8,
+                                    _kCardGap / 2,
+                                    8,
+                                  ),
                                   child: _RelatedProductCard(
                                     product: product,
                                     companies: widget.companies,
@@ -566,7 +652,9 @@ class _RelatedProductsSectionState extends State<_RelatedProductsSection> {
                             width: _currentIndex == i ? 20 : 8,
                             height: 8,
                             decoration: BoxDecoration(
-                              color: _currentIndex == i ? _kAmber : Colors.white24,
+                              color: _currentIndex == i
+                                  ? _kAmber
+                                  : Colors.white24,
                               borderRadius: BorderRadius.circular(4),
                             ),
                           ),
@@ -593,7 +681,8 @@ class _RelatedProductCard extends StatefulWidget {
   State<_RelatedProductCard> createState() => _RelatedProductCardState();
 }
 
-class _RelatedProductCardState extends State<_RelatedProductCard> with SingleTickerProviderStateMixin {
+class _RelatedProductCardState extends State<_RelatedProductCard>
+    with SingleTickerProviderStateMixin {
   bool _isHovered = false;
   late final AnimationController _scaleController;
   late final Animation<double> _scaleAnimation;
@@ -607,9 +696,10 @@ class _RelatedProductCardState extends State<_RelatedProductCard> with SingleTic
       vsync: this,
       duration: const Duration(milliseconds: 200),
     );
-    _scaleAnimation = Tween<double>(begin: 1.0, end: 1.03).animate(
-      CurvedAnimation(parent: _scaleController, curve: Curves.easeOut),
-    );
+    _scaleAnimation = Tween<double>(
+      begin: 1.0,
+      end: 1.03,
+    ).animate(CurvedAnimation(parent: _scaleController, curve: Curves.easeOut));
   }
 
   @override
@@ -634,12 +724,9 @@ class _RelatedProductCardState extends State<_RelatedProductCard> with SingleTic
       onEnter: (_) => _setHovered(true),
       onExit: (_) => _setHovered(false),
       child: GestureDetector(
-       onTap: () {
-  context.push(
-    '/product/${product.id}',
-    extra: product,
-  );
-},
+        onTap: () {
+          context.push('/product/${product.id}', extra: product);
+        },
         child: RepaintBoundary(
           child: ScaleTransition(
             scale: _scaleAnimation,
@@ -647,13 +734,17 @@ class _RelatedProductCardState extends State<_RelatedProductCard> with SingleTic
               decoration: BoxDecoration(
                 color: Colors.white.withValues(alpha: 0.08),
                 borderRadius: BorderRadius.circular(_cardRadius),
-                 border: Border.all(
-    color: _isHovered ? _kAmber.withValues(alpha: 0.6) : Colors.white.withValues(alpha: 0.12),
-    width: 1.5,
-  ),
+                border: Border.all(
+                  color: _isHovered
+                      ? _kAmber.withValues(alpha: 0.6)
+                      : Colors.white.withValues(alpha: 0.12),
+                  width: 1.5,
+                ),
                 boxShadow: [
                   BoxShadow(
-                    color: Colors.black.withValues(alpha: _isHovered ? 0.15 : 0.06),
+                    color: Colors.black.withValues(
+                      alpha: _isHovered ? 0.15 : 0.06,
+                    ),
                     blurRadius: _isHovered ? 20 : 8,
                     offset: Offset(0, _isHovered ? 8 : 4),
                     spreadRadius: _isHovered ? 2 : 0,
@@ -689,19 +780,29 @@ class _RelatedProductCardState extends State<_RelatedProductCard> with SingleTic
                                         ),
                                       );
                                     },
-                                    errorBuilder: (context, error, stackTrace) => Container(
-                                      color: Colors.grey.shade800,
-                                      child: const Center(
-                                        child: Icon(Icons.image_not_supported_outlined,
-                                            color: Colors.white38),
-                                      ),
-                                    ),
+                                    errorBuilder:
+                                        (
+                                          context,
+                                          error,
+                                          stackTrace,
+                                        ) => Container(
+                                          color: Colors.grey.shade800,
+                                          child: const Center(
+                                            child: Icon(
+                                              Icons
+                                                  .image_not_supported_outlined,
+                                              color: Colors.white38,
+                                            ),
+                                          ),
+                                        ),
                                   )
                                 : Container(
                                     color: Colors.grey.shade800,
                                     child: const Center(
-                                      child: Icon(Icons.image_not_supported_outlined,
-                                          color: Colors.white38),
+                                      child: Icon(
+                                        Icons.image_not_supported_outlined,
+                                        color: Colors.white38,
+                                      ),
                                     ),
                                   ),
                             AnimatedOpacity(
@@ -712,7 +813,10 @@ class _RelatedProductCardState extends State<_RelatedProductCard> with SingleTic
                                   gradient: LinearGradient(
                                     begin: Alignment.topCenter,
                                     end: Alignment.bottomCenter,
-                                    colors: [Colors.transparent, Colors.black.withValues(alpha: 0.7)],
+                                    colors: [
+                                      Colors.transparent,
+                                      Colors.black.withValues(alpha: 0.7),
+                                    ],
                                   ),
                                 ),
                               ),
@@ -723,7 +827,10 @@ class _RelatedProductCardState extends State<_RelatedProductCard> with SingleTic
                               child: AnimatedOpacity(
                                 duration: const Duration(milliseconds: 200),
                                 opacity: _isHovered ? 1.0 : 0.0,
-                                child: _buildQuickActionButton(Icons.favorite_border, Colors.white),
+                                child: _buildQuickActionButton(
+                                  Icons.favorite_border,
+                                  Colors.white,
+                                ),
                               ),
                             ),
                           ],
@@ -740,13 +847,20 @@ class _RelatedProductCardState extends State<_RelatedProductCard> with SingleTic
                           product.name,
                           maxLines: 2,
                           overflow: TextOverflow.ellipsis,
-                          style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w600, fontSize: 12.5),
+                          style: const TextStyle(
+                            color: Colors.white,
+                            fontWeight: FontWeight.w600,
+                            fontSize: 12.5,
+                          ),
                         ),
                         const SizedBox(height: 4),
                         if (company != null)
                           Text(
                             company.name,
-                            style: TextStyle(color: Colors.white.withValues(alpha: 0.55), fontSize: 11),
+                            style: TextStyle(
+                              color: Colors.white.withValues(alpha: 0.55),
+                              fontSize: 11,
+                            ),
                           ),
                         const SizedBox(height: 6),
                         Row(
@@ -754,7 +868,11 @@ class _RelatedProductCardState extends State<_RelatedProductCard> with SingleTic
                           children: [
                             Text(
                               '\$${product.price.toStringAsFixed(2)}',
-                              style: const TextStyle(color: _kAmber, fontWeight: FontWeight.bold, fontSize: 13.5),
+                              style: const TextStyle(
+                                color: _kAmber,
+                                fontWeight: FontWeight.bold,
+                                fontSize: 13.5,
+                              ),
                             ),
                             AnimatedOpacity(
                               duration: const Duration(milliseconds: 200),
@@ -832,16 +950,17 @@ class _DetailGrid extends StatelessWidget {
             children: [
               Expanded(child: _DetailLine(entry: left)),
               const SizedBox(width: 16),
-              Expanded(child: right != null ? _DetailLine(entry: right) : const SizedBox.shrink()),
+              Expanded(
+                child: right != null
+                    ? _DetailLine(entry: right)
+                    : const SizedBox.shrink(),
+              ),
             ],
           ),
         ),
       );
     }
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: rows,
-    );
+    return Column(crossAxisAlignment: CrossAxisAlignment.start, children: rows);
   }
 }
 
@@ -869,7 +988,6 @@ class _DetailLine extends StatelessWidget {
               fontWeight: FontWeight.w500,
               letterSpacing: 0.3,
               height: 1.4,
-              
             ),
           ),
           TextSpan(
@@ -890,11 +1008,7 @@ class _DetailLine extends StatelessWidget {
               alignment: PlaceholderAlignment.middle,
               child: Padding(
                 padding: EdgeInsets.only(left: 5),
-                child: Icon(
-                  Icons.check_circle,
-                  size: 15,
-                  color: _kGreen,
-                ),
+                child: Icon(Icons.check_circle, size: 15, color: _kGreen),
               ),
             ),
         ],

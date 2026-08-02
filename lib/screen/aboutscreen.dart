@@ -41,22 +41,22 @@ class _AboutPageState extends State<AboutPage> {
   }
 
   @override
-Widget build(BuildContext context) {
-  return AppPageScaffold(
-    body: Column(
-      children: [
-        SizedBox(height: Header.height + TopBar.height),
-        const _WelcomeSection(),
-        const _GallerySection(),
-        const StatsSection(),
-        const _FeaturesSection(),
-        const _BrandsSection(),
-        const _ReviewFormSection(),
-        const Footer(),
-      ],
-    ),
-  );
-}
+  Widget build(BuildContext context) {
+    return AppPageScaffold(
+      body: Column(
+        children: [
+          SizedBox(height: Header.height + TopBar.height),
+          const _WelcomeSection(),
+          const _GallerySection(),
+          const StatsSection(),
+          const _FeaturesSection(),
+          const _BrandsSection(),
+          const _ReviewFormSection(),
+          const Footer(),
+        ],
+      ),
+    );
+  }
 }
 
 class _RevealOnScroll extends StatefulWidget {
@@ -132,13 +132,7 @@ class _WelcomeSection extends StatelessWidget {
                         Expanded(flex: 6, child: text),
                       ],
                     )
-                  : Column(
-                      children: [
-                        image,
-                        const SizedBox(height: 40),
-                        text,
-                      ],
-                    );
+                  : Column(children: [image, const SizedBox(height: 40), text]);
             },
           ),
         ),
@@ -169,7 +163,10 @@ class _WelcomeImage extends StatelessWidget {
             child: Container(
               decoration: BoxDecoration(
                 color: _gold,
-                border: Border.all(color: _gold.withValues(alpha: 0.4), width: 1.2),
+                border: Border.all(
+                  color: _gold.withValues(alpha: 0.4),
+                  width: 1.2,
+                ),
               ),
             ),
           ),
@@ -247,7 +244,9 @@ class _WelcomeText extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Column(
-      crossAxisAlignment: isWide ? CrossAxisAlignment.start : CrossAxisAlignment.center,
+      crossAxisAlignment: isWide
+          ? CrossAxisAlignment.start
+          : CrossAxisAlignment.center,
       mainAxisSize: MainAxisSize.min,
       children: [
         Text(
@@ -277,7 +276,10 @@ class _WelcomeText extends StatelessWidget {
         Container(
           width: 70,
           height: 4,
-          decoration: BoxDecoration(color: _gold, borderRadius: BorderRadius.circular(2)),
+          decoration: BoxDecoration(
+            color: _gold,
+            borderRadius: BorderRadius.circular(2),
+          ),
         ),
         const SizedBox(height: 24),
         Text(
@@ -315,7 +317,9 @@ class _WelcomeText extends StatelessWidget {
               backgroundColor: _gold,
               foregroundColor: Colors.black,
               padding: const EdgeInsets.symmetric(horizontal: 26, vertical: 16),
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(6)),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(6),
+              ),
             ),
             child: const Text(
               "Explore Collection",
@@ -350,65 +354,76 @@ class _GallerySection extends StatelessWidget {
       child: _RevealOnScroll(
         detectorKey: const Key('reveal-gallery'),
         child: Center(
-        child: ConstrainedBox(
-          constraints: const BoxConstraints(maxWidth: 1400),
-          child: LayoutBuilder(
-            builder: (context, constraints) {
-              final isWide = constraints.maxWidth > 800;
+          child: ConstrainedBox(
+            constraints: const BoxConstraints(maxWidth: 1400),
+            child: LayoutBuilder(
+              builder: (context, constraints) {
+                final isWide = constraints.maxWidth > 800;
 
-              if (isWide) {
-                return SizedBox(
-                  height: 500,
-                  child: Row(
-                    crossAxisAlignment: CrossAxisAlignment.stretch,
-                    children: [
-                      Expanded(flex: 3, child: _GalleryImage(asset: 'assets/devansh.png')),
-                      const SizedBox(width: 16),
-                      Expanded(
-                        flex: 2,
-                        child: Column(
-                          children: [
-                            Expanded(child: _GalleryImage(asset: 'assets/chimney.png')),
-                            const SizedBox(height: 16),
-                            Expanded(child: _GalleryImage(asset: 'assets/basket.png')),
-                          ],
+                if (isWide) {
+                  return SizedBox(
+                    height: 500,
+                    child: Row(
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      children: [
+                        Expanded(
+                          flex: 3,
+                          child: _GalleryImage(asset: 'assets/devansh.png'),
                         ),
-                      ),
-                    ],
-                  ),
+                        const SizedBox(width: 16),
+                        Expanded(
+                          flex: 2,
+                          child: Column(
+                            children: [
+                              Expanded(
+                                child: _GalleryImage(
+                                  asset: 'assets/chimney.png',
+                                ),
+                              ),
+                              const SizedBox(height: 16),
+                              Expanded(
+                                child: _GalleryImage(
+                                  asset: 'assets/basket.png',
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
+                    ),
+                  );
+                }
+
+                return Column(
+                  children: [
+                    SizedBox(
+                      height: 260,
+                      width: double.infinity,
+                      child: _GalleryImage(asset: 'assets/devansh.png'),
+                    ),
+                    const SizedBox(height: 16),
+                    Row(
+                      children: [
+                        Expanded(
+                          child: SizedBox(
+                            height: 140,
+                            child: _GalleryImage(asset: 'assets/chimney.png'),
+                          ),
+                        ),
+                        const SizedBox(width: 16),
+                        Expanded(
+                          child: SizedBox(
+                            height: 140,
+                            child: _GalleryImage(asset: 'assets/basket.png'),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
                 );
-              }
-
-              return Column(
-                children: [
-                  SizedBox(
-                    height: 260,
-                    width: double.infinity,
-                    child: _GalleryImage(asset: 'assets/devansh.png'),
-                  ),
-                  const SizedBox(height: 16),
-                  Row(
-                    children: [
-                      Expanded(
-                        child: SizedBox(
-                          height: 140,
-                          child: _GalleryImage(asset: 'assets/chimney.png'),
-                        ),
-                      ),
-                      const SizedBox(width: 16),
-                      Expanded(
-                        child: SizedBox(
-                          height: 140,
-                          child: _GalleryImage(asset: 'assets/basket.png'),
-                        ),
-                      ),
-                    ],
-                  ),
-                ],
-              );
-            },
+              },
+            ),
           ),
-        ),
         ),
       ),
     );
@@ -450,7 +465,8 @@ class _FeaturesSection extends StatelessWidget {
     _FeatureCardData(
       iconAsset: 'assets/png/door-handle.png',
       title: "Genuine Products",
-      description: "We provide you with top-quality, sustainable, and authentic products.",
+      description:
+          "We provide you with top-quality, sustainable, and authentic products.",
     ),
     _FeatureCardData(
       iconAsset: 'assets/png/badge.png',
@@ -461,12 +477,14 @@ class _FeaturesSection extends StatelessWidget {
     _FeatureCardData(
       iconAsset: 'assets/png/money.png',
       title: "Big Savings",
-      description: "We present you with the best offers & deals on all our products and accessories.",
+      description:
+          "We present you with the best offers & deals on all our products and accessories.",
     ),
     _FeatureCardData(
       iconAsset: 'assets/png/virtual-assistant.png',
       title: "Excellent Supports",
-      description: "We provide high-quality services for all our customers with personal assistance.",
+      description:
+          "We provide high-quality services for all our customers with personal assistance.",
     ),
   ];
 
@@ -491,7 +509,13 @@ class _FeaturesSection extends StatelessWidget {
                   spacing: 24,
                   runSpacing: 24,
                   children: _features
-                      .map((f) => SizedBox(width: cardWidth, height: 380, child: _FeatureCard(data: f)))
+                      .map(
+                        (f) => SizedBox(
+                          width: cardWidth,
+                          height: 380,
+                          child: _FeatureCard(data: f),
+                        ),
+                      )
                       .toList(),
                 );
               },
@@ -558,7 +582,10 @@ class _FeatureCardState extends State<_FeatureCard> {
               width: 104,
               height: 104,
               padding: const EdgeInsets.all(18),
-              decoration: const BoxDecoration(color: Colors.white, shape: BoxShape.circle),
+              decoration: const BoxDecoration(
+                color: Colors.white,
+                shape: BoxShape.circle,
+              ),
               child: AnimatedRotation(
                 turns: _hovered ? 1.0 : 0.0,
                 duration: const Duration(milliseconds: 500),
@@ -575,13 +602,21 @@ class _FeatureCardState extends State<_FeatureCard> {
             Text(
               widget.data.title,
               textAlign: TextAlign.center,
-              style: const TextStyle(fontSize: 22, fontWeight: FontWeight.w600, color: Colors.white),
+              style: const TextStyle(
+                fontSize: 22,
+                fontWeight: FontWeight.w600,
+                color: Colors.white,
+              ),
             ),
             const SizedBox(height: 14),
             Text(
               widget.data.description,
               textAlign: TextAlign.center,
-              style: TextStyle(fontSize: 18, height: 1.5, color: Colors.white.withValues(alpha: 0.7)),
+              style: TextStyle(
+                fontSize: 18,
+                height: 1.5,
+                color: Colors.white.withValues(alpha: 0.7),
+              ),
             ),
           ],
         ),
@@ -618,7 +653,10 @@ class _BrandsSectionState extends State<_BrandsSection> {
           gradient: LinearGradient(
             begin: Alignment.centerLeft,
             end: Alignment.centerRight,
-            colors: [Colors.black.withValues(alpha: 0.85), Colors.black.withValues(alpha: 0.6)],
+            colors: [
+              Colors.black.withValues(alpha: 0.85),
+              Colors.black.withValues(alpha: 0.6),
+            ],
             stops: const [0.0, 0.65],
           ),
         ),
@@ -626,71 +664,80 @@ class _BrandsSectionState extends State<_BrandsSection> {
         child: _RevealOnScroll(
           detectorKey: const Key('reveal-brands'),
           child: Center(
-          child: ConstrainedBox(
-            constraints: const BoxConstraints(maxWidth: 1200),
-            child: Column(
-              children: [
-                const Text(
-                  "Brands We Work With",
-                  style: TextStyle(
-                    fontSize: 30,
-                    fontWeight: FontWeight.bold,
-                    color: Colors.white,
-                    letterSpacing: 1.0,
+            child: ConstrainedBox(
+              constraints: const BoxConstraints(maxWidth: 1200),
+              child: Column(
+                children: [
+                  const Text(
+                    "Brands We Work With",
+                    style: TextStyle(
+                      fontSize: 30,
+                      fontWeight: FontWeight.bold,
+                      color: Colors.white,
+                      letterSpacing: 1.0,
+                    ),
                   ),
-                ),
-                const SizedBox(height: 10),
-                Container(
-                  width: 60,
-                  height: 3,
-                  decoration: BoxDecoration(color: _gold, borderRadius: BorderRadius.circular(2)),
-                ),
-                const SizedBox(height: 12),
-                Text(
-                  "Trusted global manufacturers behind every product we stock",
-                  textAlign: TextAlign.center,
-                  style: TextStyle(fontSize: 15, color: Colors.white.withValues(alpha: 0.6)),
-                ),
-                const SizedBox(height: 44),
-                StreamBuilder<List<Company>>(
-                  stream: _catalogService.watchCompanies(),
-                  builder: (context, snapshot) {
-                    if (!snapshot.hasData) {
-                      return const Padding(
-                        padding: EdgeInsets.symmetric(vertical: 24),
-                        child: CircularProgressIndicator(color: _gold),
-                      );
-                    }
+                  const SizedBox(height: 10),
+                  Container(
+                    width: 60,
+                    height: 3,
+                    decoration: BoxDecoration(
+                      color: _gold,
+                      borderRadius: BorderRadius.circular(2),
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+                  Text(
+                    "Trusted global manufacturers behind every product we stock",
+                    textAlign: TextAlign.center,
+                    style: TextStyle(
+                      fontSize: 15,
+                      color: Colors.white.withValues(alpha: 0.6),
+                    ),
+                  ),
+                  const SizedBox(height: 44),
+                  StreamBuilder<List<Company>>(
+                    stream: _catalogService.watchCompanies(),
+                    builder: (context, snapshot) {
+                      if (!snapshot.hasData) {
+                        return const Padding(
+                          padding: EdgeInsets.symmetric(vertical: 24),
+                          child: CircularProgressIndicator(color: _gold),
+                        );
+                      }
 
-                    final companies = snapshot.data!;
-                    if (companies.isEmpty) return const SizedBox.shrink();
+                      final companies = snapshot.data!;
+                      if (companies.isEmpty) return const SizedBox.shrink();
 
-                    return LayoutBuilder(
-                      builder: (context, constraints) {
-                        const columns = 4;
-                        const spacing = 20.0;
-                        final w = constraints.maxWidth;
-                        final tileWidth = (w - (columns - 1) * spacing) / columns;
+                      return LayoutBuilder(
+                        builder: (context, constraints) {
+                          const columns = 4;
+                          const spacing = 20.0;
+                          final w = constraints.maxWidth;
+                          final tileWidth =
+                              (w - (columns - 1) * spacing) / columns;
 
-                        return Wrap(
-                          alignment: WrapAlignment.center,
-                          spacing: spacing,
-                          runSpacing: spacing,
-                          children: companies
-                              .map((company) => SizedBox(
+                          return Wrap(
+                            alignment: WrapAlignment.center,
+                            spacing: spacing,
+                            runSpacing: spacing,
+                            children: companies
+                                .map(
+                                  (company) => SizedBox(
                                     width: tileWidth,
                                     height: tileWidth * 0.75,
                                     child: _BrandTile(company: company),
-                                  ))
-                              .toList(),
-                        );
-                      },
-                    );
-                  },
-                ),
-              ],
+                                  ),
+                                )
+                                .toList(),
+                          );
+                        },
+                      );
+                    },
+                  ),
+                ],
+              ),
             ),
-          ),
           ),
         ),
       ),
@@ -728,7 +775,10 @@ class _BrandTileState extends State<_BrandTile> {
           decoration: BoxDecoration(
             color: Colors.white,
             borderRadius: BorderRadius.circular(10),
-            border: Border.all(color: _hovered ? _gold : Colors.transparent, width: 2),
+            border: Border.all(
+              color: _hovered ? _gold : Colors.transparent,
+              width: 2,
+            ),
             boxShadow: [
               BoxShadow(
                 color: Colors.black.withValues(alpha: _hovered ? 0.3 : 0.15),
@@ -742,28 +792,40 @@ class _BrandTileState extends State<_BrandTile> {
                 ? Text(
                     widget.company.name,
                     textAlign: TextAlign.center,
-                    style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600, color: Colors.black87),
+                    style: const TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.w600,
+                      color: Colors.black87,
+                    ),
                   )
                 : isNetworkImage
-                    ? Image.network(
-                        logoAsset,
-                        fit: BoxFit.contain,
-                        cacheWidth: 320,
-                        errorBuilder: (context, error, stackTrace) => Text(
-                          widget.company.name,
-                          textAlign: TextAlign.center,
-                          style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600, color: Colors.black87),
-                        ),
-                      )
-                    : Image.asset(
-                        logoAsset,
-                        fit: BoxFit.contain,
-                        errorBuilder: (context, error, stackTrace) => Text(
-                          widget.company.name,
-                          textAlign: TextAlign.center,
-                          style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600, color: Colors.black87),
-                        ),
+                ? Image.network(
+                    logoAsset,
+                    fit: BoxFit.contain,
+                    cacheWidth: 320,
+                    errorBuilder: (context, error, stackTrace) => Text(
+                      widget.company.name,
+                      textAlign: TextAlign.center,
+                      style: const TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.w600,
+                        color: Colors.black87,
                       ),
+                    ),
+                  )
+                : Image.asset(
+                    logoAsset,
+                    fit: BoxFit.contain,
+                    errorBuilder: (context, error, stackTrace) => Text(
+                      widget.company.name,
+                      textAlign: TextAlign.center,
+                      style: const TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.w600,
+                        color: Colors.black87,
+                      ),
+                    ),
+                  ),
           ),
         ),
       ),
@@ -861,8 +923,12 @@ class _ReviewFormSectionState extends State<_ReviewFormSection> {
     try {
       final review = Review(
         id: '',
-        name: user.name?.isNotEmpty == true ? user.name! : (user.email ?? 'Customer'),
-        role: _roleController.text.trim().isEmpty ? "Customer" : _roleController.text.trim(),
+        name: user.name?.isNotEmpty == true
+            ? user.name!
+            : (user.email ?? 'Customer'),
+        role: _roleController.text.trim().isEmpty
+            ? "Customer"
+            : _roleController.text.trim(),
         message: _messageController.text.trim(),
         rating: _rating,
         photoUrl: user.photoUrl,
@@ -886,7 +952,9 @@ class _ReviewFormSectionState extends State<_ReviewFormSection> {
       if (!mounted) return;
       setState(() => _isSubmitting = false);
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text("Failed to submit review. Please try again.")),
+        const SnackBar(
+          content: Text("Failed to submit review. Please try again."),
+        ),
       );
     }
   }
@@ -900,54 +968,66 @@ class _ReviewFormSectionState extends State<_ReviewFormSection> {
       child: _RevealOnScroll(
         detectorKey: const Key('reveal-review-form'),
         child: Center(
-        child: ConstrainedBox(
-          constraints: const BoxConstraints(maxWidth: 700),
-          child: Column(
-            children: [
-              const Text(
-                "Share Your Experience",
-                style: TextStyle(fontSize: 28, fontWeight: FontWeight.bold, color: Colors.white),
-              ),
-              const SizedBox(height: 10),
-              Container(
-                width: 60,
-                height: 3,
-                decoration: BoxDecoration(color: _gold, borderRadius: BorderRadius.circular(2)),
-              ),
-              const SizedBox(height: 12),
-              Text(
-                "Tell other customers what you think of our products and service.",
-                textAlign: TextAlign.center,
-                style: TextStyle(fontSize: 14.5, color: Colors.white.withValues(alpha: 0.65)),
-              ),
-              const SizedBox(height: 32),
-              ValueListenableBuilder<AppUser?>(
-                valueListenable: AuthService.instance.currentUser,
-                builder: (context, user, _) {
-                  if (user == null) {
-                    return _signInPrompt(context);
-                  }
+          child: ConstrainedBox(
+            constraints: const BoxConstraints(maxWidth: 700),
+            child: Column(
+              children: [
+                const Text(
+                  "Share Your Experience",
+                  style: TextStyle(
+                    fontSize: 28,
+                    fontWeight: FontWeight.bold,
+                    color: Colors.white,
+                  ),
+                ),
+                const SizedBox(height: 10),
+                Container(
+                  width: 60,
+                  height: 3,
+                  decoration: BoxDecoration(
+                    color: _gold,
+                    borderRadius: BorderRadius.circular(2),
+                  ),
+                ),
+                const SizedBox(height: 12),
+                Text(
+                  "Tell other customers what you think of our products and service.",
+                  textAlign: TextAlign.center,
+                  style: TextStyle(
+                    fontSize: 14.5,
+                    color: Colors.white.withValues(alpha: 0.65),
+                  ),
+                ),
+                const SizedBox(height: 32),
+                ValueListenableBuilder<AppUser?>(
+                  valueListenable: AuthService.instance.currentUser,
+                  builder: (context, user, _) {
+                    if (user == null) {
+                      return _signInPrompt(context);
+                    }
 
-                  // The fetch itself is triggered by _onAuthChanged (via the
-                  // listener set up in initState) — build() only reads state.
-                  if (_loadingExisting && _existingReview == null && _loadedForUid == user.uid) {
-                    return const Padding(
-                      padding: EdgeInsets.symmetric(vertical: 24),
-                      child: CircularProgressIndicator(color: _gold),
-                    );
-                  }
+                    // The fetch itself is triggered by _onAuthChanged (via the
+                    // listener set up in initState) — build() only reads state.
+                    if (_loadingExisting &&
+                        _existingReview == null &&
+                        _loadedForUid == user.uid) {
+                      return const Padding(
+                        padding: EdgeInsets.symmetric(vertical: 24),
+                        child: CircularProgressIndicator(color: _gold),
+                      );
+                    }
 
-                  // Once a review exists, the form is permanently locked —
-                  // no editing, just a summary of what was submitted.
-                  if (_existingReview != null) {
-                    return _alreadySubmittedCard(_existingReview!);
-                  }
-                  return _formCard(user);
-                },
-              ),
-            ],
+                    // Once a review exists, the form is permanently locked —
+                    // no editing, just a summary of what was submitted.
+                    if (_existingReview != null) {
+                      return _alreadySubmittedCard(_existingReview!);
+                    }
+                    return _formCard(user);
+                  },
+                ),
+              ],
+            ),
           ),
-        ),
         ),
       ),
     );
@@ -972,7 +1052,11 @@ class _ReviewFormSectionState extends State<_ReviewFormSection> {
               Expanded(
                 child: Text(
                   "Thanks for your feedback!",
-                  style: TextStyle(color: Colors.white, fontWeight: FontWeight.w600, fontSize: 15),
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontWeight: FontWeight.w600,
+                    fontSize: 15,
+                  ),
                 ),
               ),
             ],
@@ -990,13 +1074,20 @@ class _ReviewFormSectionState extends State<_ReviewFormSection> {
           const SizedBox(height: 10),
           Text(
             review.message,
-            style: TextStyle(color: Colors.white.withValues(alpha: 0.85), fontSize: 14, height: 1.5),
+            style: TextStyle(
+              color: Colors.white.withValues(alpha: 0.85),
+              fontSize: 14,
+              height: 1.5,
+            ),
           ),
           if (!review.approved) ...[
             const SizedBox(height: 8),
             Text(
               "Pending approval — it'll appear publicly once reviewed.",
-              style: TextStyle(color: Colors.white.withValues(alpha: 0.45), fontSize: 12.5),
+              style: TextStyle(
+                color: Colors.white.withValues(alpha: 0.45),
+                fontSize: 12.5,
+              ),
             ),
           ],
         ],
@@ -1019,13 +1110,20 @@ class _ReviewFormSectionState extends State<_ReviewFormSection> {
           const SizedBox(height: 14),
           const Text(
             "Sign in to leave a review",
-            style: TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.w600),
+            style: TextStyle(
+              color: Colors.white,
+              fontSize: 16,
+              fontWeight: FontWeight.w600,
+            ),
           ),
           const SizedBox(height: 8),
           Text(
             "We ask you to sign in so every review comes from a real customer.",
             textAlign: TextAlign.center,
-            style: TextStyle(color: Colors.white.withValues(alpha: 0.6), fontSize: 13),
+            style: TextStyle(
+              color: Colors.white.withValues(alpha: 0.6),
+              fontSize: 13,
+            ),
           ),
           const SizedBox(height: 20),
           ElevatedButton(
@@ -1034,9 +1132,14 @@ class _ReviewFormSectionState extends State<_ReviewFormSection> {
               backgroundColor: _gold,
               foregroundColor: Colors.black,
               padding: const EdgeInsets.symmetric(horizontal: 26, vertical: 14),
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(8),
+              ),
             ),
-            child: const Text("Sign In", style: TextStyle(fontWeight: FontWeight.w600)),
+            child: const Text(
+              "Sign In",
+              style: TextStyle(fontWeight: FontWeight.w600),
+            ),
           ),
         ],
       ),
@@ -1059,12 +1162,22 @@ class _ReviewFormSectionState extends State<_ReviewFormSection> {
           children: [
             Row(
               children: [
-                userAvatar(photoUrl: user.photoUrl, name: user.name ?? user.email ?? '?', radius: 20),
+                userAvatar(
+                  photoUrl: user.photoUrl,
+                  name: user.name ?? user.email ?? '?',
+                  radius: 20,
+                ),
                 const SizedBox(width: 12),
                 Expanded(
                   child: Text(
-                    user.name?.isNotEmpty == true ? user.name! : (user.email ?? 'Customer'),
-                    style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w600, fontSize: 15),
+                    user.name?.isNotEmpty == true
+                        ? user.name!
+                        : (user.email ?? 'Customer'),
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontWeight: FontWeight.w600,
+                      fontSize: 15,
+                    ),
                   ),
                 ),
               ],
@@ -1079,7 +1192,9 @@ class _ReviewFormSectionState extends State<_ReviewFormSection> {
               controller: _messageController,
               label: "Your Review",
               maxLines: 4,
-              validator: (v) => (v == null || v.trim().isEmpty) ? "Please enter a review" : null,
+              validator: (v) => (v == null || v.trim().isEmpty)
+                  ? "Please enter a review"
+                  : null,
             ),
             const SizedBox(height: 20),
             _buildStarPicker(),
@@ -1090,15 +1205,26 @@ class _ReviewFormSectionState extends State<_ReviewFormSection> {
                 backgroundColor: _gold,
                 foregroundColor: Colors.black,
                 padding: const EdgeInsets.symmetric(vertical: 16),
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(8),
+                ),
               ),
               child: _isSubmitting
                   ? const SizedBox(
                       width: 20,
                       height: 20,
-                      child: CircularProgressIndicator(strokeWidth: 2, color: Colors.black),
+                      child: CircularProgressIndicator(
+                        strokeWidth: 2,
+                        color: Colors.black,
+                      ),
                     )
-                  : const Text("Submit Review", style: TextStyle(fontWeight: FontWeight.w600, fontSize: 15)),
+                  : const Text(
+                      "Submit Review",
+                      style: TextStyle(
+                        fontWeight: FontWeight.w600,
+                        fontSize: 15,
+                      ),
+                    ),
             ),
             if (_submitted) ...[
               const SizedBox(height: 14),
@@ -1109,7 +1235,10 @@ class _ReviewFormSectionState extends State<_ReviewFormSection> {
                   const SizedBox(width: 8),
                   Text(
                     "Thanks! Your review has been submitted.",
-                    style: TextStyle(color: Colors.white.withValues(alpha: 0.85), fontSize: 13),
+                    style: TextStyle(
+                      color: Colors.white.withValues(alpha: 0.85),
+                      fontSize: 13,
+                    ),
                   ),
                 ],
               ),
@@ -1138,7 +1267,10 @@ class _ReviewFormSectionState extends State<_ReviewFormSection> {
         labelStyle: TextStyle(color: Colors.white.withValues(alpha: 0.6)),
         filled: true,
         fillColor: Colors.white.withValues(alpha: 0.04),
-        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+        contentPadding: const EdgeInsets.symmetric(
+          horizontal: 16,
+          vertical: 14,
+        ),
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(8),
           borderSide: BorderSide(color: Colors.white.withValues(alpha: 0.15)),
@@ -1160,7 +1292,10 @@ class _ReviewFormSectionState extends State<_ReviewFormSection> {
       children: [
         const Align(
           alignment: Alignment.centerLeft,
-          child: Text("Your Rating", style: TextStyle(color: Colors.white70, fontSize: 13)),
+          child: Text(
+            "Your Rating",
+            style: TextStyle(color: Colors.white70, fontSize: 13),
+          ),
         ),
         const SizedBox(height: 8),
         Row(
@@ -1170,7 +1305,11 @@ class _ReviewFormSectionState extends State<_ReviewFormSection> {
               onTap: () => setState(() => _rating = starIndex),
               child: Padding(
                 padding: const EdgeInsets.only(right: 6),
-                child: Icon(Icons.star, size: 28, color: starIndex <= _rating ? _gold : Colors.white24),
+                child: Icon(
+                  Icons.star,
+                  size: 28,
+                  color: starIndex <= _rating ? _gold : Colors.white24,
+                ),
               ),
             );
           }),

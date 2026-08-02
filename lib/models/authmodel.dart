@@ -8,12 +8,7 @@ class AppUser {
   final String? name;
   final String? photoUrl;
 
-  const AppUser({
-    required this.uid,
-    this.email,
-    this.name,
-    this.photoUrl,
-  });
+  const AppUser({required this.uid, this.email, this.name, this.photoUrl});
 
   factory AppUser.fromFirebaseUser(User user) {
     return AppUser(

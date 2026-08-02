@@ -28,7 +28,8 @@ const _gold = Color.fromRGBO(245, 171, 30, 1);
 class _HeaderMetrics {
   final bool showNavRow; // full desktop nav vs hamburger menu
   final bool showAccountText; // name/register/login text next to person icon
-  final bool showSearchInHeader; // false on mobile — search moves into the sidebar instead
+  final bool
+  showSearchInHeader; // false on mobile — search moves into the sidebar instead
   final double horizontalPadding;
   final double logoHeight;
   final double logoWidth;
@@ -245,7 +246,11 @@ class _HeaderState extends State<Header> {
     "Blogs": '/blog',
     "FAQs": '/faq',
   };
-  final Map<int, LayerLink> _layerLinks = {1: LayerLink(), 2: LayerLink(), 3: LayerLink()};
+  final Map<int, LayerLink> _layerLinks = {
+    1: LayerLink(),
+    2: LayerLink(),
+    3: LayerLink(),
+  };
 
   String _shortLabel(String value, {int maxChars = 8}) {
     final trimmed = value.trim();
@@ -257,7 +262,8 @@ class _HeaderState extends State<Header> {
   Timer? _closeTimer;
 
   OverlayEntry? _mobileMenuOverlay;
-  final GlobalKey<_MobileSidebarState> _mobileSidebarKey = GlobalKey<_MobileSidebarState>();
+  final GlobalKey<_MobileSidebarState> _mobileSidebarKey =
+      GlobalKey<_MobileSidebarState>();
 
   @override
   void initState() {
@@ -326,9 +332,16 @@ class _HeaderState extends State<Header> {
                             decoration: BoxDecoration(
                               color: Colors.white.withValues(alpha: 0.15),
                               borderRadius: BorderRadius.circular(8),
-                              border: Border.all(color: Colors.white.withValues(alpha: 0.3), width: 1),
+                              border: Border.all(
+                                color: Colors.white.withValues(alpha: 0.3),
+                                width: 1,
+                              ),
                               boxShadow: [
-                                BoxShadow(color: Colors.black.withValues(alpha: 0.25), blurRadius: 20, offset: const Offset(2, 4)),
+                                BoxShadow(
+                                  color: Colors.black.withValues(alpha: 0.25),
+                                  blurRadius: 20,
+                                  offset: const Offset(2, 4),
+                                ),
                               ],
                             ),
                             clipBehavior: Clip.antiAlias,
@@ -343,21 +356,21 @@ class _HeaderState extends State<Header> {
                                     },
                                   )
                                 : isCollection
-                                    ? _CollectionDropdownContent(
-                                        companies: _companies,
-                                        onNavigate: (route) {
-                                          _closeDropdown();
-                                          context.push(route);
-                                        },
-                                      )
-                                    : _DropdownList(
-                                        items: _dropdownItems[index] ?? [],
-                                        onSelect: (item) {
-                                          _closeDropdown();
-                                          final route = _pageRoutes[item];
-                                          if (route != null) context.push(route);
-                                        },
-                                      ),
+                                ? _CollectionDropdownContent(
+                                    companies: _companies,
+                                    onNavigate: (route) {
+                                      _closeDropdown();
+                                      context.push(route);
+                                    },
+                                  )
+                                : _DropdownList(
+                                    items: _dropdownItems[index] ?? [],
+                                    onSelect: (item) {
+                                      _closeDropdown();
+                                      final route = _pageRoutes[item];
+                                      if (route != null) context.push(route);
+                                    },
+                                  ),
                           ),
                         ),
                       ),
@@ -487,7 +500,10 @@ class _HeaderState extends State<Header> {
 
               if (m.showSearchInHeader) ...[
                 SizedBox(width: m.gapLarge),
-                _SearchField(flexible: m.searchIsFlexible, width: m.searchWidth),
+                _SearchField(
+                  flexible: m.searchIsFlexible,
+                  width: m.searchWidth,
+                ),
               ],
 
               SizedBox(width: m.gapMedium),
@@ -540,12 +556,21 @@ class _HeaderState extends State<Header> {
                               right: -6,
                               top: -6,
                               child: Container(
-                                padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 1),
-                                constraints: const BoxConstraints(minWidth: 16, minHeight: 16),
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 5,
+                                  vertical: 1,
+                                ),
+                                constraints: const BoxConstraints(
+                                  minWidth: 16,
+                                  minHeight: 16,
+                                ),
                                 decoration: BoxDecoration(
                                   color: _gold,
                                   borderRadius: BorderRadius.circular(10),
-                                  border: Border.all(color: const Color(0xFF1A1A1A), width: 1.5),
+                                  border: Border.all(
+                                    color: const Color(0xFF1A1A1A),
+                                    width: 1.5,
+                                  ),
                                 ),
                                 child: Text(
                                   '$count',
@@ -589,17 +614,32 @@ class _HeaderState extends State<Header> {
     );
   }
 
-  Widget _buildMenuItem(String title, {required bool showArrow, required int index}) {
+  Widget _buildMenuItem(
+    String title, {
+    required bool showArrow,
+    required int index,
+  }) {
     final isHovered = _hoveredIndex == index;
     final Color itemColor = isHovered ? _gold : Colors.white;
 
     Widget content = Row(
       mainAxisSize: MainAxisSize.min,
       children: [
-        Text(title, style: TextStyle(color: itemColor, fontSize: 16, fontWeight: FontWeight.w500)),
+        Text(
+          title,
+          style: TextStyle(
+            color: itemColor,
+            fontSize: 16,
+            fontWeight: FontWeight.w500,
+          ),
+        ),
         if (showArrow) ...[
           const SizedBox(width: 2),
-          Icon(isHovered ? Icons.arrow_drop_up : Icons.arrow_drop_down, color: itemColor, size: 22),
+          Icon(
+            isHovered ? Icons.arrow_drop_up : Icons.arrow_drop_down,
+            color: itemColor,
+            size: 22,
+          ),
         ],
       ],
     );
@@ -644,17 +684,29 @@ class _SearchField extends StatelessWidget {
         isDense: flexible,
         prefixIcon: Container(
           margin: const EdgeInsets.all(2),
-          decoration: const BoxDecoration(color: Colors.black, shape: BoxShape.circle),
-          child: Icon(Icons.search, color: Colors.white, size: flexible ? 16 : 18),
+          decoration: const BoxDecoration(
+            color: Colors.black,
+            shape: BoxShape.circle,
+          ),
+          child: Icon(
+            Icons.search,
+            color: Colors.white,
+            size: flexible ? 16 : 18,
+          ),
         ),
-        border: OutlineInputBorder(borderRadius: BorderRadius.circular(30), borderSide: BorderSide.none),
+        border: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(30),
+          borderSide: BorderSide.none,
+        ),
         contentPadding: const EdgeInsets.symmetric(vertical: 8),
       ),
     );
 
     final sized = SizedBox(height: flexible ? 36 : 38, child: field);
 
-    return flexible ? Expanded(child: sized) : SizedBox(width: width, child: sized);
+    return flexible
+        ? Expanded(child: sized)
+        : SizedBox(width: width, child: sized);
   }
 }
 
@@ -711,7 +763,11 @@ class _AccountSection extends StatelessWidget {
       builder: (context, user, _) {
         final signedIn = user != null;
         final accountLabel = signedIn
-            ? shortLabel(user.name?.isNotEmpty == true ? user.name! : (user.email ?? 'My Account'))
+            ? shortLabel(
+                user.name?.isNotEmpty == true
+                    ? user.name!
+                    : (user.email ?? 'My Account'),
+              )
             : 'Account';
 
         return SizedBox(
@@ -729,7 +785,9 @@ class _AccountSection extends StatelessWidget {
                   onExit: (_) => onPersonExit(),
                   child: Icon(
                     Icons.person,
-                    color: (hoveredPersonIcon || signedIn) ? _gold : Colors.white,
+                    color: (hoveredPersonIcon || signedIn)
+                        ? _gold
+                        : Colors.white,
                     size: iconSize,
                   ),
                 ),
@@ -761,9 +819,27 @@ class _AccountSection extends StatelessWidget {
                     if (!signedIn)
                       Row(
                         children: [
-                          _authLink("Register", hoveredRegister, onRegisterEnter, onRegisterExit, onGoAuth),
-                          const Text(" | ", style: TextStyle(color: Colors.white70, fontSize: 12)),
-                          _authLink("Login", hoveredLogin, onLoginEnter, onLoginExit, onGoAuth),
+                          _authLink(
+                            "Register",
+                            hoveredRegister,
+                            onRegisterEnter,
+                            onRegisterExit,
+                            onGoAuth,
+                          ),
+                          const Text(
+                            " | ",
+                            style: TextStyle(
+                              color: Colors.white70,
+                              fontSize: 12,
+                            ),
+                          ),
+                          _authLink(
+                            "Login",
+                            hoveredLogin,
+                            onLoginEnter,
+                            onLoginExit,
+                            onGoAuth,
+                          ),
                         ],
                       )
                     else
@@ -792,7 +868,13 @@ class _AccountSection extends StatelessWidget {
     );
   }
 
-  Widget _authLink(String title, bool hovered, VoidCallback onEnter, VoidCallback onExit, VoidCallback onTap) {
+  Widget _authLink(
+    String title,
+    bool hovered,
+    VoidCallback onEnter,
+    VoidCallback onExit,
+    VoidCallback onTap,
+  ) {
     return GestureDetector(
       onTap: onTap,
       child: MouseRegion(
@@ -801,7 +883,10 @@ class _AccountSection extends StatelessWidget {
         onExit: (_) => onExit(),
         child: Text(
           title,
-          style: TextStyle(color: hovered ? _gold : Colors.white70, fontSize: 11),
+          style: TextStyle(
+            color: hovered ? _gold : Colors.white70,
+            fontSize: 11,
+          ),
         ),
       ),
     );
@@ -833,11 +918,17 @@ class _ShopDropdownContent extends StatelessWidget {
               onTap: () => onNavigate('/products?category=${category.id}'),
             ),
           ),
-          for (final type in Catalog.typesInCategory(products, types, category.id))
+          for (final type in Catalog.typesInCategory(
+            products,
+            types,
+            category.id,
+          ))
             _DropdownColumnRow(
               item: _DropdownColumnItem(
                 label: '- ${type.name}',
-                onTap: () => onNavigate('/products?category=${category.id}&type=${type.id}'),
+                onTap: () => onNavigate(
+                  '/products?category=${category.id}&type=${type.id}',
+                ),
               ),
               isSubItem: true,
             ),
@@ -851,11 +942,16 @@ class _CollectionDropdownContent extends StatelessWidget {
   final List<Company> companies;
   final void Function(String route) onNavigate;
 
-  const _CollectionDropdownContent({required this.companies, required this.onNavigate});
+  const _CollectionDropdownContent({
+    required this.companies,
+    required this.onNavigate,
+  });
 
   @override
   Widget build(BuildContext context) {
-    final visibleCompanies = companies.where((c) => c.id != 'unknown' && c.id != 'others').toList();
+    final visibleCompanies = companies
+        .where((c) => c.id != 'unknown' && c.id != 'others')
+        .toList();
 
     return _DropdownColumn(
       title: 'Companies',
@@ -893,7 +989,12 @@ class _DropdownColumn extends StatelessWidget {
           padding: const EdgeInsets.fromLTRB(16, 14, 16, 8),
           child: Text(
             title,
-            style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w700, letterSpacing: 0.6, color: _gold),
+            style: const TextStyle(
+              fontSize: 15,
+              fontWeight: FontWeight.w700,
+              letterSpacing: 0.6,
+              color: _gold,
+            ),
           ),
         ),
         ...children,
@@ -933,13 +1034,22 @@ class _DropdownColumnRowState extends State<_DropdownColumnRow> {
             bottom: widget.isSubItem ? 6 : 8,
           ),
           decoration: BoxDecoration(
-            color: _isHovered ? _gold.withValues(alpha: 0.15) : Colors.transparent,
-            border: Border(left: BorderSide(color: _isHovered ? _gold : Colors.transparent, width: 3)),
+            color: _isHovered
+                ? _gold.withValues(alpha: 0.15)
+                : Colors.transparent,
+            border: Border(
+              left: BorderSide(
+                color: _isHovered ? _gold : Colors.transparent,
+                width: 3,
+              ),
+            ),
           ),
           child: Text(
             widget.item.label,
             style: TextStyle(
-              color: _isHovered ? _gold : (widget.isSubItem ? Colors.white70 : Colors.white),
+              color: _isHovered
+                  ? _gold
+                  : (widget.isSubItem ? Colors.white70 : Colors.white),
               fontSize: widget.isSubItem ? 12.5 : 13.5,
               fontWeight: widget.isSubItem ? FontWeight.w400 : FontWeight.w500,
             ),
@@ -982,10 +1092,23 @@ class _DropdownListState extends State<_DropdownList> {
               width: double.infinity,
               padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
               decoration: BoxDecoration(
-                color: isHovered ? _gold.withValues(alpha: 0.1) : Colors.transparent,
-                border: Border(right: BorderSide(color: isHovered ? _gold : Colors.transparent, width: 3)),
+                color: isHovered
+                    ? _gold.withValues(alpha: 0.1)
+                    : Colors.transparent,
+                border: Border(
+                  right: BorderSide(
+                    color: isHovered ? _gold : Colors.transparent,
+                    width: 3,
+                  ),
+                ),
               ),
-              child: Text(item, style: TextStyle(color: isHovered ? _gold : Colors.white, fontSize: 14)),
+              child: Text(
+                item,
+                style: TextStyle(
+                  color: isHovered ? _gold : Colors.white,
+                  fontSize: 14,
+                ),
+              ),
             ),
           ),
         );
@@ -1020,7 +1143,8 @@ class _MobileSidebar extends StatefulWidget {
   State<_MobileSidebar> createState() => _MobileSidebarState();
 }
 
-class _MobileSidebarState extends State<_MobileSidebar> with SingleTickerProviderStateMixin {
+class _MobileSidebarState extends State<_MobileSidebar>
+    with SingleTickerProviderStateMixin {
   late final AnimationController _controller;
   late final Animation<Offset> _slide;
 
@@ -1029,14 +1153,20 @@ class _MobileSidebarState extends State<_MobileSidebar> with SingleTickerProvide
   @override
   void initState() {
     super.initState();
-    _controller = AnimationController(vsync: this, duration: const Duration(milliseconds: 220));
-    _slide = Tween<Offset>(begin: const Offset(1, 0), end: Offset.zero)
-        .animate(CurvedAnimation(parent: _controller, curve: Curves.easeOut));
+    _controller = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 220),
+    );
+    _slide = Tween<Offset>(
+      begin: const Offset(1, 0),
+      end: Offset.zero,
+    ).animate(CurvedAnimation(parent: _controller, curve: Curves.easeOut));
     _controller.forward();
   }
 
   Future<void> close() async {
-    if (_controller.status == AnimationStatus.reverse || _controller.status == AnimationStatus.dismissed) {
+    if (_controller.status == AnimationStatus.reverse ||
+        _controller.status == AnimationStatus.dismissed) {
       return;
     }
     await _controller.reverse();
@@ -1074,7 +1204,9 @@ class _MobileSidebarState extends State<_MobileSidebar> with SingleTickerProvide
                     Container(width: 3, color: _gold),
                     Expanded(
                       child: ClipRRect(
-                        borderRadius: const BorderRadius.only(topLeft: Radius.circular(16)),
+                        borderRadius: const BorderRadius.only(
+                          topLeft: Radius.circular(16),
+                        ),
                         child: Material(
                           elevation: 16,
                           color: const Color(0xFF1A1A1A),
@@ -1083,26 +1215,44 @@ class _MobileSidebarState extends State<_MobileSidebar> with SingleTickerProvide
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
                                 Padding(
-                                  padding: const EdgeInsets.fromLTRB(16, 12, 8, 8),
+                                  padding: const EdgeInsets.fromLTRB(
+                                    16,
+                                    12,
+                                    8,
+                                    8,
+                                  ),
                                   child: Column(
-                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
                                     children: [
                                       Row(
-                                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                        mainAxisAlignment:
+                                            MainAxisAlignment.spaceBetween,
                                         children: [
                                           const Text(
                                             "Menu",
-                                            style: TextStyle(fontSize: 18, fontWeight: FontWeight.w600, color: Colors.white),
+                                            style: TextStyle(
+                                              fontSize: 18,
+                                              fontWeight: FontWeight.w600,
+                                              color: Colors.white,
+                                            ),
                                           ),
                                           IconButton(
                                             onPressed: close,
-                                            icon: const Icon(Icons.close, color: Colors.white),
+                                            icon: const Icon(
+                                              Icons.close,
+                                              color: Colors.white,
+                                            ),
                                             splashRadius: 20,
                                           ),
                                         ],
                                       ),
                                       const SizedBox(height: 1),
-                                      Container(height: 2, width: 30, color: _gold),
+                                      Container(
+                                        height: 2,
+                                        width: 30,
+                                        color: _gold,
+                                      ),
                                     ],
                                   ),
                                 ),
@@ -1110,32 +1260,52 @@ class _MobileSidebarState extends State<_MobileSidebar> with SingleTickerProvide
                                 // Search — lives here instead of the header
                                 // row on mobile, where there's no room for it.
                                 Padding(
-                                  padding: const EdgeInsets.symmetric(horizontal: 16),
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 16,
+                                  ),
                                   child: SizedBox(
                                     height: 40,
                                     child: TextField(
                                       decoration: InputDecoration(
                                         hintText: "Search...",
-                                        hintStyle: const TextStyle(color: Colors.grey, fontSize: 13),
+                                        hintStyle: const TextStyle(
+                                          color: Colors.grey,
+                                          fontSize: 13,
+                                        ),
                                         filled: true,
                                         fillColor: Colors.white,
                                         isDense: true,
                                         prefixIcon: Container(
                                           margin: const EdgeInsets.all(2),
-                                          decoration: const BoxDecoration(color: Colors.black, shape: BoxShape.circle),
-                                          child: const Icon(Icons.search, color: Colors.white, size: 16),
+                                          decoration: const BoxDecoration(
+                                            color: Colors.black,
+                                            shape: BoxShape.circle,
+                                          ),
+                                          child: const Icon(
+                                            Icons.search,
+                                            color: Colors.white,
+                                            size: 16,
+                                          ),
                                         ),
                                         border: OutlineInputBorder(
-                                          borderRadius: BorderRadius.circular(30),
+                                          borderRadius: BorderRadius.circular(
+                                            30,
+                                          ),
                                           borderSide: BorderSide.none,
                                         ),
-                                        contentPadding: const EdgeInsets.symmetric(vertical: 8),
+                                        contentPadding:
+                                            const EdgeInsets.symmetric(
+                                              vertical: 8,
+                                            ),
                                       ),
                                     ),
                                   ),
                                 ),
                                 const SizedBox(height: 14),
-                                const Divider(height: 1, color: Color(0xFF444444)),
+                                const Divider(
+                                  height: 1,
+                                  color: Color(0xFF444444),
+                                ),
                                 const SizedBox(height: 8),
                                 Expanded(
                                   child: SingleChildScrollView(
@@ -1202,7 +1372,10 @@ class _MobileNavMenu extends StatelessWidget {
             tilePadding: const EdgeInsets.symmetric(horizontal: 16),
             iconColor: Colors.white,
             collapsedIconColor: Colors.white70,
-            title: const Text("Shop", style: TextStyle(color: Colors.white, fontSize: 14)),
+            title: const Text(
+              "Shop",
+              style: TextStyle(color: Colors.white, fontSize: 14),
+            ),
             children: [
               for (final category in categories) ...[
                 ListTile(
@@ -1210,16 +1383,32 @@ class _MobileNavMenu extends StatelessWidget {
                   contentPadding: const EdgeInsets.only(left: 32, right: 16),
                   title: Text(
                     category.name,
-                    style: const TextStyle(color: Colors.white, fontSize: 13.5, fontWeight: FontWeight.w500),
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontSize: 13.5,
+                      fontWeight: FontWeight.w500,
+                    ),
                   ),
                   onTap: () => onNavigate('/products?category=${category.id}'),
                 ),
-                for (final type in Catalog.typesInCategory(products, types, category.id))
+                for (final type in Catalog.typesInCategory(
+                  products,
+                  types,
+                  category.id,
+                ))
                   ListTile(
                     dense: true,
                     contentPadding: const EdgeInsets.only(left: 48, right: 16),
-                    title: Text(type.name, style: const TextStyle(color: Colors.white70, fontSize: 12.5)),
-                    onTap: () => onNavigate('/products?category=${category.id}&type=${type.id}'),
+                    title: Text(
+                      type.name,
+                      style: const TextStyle(
+                        color: Colors.white70,
+                        fontSize: 12.5,
+                      ),
+                    ),
+                    onTap: () => onNavigate(
+                      '/products?category=${category.id}&type=${type.id}',
+                    ),
                   ),
               ],
             ],
@@ -1227,19 +1416,27 @@ class _MobileNavMenu extends StatelessWidget {
         }
 
         if (index == 2) {
-          final visibleCompanies = companies.where((c) => c.id != 'unknown' && c.id != 'others').toList();
+          final visibleCompanies = companies
+              .where((c) => c.id != 'unknown' && c.id != 'others')
+              .toList();
 
           return ExpansionTile(
             tilePadding: const EdgeInsets.symmetric(horizontal: 16),
             iconColor: Colors.white,
             collapsedIconColor: Colors.white70,
-            title: const Text("Collection", style: TextStyle(color: Colors.white, fontSize: 14)),
+            title: const Text(
+              "Collection",
+              style: TextStyle(color: Colors.white, fontSize: 14),
+            ),
             children: [
               for (final company in visibleCompanies)
                 ListTile(
                   dense: true,
                   contentPadding: const EdgeInsets.only(left: 32, right: 16),
-                  title: Text(company.name, style: const TextStyle(color: Colors.white70, fontSize: 13)),
+                  title: Text(
+                    company.name,
+                    style: const TextStyle(color: Colors.white70, fontSize: 13),
+                  ),
                   onTap: () => onNavigate('/products?company=${company.id}'),
                 ),
             ],
@@ -1251,7 +1448,10 @@ class _MobileNavMenu extends StatelessWidget {
         if (subItems == null) {
           return ListTile(
             dense: true,
-            title: Text(label, style: const TextStyle(color: Colors.white, fontSize: 14)),
+            title: Text(
+              label,
+              style: const TextStyle(color: Colors.white, fontSize: 14),
+            ),
             onTap: () => web.window.location.reload(),
           );
         }
@@ -1260,13 +1460,19 @@ class _MobileNavMenu extends StatelessWidget {
           tilePadding: const EdgeInsets.symmetric(horizontal: 16),
           iconColor: Colors.white,
           collapsedIconColor: Colors.white70,
-          title: Text(label, style: const TextStyle(color: Colors.white, fontSize: 14)),
+          title: Text(
+            label,
+            style: const TextStyle(color: Colors.white, fontSize: 14),
+          ),
           children: subItems
               .map(
                 (item) => ListTile(
                   dense: true,
                   contentPadding: const EdgeInsets.only(left: 32, right: 16),
-                  title: Text(item, style: const TextStyle(color: Colors.white70, fontSize: 13)),
+                  title: Text(
+                    item,
+                    style: const TextStyle(color: Colors.white70, fontSize: 13),
+                  ),
                   onTap: () => onSelect(item),
                 ),
               )

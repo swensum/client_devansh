@@ -50,44 +50,46 @@ class _ContactPageState extends State<ContactPage> {
   }
 
   Future<void> _handleSubmit() async {
-  if (!_formKey.currentState!.validate()) return;
+    if (!_formKey.currentState!.validate()) return;
 
-  setState(() => _isSubmitting = true);
+    setState(() => _isSubmitting = true);
 
-  try {
-    await FirebaseFirestore.instance.collection('contact_messages').add({
-      'name': _nameController.text.trim(),
-      'email': _emailController.text.trim(),
-      'phone': _phoneController.text.trim(),
-      'address': _addressController.text.trim(),
-      'message': _messageController.text.trim(),
-      'createdAt': FieldValue.serverTimestamp(),
-      'read': false, // admin panel can use this to flag unread messages
-    });
+    try {
+      await FirebaseFirestore.instance.collection('contact_messages').add({
+        'name': _nameController.text.trim(),
+        'email': _emailController.text.trim(),
+        'phone': _phoneController.text.trim(),
+        'address': _addressController.text.trim(),
+        'message': _messageController.text.trim(),
+        'createdAt': FieldValue.serverTimestamp(),
+        'read': false, // admin panel can use this to flag unread messages
+      });
 
-    if (!mounted) return;
-    setState(() {
-      _isSubmitting = false;
-      _submitted = true;
-    });
+      if (!mounted) return;
+      setState(() {
+        _isSubmitting = false;
+        _submitted = true;
+      });
 
-    _nameController.clear();
-    _emailController.clear();
-    _phoneController.clear();
-    _addressController.clear();
-    _messageController.clear();
-    Future.delayed(const Duration(seconds: 3), () {
-      if (mounted) setState(() => _submitted = false);
-    });
-  } catch (e) {
-  debugPrint('Contact submit error: $e');   // add this line
-  if (!mounted) return;
-  setState(() => _isSubmitting = false);
-  ScaffoldMessenger.of(context).showSnackBar(
-    const SnackBar(content: Text("Failed to send message. Please try again.")),
-  );
-}
-}
+      _nameController.clear();
+      _emailController.clear();
+      _phoneController.clear();
+      _addressController.clear();
+      _messageController.clear();
+      Future.delayed(const Duration(seconds: 3), () {
+        if (mounted) setState(() => _submitted = false);
+      });
+    } catch (e) {
+      debugPrint('Contact submit error: $e'); // add this line
+      if (!mounted) return;
+      setState(() => _isSubmitting = false);
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text("Failed to send message. Please try again."),
+        ),
+      );
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -116,7 +118,10 @@ class _ContactPageState extends State<ContactPage> {
           gradient: LinearGradient(
             begin: Alignment.topLeft,
             end: Alignment.bottomRight,
-            colors: [Colors.black.withValues(alpha: 0.95), Colors.black.withValues(alpha: 0.85)],
+            colors: [
+              Colors.black.withValues(alpha: 0.95),
+              Colors.black.withValues(alpha: 0.85),
+            ],
           ),
         ),
         child: Center(
@@ -140,11 +145,7 @@ class _ContactPageState extends State<ContactPage> {
                         ),
                       )
                     : Column(
-                        children: [
-                          info,
-                          const SizedBox(height: 40),
-                          form,
-                        ],
+                        children: [info, const SizedBox(height: 40), form],
                       );
               },
             ),
@@ -313,8 +314,9 @@ class _ContactPageState extends State<ContactPage> {
               _buildField(
                 controller: _nameController,
                 label: "Your Name",
-                validator: (value) =>
-                    (value == null || value.trim().isEmpty) ? "Please enter your name" : null,
+                validator: (value) => (value == null || value.trim().isEmpty)
+                    ? "Please enter your name"
+                    : null,
               ),
               const SizedBox(height: 18),
               _buildField(
@@ -322,9 +324,11 @@ class _ContactPageState extends State<ContactPage> {
                 label: "Email Address",
                 keyboardType: TextInputType.emailAddress,
                 validator: (value) {
-                  if (value == null || value.trim().isEmpty) return "Please enter your email";
+                  if (value == null || value.trim().isEmpty)
+                    return "Please enter your email";
                   final emailRegex = RegExp(r'^[\w\.\-]+@[\w\-]+\.[\w\.\-]+$');
-                  if (!emailRegex.hasMatch(value.trim())) return "Enter a valid email";
+                  if (!emailRegex.hasMatch(value.trim()))
+                    return "Enter a valid email";
                   return null;
                 },
               ),
@@ -341,16 +345,18 @@ class _ContactPageState extends State<ContactPage> {
               _buildField(
                 controller: _addressController,
                 label: "Address",
-                validator: (value) =>
-                    (value == null || value.trim().isEmpty) ? "Please enter your address" : null,
+                validator: (value) => (value == null || value.trim().isEmpty)
+                    ? "Please enter your address"
+                    : null,
               ),
               const SizedBox(height: 18),
               _buildField(
                 controller: _messageController,
                 label: "Your Message",
                 maxLines: 5,
-                validator: (value) =>
-                    (value == null || value.trim().isEmpty) ? "Please enter a message" : null,
+                validator: (value) => (value == null || value.trim().isEmpty)
+                    ? "Please enter a message"
+                    : null,
               ),
               const SizedBox(height: 24),
               _buildSubmitButton(),
@@ -363,7 +369,10 @@ class _ContactPageState extends State<ContactPage> {
                     const SizedBox(width: 8),
                     Text(
                       "Thanks! Your message has been sent.",
-                      style: TextStyle(color: Colors.white.withValues(alpha: 0.85), fontSize: 13),
+                      style: TextStyle(
+                        color: Colors.white.withValues(alpha: 0.85),
+                        fontSize: 13,
+                      ),
                     ),
                   ],
                 ),
@@ -395,7 +404,10 @@ class _ContactPageState extends State<ContactPage> {
         labelStyle: TextStyle(color: Colors.white.withValues(alpha: 0.6)),
         filled: true,
         fillColor: Colors.white.withValues(alpha: 0.04),
-        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+        contentPadding: const EdgeInsets.symmetric(
+          horizontal: 16,
+          vertical: 14,
+        ),
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(8),
           borderSide: BorderSide(color: Colors.white.withValues(alpha: 0.15)),
@@ -430,7 +442,10 @@ class _ContactPageState extends State<ContactPage> {
           ? const SizedBox(
               width: 20,
               height: 20,
-              child: CircularProgressIndicator(strokeWidth: 2, color: Colors.black),
+              child: CircularProgressIndicator(
+                strokeWidth: 2,
+                color: Colors.black,
+              ),
             )
           : const Text(
               "Send Message",
@@ -452,6 +467,7 @@ class _Divider extends StatelessWidget {
     );
   }
 }
+
 class _MapSection extends StatefulWidget {
   const _MapSection();
 
@@ -462,8 +478,8 @@ class _MapSection extends StatefulWidget {
 class _MapSectionState extends State<_MapSection> {
   static const _viewType = 'company-location-map';
   static bool _factoryRegistered = false;
-static const _mapEmbedSrc =
-    'https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d940.724856269087!2d83.47113613039252!3d27.689691028367275!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x3996877946082bab%3A0x78a9b9e3b3448eb6!2sDevansh%20Suppliers!5e1!3m2!1sen!2snp!4v1784795275180!5m2!1sen!2snp';
+  static const _mapEmbedSrc =
+      'https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d940.724856269087!2d83.47113613039252!3d27.689691028367275!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x3996877946082bab%3A0x78a9b9e3b3448eb6!2sDevansh%20Suppliers!5e1!3m2!1sen!2snp!4v1784795275180!5m2!1sen!2snp';
   static const _accent = Color.fromRGBO(245, 171, 30, 1);
 
   @override
@@ -524,7 +540,9 @@ static const _mapEmbedSrc =
                 child: Container(
                   height: 400,
                   decoration: BoxDecoration(
-                    border: Border.all(color: Colors.white.withValues(alpha: 0.1)),
+                    border: Border.all(
+                      color: Colors.white.withValues(alpha: 0.1),
+                    ),
                   ),
                   child: const HtmlElementView(viewType: _viewType),
                 ),

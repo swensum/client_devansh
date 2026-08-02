@@ -11,8 +11,7 @@ class Footer extends StatefulWidget {
   static const _accent = Color.fromRGBO(245, 171, 30, 1);
 
   static const List<_FooterLink> _quickLinks = [
-  
-   _FooterLink(label: "About Us", route: "/about"),
+    _FooterLink(label: "About Us", route: "/about"),
     _FooterLink(label: "Products", route: "/products"),
     _FooterLink(label: "Reviews"),
     _FooterLink(label: "Contact", route: "/contact"),
@@ -54,10 +53,7 @@ class _FooterState extends State<Footer> {
 
   List<_FooterLink> get _categoryLinks => _categories
       .map(
-        (c) => _FooterLink(
-          label: c.name,
-          route: '/products?category=${c.id}',
-        ),
+        (c) => _FooterLink(label: c.name, route: '/products?category=${c.id}'),
       )
       .toList();
 
@@ -90,7 +86,10 @@ class _FooterState extends State<Footer> {
                     final isWide = constraints.maxWidth > 800;
 
                     final brand = _buildBrandColumn();
-                    final quick = _buildLinkColumn("Quick Links", Footer._quickLinks);
+                    final quick = _buildLinkColumn(
+                      "Quick Links",
+                      Footer._quickLinks,
+                    );
                     final categoryColumns = _categoryColumns;
                     final categories = _buildCategoriesSection(categoryColumns);
                     final contact = _buildContactColumn();
@@ -126,7 +125,11 @@ class _FooterState extends State<Footer> {
               ),
             ),
           ),
-          Container(width: double.infinity, height: 1, color: Colors.white.withValues(alpha: 0.08)),
+          Container(
+            width: double.infinity,
+            height: 1,
+            color: Colors.white.withValues(alpha: 0.08),
+          ),
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 30, vertical: 20),
             child: Center(
@@ -137,7 +140,10 @@ class _FooterState extends State<Footer> {
                     final isWide = constraints.maxWidth > 700;
                     final copyright = Text(
                       "© ${DateTime.now().year} Devansh Hardware. All rights reserved.",
-                      style: TextStyle(fontSize: 13, color: Colors.white.withValues(alpha: 0.5)),
+                      style: TextStyle(
+                        fontSize: 13,
+                        color: Colors.white.withValues(alpha: 0.5),
+                      ),
                     );
                     final legalLinks = Wrap(
                       spacing: 20,
@@ -154,7 +160,11 @@ class _FooterState extends State<Footer> {
                           )
                         : Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [copyright, const SizedBox(height: 10), legalLinks],
+                            children: [
+                              copyright,
+                              const SizedBox(height: 10),
+                              legalLinks,
+                            ],
                           );
                   },
                 ),
@@ -182,15 +192,21 @@ class _FooterState extends State<Footer> {
           Text(
             "Premium cabinet and door hardware crafted for modern homes "
             "and everyday durability.",
-            style: TextStyle(fontSize: 13.5, height: 1.6, color: Colors.white.withValues(alpha: 0.6)),
+            style: TextStyle(
+              fontSize: 13.5,
+              height: 1.6,
+              color: Colors.white.withValues(alpha: 0.6),
+            ),
           ),
           const SizedBox(height: 20),
           Row(
             children: Footer._socials
-                .map((s) => Padding(
-                      padding: const EdgeInsets.only(right: 10),
-                      child: _SocialIcon(icon: s.icon),
-                    ))
+                .map(
+                  (s) => Padding(
+                    padding: const EdgeInsets.only(right: 10),
+                    child: _SocialIcon(icon: s.icon),
+                  ),
+                )
                 .toList(),
           ),
         ],
@@ -214,10 +230,12 @@ class _FooterState extends State<Footer> {
             ),
           ),
           const SizedBox(height: 16),
-          ...links.map((link) => Padding(
-                padding: const EdgeInsets.only(bottom: 12),
-                child: _FooterLinkText(label: link.label, route: link.route),
-              )),
+          ...links.map(
+            (link) => Padding(
+              padding: const EdgeInsets.only(bottom: 12),
+              child: _FooterLinkText(label: link.label, route: link.route),
+            ),
+          ),
         ],
       ),
     );
@@ -251,7 +269,10 @@ class _FooterState extends State<Footer> {
                     for (final link in column)
                       Padding(
                         padding: const EdgeInsets.only(bottom: 12),
-                        child: _FooterLinkText(label: link.label, route: link.route),
+                        child: _FooterLinkText(
+                          label: link.label,
+                          route: link.route,
+                        ),
                       ),
                   ],
                 ),
@@ -283,10 +304,7 @@ class _FooterState extends State<Footer> {
             text: "123 Hardware Street, Industrial Area, City, State 12345",
           ),
           SizedBox(height: 14),
-          _ContactRow(
-            icon: Icons.phone_outlined,
-            text: "+91 98765 43210",
-          ),
+          _ContactRow(icon: Icons.phone_outlined, text: "+91 98765 43210"),
           SizedBox(height: 14),
           _ContactRow(
             icon: Icons.email_outlined,
@@ -405,7 +423,9 @@ class _LegalLinkState extends State<_LegalLink> {
           duration: const Duration(milliseconds: 200),
           style: TextStyle(
             fontSize: 12.5,
-            color: _isHovered ? Footer._accent : Colors.white.withValues(alpha: 0.5),
+            color: _isHovered
+                ? Footer._accent
+                : Colors.white.withValues(alpha: 0.5),
           ),
           child: Text(widget.label),
         ),
@@ -445,13 +465,17 @@ class _SocialIconState extends State<_SocialIcon> {
                 ? Footer._accent
                 : Colors.white.withValues(alpha: 0.08),
             border: Border.all(
-              color: _isHovered ? Footer._accent : Colors.white.withValues(alpha: 0.15),
+              color: _isHovered
+                  ? Footer._accent
+                  : Colors.white.withValues(alpha: 0.15),
             ),
           ),
           child: Icon(
             widget.icon,
             size: 16,
-            color: _isHovered ? Colors.black : Colors.white.withValues(alpha: 0.8),
+            color: _isHovered
+                ? Colors.black
+                : Colors.white.withValues(alpha: 0.8),
           ),
         ),
       ),

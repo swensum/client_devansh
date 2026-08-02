@@ -11,8 +11,9 @@ class AuthService {
         : AppUser.fromFirebaseUser(currentFirebaseUser);
 
     _auth.authStateChanges().listen((firebaseUser) {
-      currentUser.value =
-          firebaseUser == null ? null : AppUser.fromFirebaseUser(firebaseUser);
+      currentUser.value = firebaseUser == null
+          ? null
+          : AppUser.fromFirebaseUser(firebaseUser);
     });
   }
 
@@ -63,7 +64,6 @@ class AuthService {
   }
 
   Future<void> sendPasswordResetEmail(String email) {
-   
     final resetUrl = Uri.base.replace(queryParameters: {});
     final actionCodeSettings = ActionCodeSettings(
       url: resetUrl.toString(),

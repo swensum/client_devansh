@@ -35,8 +35,7 @@ const List<_FaqItem> _kFaqs = [
     answer:
         "You can place an order through our website or you can send a message"
         " on our WhatsApp numbers: 9857033614, 9857081383\n\n"
-
-"Note: Direct calls and WhatsApp messages are encouraged."
+        "Note: Direct calls and WhatsApp messages are encouraged.",
   ),
 ];
 
@@ -49,17 +48,17 @@ class FaqSection extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       width: double.infinity,
-         decoration: BoxDecoration(
-              gradient: LinearGradient(
-                begin: Alignment.centerLeft,
-                end: Alignment.centerRight,
-                colors: [
-                  Colors.black.withValues(alpha: 0.85),
-                  Colors.black.withValues(alpha: 0.6),
-                ],
-                stops: const [0.0, 0.65],
-              ),
-            ),
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          begin: Alignment.centerLeft,
+          end: Alignment.centerRight,
+          colors: [
+            Colors.black.withValues(alpha: 0.85),
+            Colors.black.withValues(alpha: 0.6),
+          ],
+          stops: const [0.0, 0.65],
+        ),
+      ),
       padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 70),
       child: Center(
         child: ConstrainedBox(
@@ -143,7 +142,10 @@ class _FaqTileState extends State<_FaqTile> {
               behavior: HitTestBehavior.opaque,
               onTap: () => setState(() => _isOpen = !_isOpen),
               child: Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 16),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 18,
+                  vertical: 16,
+                ),
                 child: Row(
                   crossAxisAlignment: CrossAxisAlignment.center,
                   children: [
@@ -173,8 +175,9 @@ class _FaqTileState extends State<_FaqTile> {
             ),
             AnimatedCrossFade(
               duration: const Duration(milliseconds: 200),
-              crossFadeState:
-                  _isOpen ? CrossFadeState.showFirst : CrossFadeState.showSecond,
+              crossFadeState: _isOpen
+                  ? CrossFadeState.showFirst
+                  : CrossFadeState.showSecond,
               firstChild: Padding(
                 padding: const EdgeInsets.fromLTRB(18, 0, 18, 18),
                 child: Text(

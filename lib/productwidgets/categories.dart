@@ -1,18 +1,18 @@
-
 import 'package:devansh/data/catalog.dart';
 import 'package:devansh/models/catalogmodels.dart';
 import 'package:devansh/services/catalogservice.dart';
 import 'package:flutter/material.dart' hide MaterialType;
 
 const _kAmber = Color.fromRGBO(245, 171, 30, 1);
-typedef _SidebarDataBuilder = Widget Function(
-  BuildContext context,
-  List<Category> categories,
-  List<Product> products,
-  List<Company> companies,
-  List<MaterialType> materials,
-  List<ProductType> types,
-);
+typedef _SidebarDataBuilder =
+    Widget Function(
+      BuildContext context,
+      List<Category> categories,
+      List<Product> products,
+      List<Company> companies,
+      List<MaterialType> materials,
+      List<ProductType> types,
+    );
 
 class _CategorySidebarData extends StatelessWidget {
   final _SidebarDataBuilder builder;
@@ -46,8 +46,8 @@ class _CategorySidebarData extends StatelessWidget {
 
                         final stillLoading =
                             categorySnap.connectionState ==
-                                    ConnectionState.waiting &&
-                                categories.isEmpty;
+                                ConnectionState.waiting &&
+                            categories.isEmpty;
 
                         if (stillLoading) {
                           return const Padding(
@@ -111,85 +111,112 @@ class CategorySidebar extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return _CategorySidebarData(
-      builder: (context, categories, products, companies, allMaterials, allTypes) {
-        final materials = selectedCategoryId == null
-            ? <MaterialType>[]
-            : Catalog.materialsInCategory(products, allMaterials, selectedCategoryId!);
-        final showMaterials = materials.isNotEmpty;
+      builder:
+          (context, categories, products, companies, allMaterials, allTypes) {
+            final materials = selectedCategoryId == null
+                ? <MaterialType>[]
+                : Catalog.materialsInCategory(
+                    products,
+                    allMaterials,
+                    selectedCategoryId!,
+                  );
+            final showMaterials = materials.isNotEmpty;
 
-        final types = selectedCategoryId == null
-            ? <ProductType>[]
-            : Catalog.typesInCategory(products, allTypes, selectedCategoryId!);
-        final showTypes = types.isNotEmpty;
+            final types = selectedCategoryId == null
+                ? <ProductType>[]
+                : Catalog.typesInCategory(
+                    products,
+                    allTypes,
+                    selectedCategoryId!,
+                  );
+            final showTypes = types.isNotEmpty;
 
-        return Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            const Text(
-              'Categories',
-              style: TextStyle(color: Colors.white, fontSize: 20, fontWeight: FontWeight.bold),
-            ),
-            const SizedBox(height: 14),
-            _AllCategoriesEntry(
-              isSelected: selectedCategoryId == null,
-              onTap: () => onCategoryTap(null),
-            ),
-            for (final category in categories)
-              _CategoryEntry(
-                category: category,
-                products: products,
-                companies: companies,
-                isSelected: category.id == selectedCategoryId,
-                selectedCompanyId: selectedCompanyId,
-                onCategoryTap: () => onCategoryTap(category.id),
-                onCompanyTap: onCompanyTap,
-              ),
-            if (showTypes) ...[
-              const SizedBox(height: 16),
-              Divider(color: Colors.white.withValues(alpha: 0.15), height: 1),
-              const SizedBox(height: 16),
-              const Text(
-                'Type',
-                style: TextStyle(color: Colors.white, fontSize: 20, fontWeight: FontWeight.bold),
-              ),
-              const SizedBox(height: 10),
-              _CompanyRow(
-                label: 'All',
-                isSelected: selectedTypeId == null,
-                onTap: () => onTypeTap(null),
-              ),
-              for (final type in types)
-                _CompanyRow(
-                  label: type.name,
-                  isSelected: selectedTypeId == type.id,
-                  onTap: () => onTypeTap(type.id),
+            return Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                const Text(
+                  'Categories',
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontSize: 20,
+                    fontWeight: FontWeight.bold,
+                  ),
                 ),
-            ],
-            if (showMaterials) ...[
-              const SizedBox(height: 16),
-              Divider(color: Colors.white.withValues(alpha: 0.15), height: 1),
-              const SizedBox(height: 16),
-              const Text(
-                'Materials',
-                style: TextStyle(color: Colors.white, fontSize: 20, fontWeight: FontWeight.bold),
-              ),
-              const SizedBox(height: 10),
-              _CompanyRow(
-                label: 'All',
-                isSelected: selectedMaterialId == null,
-                onTap: () => onMaterialTap(null),
-              ),
-              for (final material in materials)
-                _CompanyRow(
-                  label: material.name,
-                  isSelected: selectedMaterialId == material.id,
-                  onTap: () => onMaterialTap(material.id),
+                const SizedBox(height: 14),
+                _AllCategoriesEntry(
+                  isSelected: selectedCategoryId == null,
+                  onTap: () => onCategoryTap(null),
                 ),
-            ],
-          ],
-        );
-      },
+                for (final category in categories)
+                  _CategoryEntry(
+                    category: category,
+                    products: products,
+                    companies: companies,
+                    isSelected: category.id == selectedCategoryId,
+                    selectedCompanyId: selectedCompanyId,
+                    onCategoryTap: () => onCategoryTap(category.id),
+                    onCompanyTap: onCompanyTap,
+                  ),
+                if (showTypes) ...[
+                  const SizedBox(height: 16),
+                  Divider(
+                    color: Colors.white.withValues(alpha: 0.15),
+                    height: 1,
+                  ),
+                  const SizedBox(height: 16),
+                  const Text(
+                    'Type',
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontSize: 20,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                  const SizedBox(height: 10),
+                  _CompanyRow(
+                    label: 'All',
+                    isSelected: selectedTypeId == null,
+                    onTap: () => onTypeTap(null),
+                  ),
+                  for (final type in types)
+                    _CompanyRow(
+                      label: type.name,
+                      isSelected: selectedTypeId == type.id,
+                      onTap: () => onTypeTap(type.id),
+                    ),
+                ],
+                if (showMaterials) ...[
+                  const SizedBox(height: 16),
+                  Divider(
+                    color: Colors.white.withValues(alpha: 0.15),
+                    height: 1,
+                  ),
+                  const SizedBox(height: 16),
+                  const Text(
+                    'Materials',
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontSize: 20,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                  const SizedBox(height: 10),
+                  _CompanyRow(
+                    label: 'All',
+                    isSelected: selectedMaterialId == null,
+                    onTap: () => onMaterialTap(null),
+                  ),
+                  for (final material in materials)
+                    _CompanyRow(
+                      label: material.name,
+                      isSelected: selectedMaterialId == material.id,
+                      onTap: () => onMaterialTap(material.id),
+                    ),
+                ],
+              ],
+            );
+          },
     );
   }
 }
@@ -211,7 +238,9 @@ class _AllCategoriesEntry extends StatelessWidget {
           width: double.infinity,
           padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
           decoration: BoxDecoration(
-            color: isSelected ? _kAmber.withValues(alpha: 0.15) : Colors.transparent,
+            color: isSelected
+                ? _kAmber.withValues(alpha: 0.15)
+                : Colors.transparent,
             borderRadius: BorderRadius.circular(8),
             border: Border(
               left: BorderSide(
@@ -308,7 +337,9 @@ class _CategoryEntryState extends State<_CategoryEntry> {
               width: double.infinity,
               padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
               decoration: BoxDecoration(
-                color: isSelected ? _kAmber.withValues(alpha: 0.15) : Colors.transparent,
+                color: isSelected
+                    ? _kAmber.withValues(alpha: 0.15)
+                    : Colors.transparent,
                 borderRadius: BorderRadius.circular(8),
                 border: Border(
                   left: BorderSide(
@@ -324,14 +355,18 @@ class _CategoryEntryState extends State<_CategoryEntry> {
                       category.name,
                       style: TextStyle(
                         color: isSelected ? _kAmber : Colors.white,
-                        fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
+                        fontWeight: isSelected
+                            ? FontWeight.w700
+                            : FontWeight.w500,
                         fontSize: 14.5,
                       ),
                     ),
                   ),
                   if (companies.length > 1)
                     Icon(
-                      showCompanies ? Icons.keyboard_arrow_up : Icons.keyboard_arrow_down,
+                      showCompanies
+                          ? Icons.keyboard_arrow_up
+                          : Icons.keyboard_arrow_down,
                       size: 18,
                       color: isSelected ? _kAmber : Colors.white54,
                     ),
@@ -372,7 +407,8 @@ class _CategoryEntryState extends State<_CategoryEntry> {
                                     for (final company in companies)
                                       _CompanyRow(
                                         label: company.name,
-                                        isSelected: selectedCompanyId == company.id,
+                                        isSelected:
+                                            selectedCompanyId == company.id,
                                         onTap: () => onCompanyTap(company.id),
                                       ),
                                   ],
@@ -410,7 +446,11 @@ class _CompanyRow extends StatelessWidget {
   final bool isSelected;
   final VoidCallback onTap;
 
-  const _CompanyRow({required this.label, required this.isSelected, required this.onTap});
+  const _CompanyRow({
+    required this.label,
+    required this.isSelected,
+    required this.onTap,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -422,7 +462,9 @@ class _CompanyRow extends StatelessWidget {
         child: Row(
           children: [
             Icon(
-              isSelected ? Icons.radio_button_checked : Icons.radio_button_unchecked,
+              isSelected
+                  ? Icons.radio_button_checked
+                  : Icons.radio_button_unchecked,
               size: 14,
               color: isSelected ? _kAmber : Colors.white38,
             ),
@@ -430,7 +472,9 @@ class _CompanyRow extends StatelessWidget {
             Text(
               label,
               style: TextStyle(
-                color: isSelected ? _kAmber : Colors.white.withValues(alpha: 0.75),
+                color: isSelected
+                    ? _kAmber
+                    : Colors.white.withValues(alpha: 0.75),
                 fontSize: 13,
                 fontWeight: isSelected ? FontWeight.w600 : FontWeight.w400,
               ),

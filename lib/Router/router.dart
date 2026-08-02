@@ -33,8 +33,9 @@ class GoRouterRefreshStream extends ChangeNotifier {
   }
 }
 
-final GoRouterRefreshStream _authRefresh =
-    GoRouterRefreshStream(FirebaseAuth.instance.authStateChanges());
+final GoRouterRefreshStream _authRefresh = GoRouterRefreshStream(
+  FirebaseAuth.instance.authStateChanges(),
+);
 
 const List<String> _protectedPaths = ['/orders'];
 
@@ -50,13 +51,11 @@ CustomTransitionPage<void> _slideFromRightPage({
     transitionsBuilder: (context, animation, secondaryAnimation, child) {
       const begin = Offset(1.0, 0.0);
       const end = Offset.zero;
-      final tween = Tween(begin: begin, end: end).chain(
-        CurveTween(curve: Curves.easeOutCubic),
-      );
-      return SlideTransition(
-        position: animation.drive(tween),
-        child: child,
-      );
+      final tween = Tween(
+        begin: begin,
+        end: end,
+      ).chain(CurveTween(curve: Curves.easeOutCubic));
+      return SlideTransition(position: animation.drive(tween), child: child);
     },
   );
 }
@@ -123,7 +122,10 @@ final GoRouter appRouter = GoRouter(
       path: '/about',
       name: 'about',
       pageBuilder: (context, state) {
-        return _slideFromRightPage(key: state.pageKey, child: const AboutPage());
+        return _slideFromRightPage(
+          key: state.pageKey,
+          child: const AboutPage(),
+        );
       },
     ),
     GoRoute(

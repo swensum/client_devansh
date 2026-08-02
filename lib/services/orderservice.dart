@@ -7,6 +7,7 @@ class PendingOrderItem {
 
   PendingOrderItem({required this.product, required this.quantity});
 }
+
 class OrderCartService {
   OrderCartService._();
   static final OrderCartService instance = OrderCartService._();
@@ -17,7 +18,9 @@ class OrderCartService {
   int get count => items.value.length;
 
   void addItem(Product product, int quantity) {
-    final existingIndex = items.value.indexWhere((i) => i.product.id == product.id);
+    final existingIndex = items.value.indexWhere(
+      (i) => i.product.id == product.id,
+    );
     final updated = [...items.value];
     if (existingIndex != -1) {
       updated[existingIndex] = PendingOrderItem(
@@ -33,7 +36,10 @@ class OrderCartService {
   void updateQuantity(int index, int quantity) {
     if (quantity < 1) return;
     final updated = [...items.value];
-    updated[index] = PendingOrderItem(product: updated[index].product, quantity: quantity);
+    updated[index] = PendingOrderItem(
+      product: updated[index].product,
+      quantity: quantity,
+    );
     items.value = updated;
   }
 

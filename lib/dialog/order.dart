@@ -113,9 +113,9 @@ class _OrderDialogState extends State<_OrderDialog> {
     await Future.delayed(const Duration(milliseconds: 400));
     OrderCartService.instance.addItem(_product, _quantity);
 
-   if (!mounted) return;
-setState(() => _submitting = false);
-context.pop();
+    if (!mounted) return;
+    setState(() => _submitting = false);
+    context.pop();
 
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
@@ -145,7 +145,9 @@ context.pop();
       'Availability': product.availability,
     }..removeWhere((key, value) => value == null || value.trim().isEmpty);
 
-    final otherRelated = _allKnownProducts.where((p) => p.id != product.id).toList();
+    final otherRelated = _allKnownProducts
+        .where((p) => p.id != product.id)
+        .toList();
 
     return Dialog(
       backgroundColor: Colors.transparent,
@@ -165,10 +167,18 @@ context.pop();
             border: Border.all(color: _kBorderSubtle, width: 1.2),
             boxShadow: [
               // Deep ambient shadow for lift off the page…
-              const BoxShadow(color: Colors.black54, blurRadius: 36, offset: Offset(0, 16)),
+              const BoxShadow(
+                color: Colors.black54,
+                blurRadius: 36,
+                offset: Offset(0, 16),
+              ),
               // …plus a faint warm glow that nods to the brand's amber accent
               // without shouting — a "premium moment" cue, used sparingly.
-              BoxShadow(color: _kAmber.withValues(alpha: 0.06), blurRadius: 60, spreadRadius: -10),
+              BoxShadow(
+                color: _kAmber.withValues(alpha: 0.06),
+                blurRadius: 60,
+                spreadRadius: -10,
+              ),
             ],
           ),
           child: Column(
@@ -213,9 +223,7 @@ context.pop();
                         ),
                       ],
                     ),
-                   _CloseButton(
-  onTap: () => context.pop(),
-),
+                    _CloseButton(onTap: () => context.pop()),
                   ],
                 ),
               ),
@@ -272,7 +280,11 @@ context.pop();
                 margin: const EdgeInsets.only(top: 16),
                 padding: const EdgeInsets.fromLTRB(24, 16, 24, 20),
                 decoration: BoxDecoration(
-                  border: Border(top: BorderSide(color: Colors.white.withValues(alpha: 0.08))),
+                  border: Border(
+                    top: BorderSide(
+                      color: Colors.white.withValues(alpha: 0.08),
+                    ),
+                  ),
                 ),
                 child: SizedBox(
                   width: double.infinity,
@@ -284,15 +296,26 @@ context.pop();
                       disabledBackgroundColor: _kAmber.withValues(alpha: 0.5),
                       padding: const EdgeInsets.symmetric(vertical: 15),
                       elevation: 0,
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(8),
+                      ),
                     ),
                     child: _submitting
                         ? const SizedBox(
                             width: 20,
                             height: 20,
-                            child: CircularProgressIndicator(strokeWidth: 2.4, color: Colors.black),
+                            child: CircularProgressIndicator(
+                              strokeWidth: 2.4,
+                              color: Colors.black,
+                            ),
                           )
-                        : const Text('Submit Order', style: TextStyle(fontWeight: FontWeight.w700, fontSize: 16)),
+                        : const Text(
+                            'Submit Order',
+                            style: TextStyle(
+                              fontWeight: FontWeight.w700,
+                              fontSize: 16,
+                            ),
+                          ),
                   ),
                 ),
               ),
@@ -330,7 +353,9 @@ class _CloseButtonState extends State<_CloseButton> {
           duration: const Duration(milliseconds: 150),
           padding: const EdgeInsets.all(8),
           decoration: BoxDecoration(
-            color: _isHovered ? Colors.white.withValues(alpha: 0.08) : Colors.transparent,
+            color: _isHovered
+                ? Colors.white.withValues(alpha: 0.08)
+                : Colors.transparent,
             shape: BoxShape.circle,
           ),
           child: Icon(
@@ -368,7 +393,11 @@ class _ProductImagePane extends StatelessWidget {
             borderRadius: BorderRadius.circular(12),
             border: Border.all(color: _kBorderSubtle),
             boxShadow: [
-              BoxShadow(color: Colors.black.withValues(alpha: 0.3), blurRadius: 16, offset: const Offset(0, 6)),
+              BoxShadow(
+                color: Colors.black.withValues(alpha: 0.3),
+                blurRadius: 16,
+                offset: const Offset(0, 6),
+              ),
             ],
           ),
           child: ClipRRect(
@@ -384,20 +413,31 @@ class _ProductImagePane extends StatelessWidget {
                       loadingBuilder: (context, child, progress) {
                         if (progress == null) return child;
                         return const Center(
-                          child: CircularProgressIndicator(color: _kAmber, strokeWidth: 2),
+                          child: CircularProgressIndicator(
+                            color: _kAmber,
+                            strokeWidth: 2,
+                          ),
                         );
                       },
                       errorBuilder: (context, error, stackTrace) => Container(
                         color: Colors.grey.shade800,
                         child: const Center(
-                          child: Icon(Icons.image_not_supported_outlined, color: Colors.white38, size: 28),
+                          child: Icon(
+                            Icons.image_not_supported_outlined,
+                            color: Colors.white38,
+                            size: 28,
+                          ),
                         ),
                       ),
                     )
                   : Container(
                       color: Colors.grey.shade800,
                       child: const Center(
-                        child: Icon(Icons.image_not_supported_outlined, color: Colors.white38, size: 28),
+                        child: Icon(
+                          Icons.image_not_supported_outlined,
+                          color: Colors.white38,
+                          size: 28,
+                        ),
                       ),
                     ),
             ),
@@ -456,7 +496,9 @@ class _RelatedThumbnailState extends State<_RelatedThumbnail> {
           decoration: BoxDecoration(
             borderRadius: BorderRadius.circular(10),
             border: Border.all(
-              color: _isHovered ? _kAmber.withValues(alpha: 0.7) : _kBorderSubtle,
+              color: _isHovered
+                  ? _kAmber.withValues(alpha: 0.7)
+                  : _kBorderSubtle,
               width: _isHovered ? 1.5 : 1,
             ),
           ),
@@ -475,7 +517,11 @@ class _RelatedThumbnailState extends State<_RelatedThumbnail> {
                         size: 24,
                       ),
                     )
-                  : const Icon(Icons.image_not_supported_outlined, color: Colors.white38, size: 24),
+                  : const Icon(
+                      Icons.image_not_supported_outlined,
+                      color: Colors.white38,
+                      size: 24,
+                    ),
             ),
           ),
         ),
@@ -510,15 +556,24 @@ class _ProductDetailsPane extends StatelessWidget {
           product.name,
           maxLines: 2,
           overflow: TextOverflow.ellipsis,
-          style: const TextStyle(color: Colors.white, fontSize: 21, fontWeight: FontWeight.w700),
+          style: const TextStyle(
+            color: Colors.white,
+            fontSize: 21,
+            fontWeight: FontWeight.w700,
+          ),
         ),
-        if (product.description != null && product.description!.trim().isNotEmpty) ...[
+        if (product.description != null &&
+            product.description!.trim().isNotEmpty) ...[
           const SizedBox(height: 8),
           Text(
             product.description!,
             maxLines: 3,
             overflow: TextOverflow.ellipsis,
-            style: TextStyle(color: Colors.white.withValues(alpha: 0.7), fontSize: 15, height: 1.45),
+            style: TextStyle(
+              color: Colors.white.withValues(alpha: 0.7),
+              fontSize: 15,
+              height: 1.45,
+            ),
           ),
         ],
         if (specs.isNotEmpty) ...[
@@ -547,7 +602,11 @@ class _ProductDetailsPane extends StatelessWidget {
         const SizedBox(height: 22),
         Text(
           'Quantity / Pieces',
-          style: TextStyle(color: Colors.white.withValues(alpha: 0.75), fontSize: 14.5, fontWeight: FontWeight.w600),
+          style: TextStyle(
+            color: Colors.white.withValues(alpha: 0.75),
+            fontSize: 14.5,
+            fontWeight: FontWeight.w600,
+          ),
         ),
         const SizedBox(height: 10),
         Row(
@@ -559,7 +618,11 @@ class _ProductDetailsPane extends StatelessWidget {
               padding: const EdgeInsets.symmetric(vertical: 10),
               child: Text(
                 '$quantity',
-                style: const TextStyle(color: Colors.white, fontSize: 17, fontWeight: FontWeight.w600),
+                style: const TextStyle(
+                  color: Colors.white,
+                  fontSize: 17,
+                  fontWeight: FontWeight.w600,
+                ),
               ),
             ),
             _QtyButton(icon: Icons.add, onTap: onIncrement),
@@ -597,9 +660,15 @@ class _QtyButtonState extends State<_QtyButton> {
           decoration: BoxDecoration(
             color: _isHovered ? _kSurfaceRaised : _kSurface,
             borderRadius: BorderRadius.circular(8),
-            border: Border.all(color: _isHovered ? _kAmber.withValues(alpha: 0.6) : _kBorder),
+            border: Border.all(
+              color: _isHovered ? _kAmber.withValues(alpha: 0.6) : _kBorder,
+            ),
           ),
-          child: Icon(widget.icon, color: _isHovered ? _kAmber : Colors.white70, size: 18),
+          child: Icon(
+            widget.icon,
+            color: _isHovered ? _kAmber : Colors.white70,
+            size: 18,
+          ),
         ),
       ),
     );
@@ -616,7 +685,8 @@ class _DetailEntry {
     required this.label,
     required this.value,
     // ignore: unused_element_parameter
-    this.isAvailability = false, this.valueColor,
+    this.isAvailability = false,
+    this.valueColor,
   });
 }
 
@@ -639,16 +709,17 @@ class _DetailGrid extends StatelessWidget {
             children: [
               Expanded(child: _DetailLine(entry: left)),
               const SizedBox(width: 16),
-              Expanded(child: right != null ? _DetailLine(entry: right) : const SizedBox.shrink()),
+              Expanded(
+                child: right != null
+                    ? _DetailLine(entry: right)
+                    : const SizedBox.shrink(),
+              ),
             ],
           ),
         ),
       );
     }
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: rows,
-    );
+    return Column(crossAxisAlignment: CrossAxisAlignment.start, children: rows);
   }
 }
 
@@ -658,7 +729,8 @@ class _DetailLine extends StatelessWidget {
   const _DetailLine({required this.entry});
 
   bool get _isInStock =>
-      entry.value.toLowerCase().contains('stock') && !entry.value.toLowerCase().contains('out');
+      entry.value.toLowerCase().contains('stock') &&
+      !entry.value.toLowerCase().contains('out');
 
   @override
   Widget build(BuildContext context) {
@@ -680,7 +752,9 @@ class _DetailLine extends StatelessWidget {
           TextSpan(
             text: entry.value,
             style: TextStyle(
-              color: showGreen ? _kGreen : (entry.valueColor ?? const Color(0xFFF5F5F5)),
+              color: showGreen
+                  ? _kGreen
+                  : (entry.valueColor ?? const Color(0xFFF5F5F5)),
               fontSize: 15,
               fontWeight: FontWeight.w500,
               letterSpacing: 0.2,

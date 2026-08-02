@@ -11,11 +11,8 @@ class ReviewService {
         .orderBy('createdAt', descending: true)
         .limit(limit)
         .snapshots()
-        .handleError((error, stack) {
-      
-        })
+        .handleError((error, stack) {})
         .map((snap) {
-          
           final reviews = <Review>[];
           for (final doc in snap.docs) {
             try {
@@ -35,5 +32,6 @@ class ReviewService {
     return Review.fromFirestore(doc);
   }
 
-  Future<void> submitReview(Review review, String uid) => _col.doc(uid).set(review.toMap());
+  Future<void> submitReview(Review review, String uid) =>
+      _col.doc(uid).set(review.toMap());
 }
