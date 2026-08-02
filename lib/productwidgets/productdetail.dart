@@ -926,7 +926,7 @@ class _DetailEntry {
   const _DetailEntry({
     required this.label,
     required this.value,
-  
+
     this.isAvailability = false,
   });
 }
@@ -993,9 +993,7 @@ class _DetailLine extends StatelessWidget {
           TextSpan(
             text: entry.value,
             style: TextStyle(
-             color: showGreen
-    ? _kGreen
-    : const Color(0xFFF5F5F5),
+              color: showGreen ? _kGreen : const Color(0xFFF5F5F5),
               fontSize: 15,
               fontWeight: FontWeight.w500,
               letterSpacing: 0.2,
