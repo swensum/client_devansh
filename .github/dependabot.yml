@@ -1,20 +1,13 @@
 version: 2
 updates:
-  # React admin panel — npm dependencies
-  - package-ecosystem: "npm"
-    directory: "/admin"          # adjust to your actual admin folder path
-    schedule:
-      interval: "weekly"
-    open-pull-requests-limit: 10
-
-  # Flutter storefront — pub dependencies
+  # Flutter dependencies
   - package-ecosystem: "pub"
     directory: "/"
     schedule:
       interval: "weekly"
     open-pull-requests-limit: 10
 
-  # Keep the GitHub Actions workflows themselves patched
+  # GitHub Actions
   - package-ecosystem: "github-actions"
     directory: "/"
     schedule:
