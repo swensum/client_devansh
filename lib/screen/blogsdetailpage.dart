@@ -183,7 +183,6 @@ class _BlogDetailPageState extends State<BlogDetailPage> {
               color: Colors.white.withValues(alpha: 0.5),
             ),
           ),
-         
         ],
       ),
     );
@@ -198,8 +197,6 @@ class _BlogDetailPageState extends State<BlogDetailPage> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              
-            
               LayoutBuilder(
                 builder: (context, constraints) {
                   final isWide = constraints.maxWidth > 800;
@@ -210,16 +207,17 @@ class _BlogDetailPageState extends State<BlogDetailPage> {
                     onTapPost: (p) => context.go('/blog/${p.slug}'),
                   );
 
-                 if (isWide) {
-  return Row(
-    crossAxisAlignment: CrossAxisAlignment.start,   // ← natural top alignment
-    children: [
-      Expanded(flex: 7, child: image),
-      const SizedBox(width: 28),
-      Expanded(flex: 3, child: recent),
-    ],
-  );
-}
+                  if (isWide) {
+                    return Row(
+                      crossAxisAlignment:
+                          CrossAxisAlignment.start, // ← natural top alignment
+                      children: [
+                        Expanded(flex: 7, child: image),
+                        const SizedBox(width: 28),
+                        Expanded(flex: 3, child: recent),
+                      ],
+                    );
+                  }
 
                   return Column(
                     children: [image, const SizedBox(height: 28), recent],
@@ -596,4 +594,3 @@ class _RecentBlogRowState extends State<_RecentBlogRow> {
     );
   }
 }
-
