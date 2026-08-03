@@ -20,14 +20,14 @@ Future<void> main() async {
       GoRouter.optionURLReflectsImperativeAPIs = true;
       usePathUrlStrategy();
 
-      await dotenv.load(fileName: ".env");
-
       SystemChrome.setSystemUIOverlayStyle(
         const SystemUiOverlayStyle(
           statusBarColor: Color(0xFF0A1929),
           statusBarIconBrightness: Brightness.light,
         ),
       );
+
+      await dotenv.load(fileName: ".env");
 
       await Firebase.initializeApp(
         options: DefaultFirebaseOptions.currentPlatform,

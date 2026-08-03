@@ -11,7 +11,7 @@ String _optimizedImageUrl(String url, {int width = 400}) {
   if (!url.contains('res.cloudinary.com') || !url.contains('/upload/')) {
     return url;
   }
-  if (url.contains('/upload/w_')) return url; // already transformed
+  if (url.contains('/upload/w_')) return url;
   return url.replaceFirst('/upload/', '/upload/w_$width,q_auto,f_auto/');
 }
 
@@ -29,12 +29,15 @@ class _TopProductsSectionState extends State<TopProductsSection> {
 
   late final PageController _pageController;
   int _currentPage = 0;
-
+  bool _startLoadingProducts = false;
   bool _visible = false;
 
   void _handleVisibility(VisibilityInfo info) {
-    if (!_visible && info.visibleFraction > 0.2) {
-      setState(() => _visible = true);
+    if (info.visibleFraction > 0.2 && !_visible) {
+      setState(() {
+        _visible = true;
+        _startLoadingProducts = true;
+      });
     }
   }
 
@@ -79,6 +82,14 @@ class _TopProductsSectionState extends State<TopProductsSection> {
 
   @override
   Widget build(BuildContext context) {
+    if (!_startLoadingProducts) {
+      return VisibilityDetector(
+        key: const Key('top-products-section-visibility'),
+        onVisibilityChanged: _handleVisibility,
+        child: Container(height: 650, color: const Color(0xFF0F0F0F)),
+      );
+    }
+
     return StreamBuilder<List<Product>>(
       stream: _catalogService.watchTopProducts(),
       builder: (context, snapshot) {

@@ -76,8 +76,6 @@ MarkdownStyleSheet _blogMarkdownStyleSheet() {
   );
 }
 
-/// Full post view at `/blog/:slug` — cover image + a "Recent Blogs" rail
-/// side by side up top, then the title/meta/content below that.
 class BlogDetailPage extends StatefulWidget {
   final String slug;
   const BlogDetailPage({super.key, required this.slug});
@@ -185,8 +183,6 @@ class _BlogDetailPageState extends State<BlogDetailPage> {
               color: Colors.white.withValues(alpha: 0.5),
             ),
           ),
-          const SizedBox(height: 24),
-          _BackToBlogLink(onTap: () => context.go('/blog')),
         ],
       ),
     );
@@ -201,10 +197,6 @@ class _BlogDetailPageState extends State<BlogDetailPage> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              _BackToBlogLink(onTap: () => context.go('/blog')),
-              const SizedBox(height: 20),
-
-              // ── Cover image (left) + Recent Blogs rail (right) ──────
               LayoutBuilder(
                 builder: (context, constraints) {
                   final isWide = constraints.maxWidth > 800;
@@ -216,15 +208,14 @@ class _BlogDetailPageState extends State<BlogDetailPage> {
                   );
 
                   if (isWide) {
-                    return IntrinsicHeight(
-                      child: Row(
-                        crossAxisAlignment: CrossAxisAlignment.stretch,
-                        children: [
-                          Expanded(flex: 7, child: image),
-                          const SizedBox(width: 28),
-                          Expanded(flex: 3, child: recent),
-                        ],
-                      ),
+                    return Row(
+                      crossAxisAlignment:
+                          CrossAxisAlignment.start, // ← natural top alignment
+                      children: [
+                        Expanded(flex: 7, child: image),
+                        const SizedBox(width: 28),
+                        Expanded(flex: 3, child: recent),
+                      ],
                     );
                   }
 
@@ -350,8 +341,6 @@ class _BlogDetailPageState extends State<BlogDetailPage> {
   }
 }
 
-/// Smaller, contained cover image — rounded corners instead of an edge-to-edge
-/// banner, so it visually sits as a card rather than a full-bleed hero.
 class _CoverImage extends StatelessWidget {
   final BlogPost post;
   const _CoverImage({required this.post});
@@ -360,26 +349,14 @@ class _CoverImage extends StatelessWidget {
   Widget build(BuildContext context) {
     return ClipRRect(
       borderRadius: BorderRadius.circular(12),
-      child: AspectRatio(
-        aspectRatio: 16 / 10,
-        child: Container(
-          // Letterbox background so BoxFit.contain doesn't leave bare gaps —
-          // this shows the WHOLE image with nothing cropped, at the same
-          // box size as before.
-          color: const Color(0xFF1A1A1A),
-          child: post.coverImage != null
-              ? Image.network(
-                  post.coverImage!,
-                  fit: BoxFit.contain,
-                  errorBuilder: (context, error, stackTrace) => _placeholder(),
-                  loadingBuilder: (context, child, progress) {
-                    if (progress == null) return child;
-                    return _placeholder();
-                  },
-                )
-              : _placeholder(),
-        ),
-      ),
+      child: post.coverImage != null
+          ? Image.network(
+              post.coverImage!,
+              fit: BoxFit.fitWidth, // width fills, height adjusts naturally
+              width: double.infinity,
+              errorBuilder: (context, error, stackTrace) => _placeholder(),
+            )
+          : _placeholder(),
     );
   }
 
@@ -609,49 +586,6 @@ class _RecentBlogRowState extends State<_RecentBlogRow> {
                       ? kBlogAccent
                       : Colors.white.withValues(alpha: 0.85),
                 ),
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-class _BackToBlogLink extends StatefulWidget {
-  final VoidCallback onTap;
-  const _BackToBlogLink({required this.onTap});
-
-  @override
-  State<_BackToBlogLink> createState() => _BackToBlogLinkState();
-}
-
-class _BackToBlogLinkState extends State<_BackToBlogLink> {
-  bool _isHovered = false;
-
-  @override
-  Widget build(BuildContext context) {
-    return MouseRegion(
-      cursor: SystemMouseCursors.click,
-      onEnter: (_) => setState(() => _isHovered = true),
-      onExit: (_) => setState(() => _isHovered = false),
-      child: GestureDetector(
-        onTap: widget.onTap,
-        child: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Icon(
-              Icons.arrow_back,
-              size: 15,
-              color: _isHovered ? kBlogAccent : Colors.white70,
-            ),
-            const SizedBox(width: 6),
-            Text(
-              "Back to Blog",
-              style: TextStyle(
-                fontSize: 13.5,
-                fontWeight: FontWeight.w600,
-                color: _isHovered ? kBlogAccent : Colors.white70,
               ),
             ),
           ],
