@@ -183,8 +183,7 @@ class _BlogDetailPageState extends State<BlogDetailPage> {
               color: Colors.white.withValues(alpha: 0.5),
             ),
           ),
-          const SizedBox(height: 24),
-          _BackToBlogLink(onTap: () => context.go('/blog')),
+         
         ],
       ),
     );
@@ -199,10 +198,8 @@ class _BlogDetailPageState extends State<BlogDetailPage> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              _BackToBlogLink(onTap: () => context.go('/blog')),
-              const SizedBox(height: 20),
-
-              // ── Cover image (left) + Recent Blogs rail (right) ──────
+              
+            
               LayoutBuilder(
                 builder: (context, constraints) {
                   final isWide = constraints.maxWidth > 800;
@@ -213,18 +210,16 @@ class _BlogDetailPageState extends State<BlogDetailPage> {
                     onTapPost: (p) => context.go('/blog/${p.slug}'),
                   );
 
-                  if (isWide) {
-                    return IntrinsicHeight(
-                      child: Row(
-                        crossAxisAlignment: CrossAxisAlignment.stretch,
-                        children: [
-                          Expanded(flex: 7, child: image),
-                          const SizedBox(width: 28),
-                          Expanded(flex: 3, child: recent),
-                        ],
-                      ),
-                    );
-                  }
+                 if (isWide) {
+  return Row(
+    crossAxisAlignment: CrossAxisAlignment.start,   // ← natural top alignment
+    children: [
+      Expanded(flex: 7, child: image),
+      const SizedBox(width: 28),
+      Expanded(flex: 3, child: recent),
+    ],
+  );
+}
 
                   return Column(
                     children: [image, const SizedBox(height: 28), recent],
@@ -602,45 +597,3 @@ class _RecentBlogRowState extends State<_RecentBlogRow> {
   }
 }
 
-class _BackToBlogLink extends StatefulWidget {
-  final VoidCallback onTap;
-  const _BackToBlogLink({required this.onTap});
-
-  @override
-  State<_BackToBlogLink> createState() => _BackToBlogLinkState();
-}
-
-class _BackToBlogLinkState extends State<_BackToBlogLink> {
-  bool _isHovered = false;
-
-  @override
-  Widget build(BuildContext context) {
-    return MouseRegion(
-      cursor: SystemMouseCursors.click,
-      onEnter: (_) => setState(() => _isHovered = true),
-      onExit: (_) => setState(() => _isHovered = false),
-      child: GestureDetector(
-        onTap: widget.onTap,
-        child: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Icon(
-              Icons.arrow_back,
-              size: 15,
-              color: _isHovered ? kBlogAccent : Colors.white70,
-            ),
-            const SizedBox(width: 6),
-            Text(
-              "Back to Blog",
-              style: TextStyle(
-                fontSize: 13.5,
-                fontWeight: FontWeight.w600,
-                color: _isHovered ? kBlogAccent : Colors.white70,
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-}
