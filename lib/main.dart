@@ -35,7 +35,6 @@ Future<void> main() async {
 
       FirebaseFirestore.instance.settings = const Settings(
         persistenceEnabled: true,
-        webExperimentalForceLongPolling: true,
       );
 
       runApp(const MyApp());
