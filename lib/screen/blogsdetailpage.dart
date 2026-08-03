@@ -76,8 +76,6 @@ MarkdownStyleSheet _blogMarkdownStyleSheet() {
   );
 }
 
-/// Full post view at `/blog/:slug` — cover image + a "Recent Blogs" rail
-/// side by side up top, then the title/meta/content below that.
 class BlogDetailPage extends StatefulWidget {
   final String slug;
   const BlogDetailPage({super.key, required this.slug});
@@ -350,8 +348,6 @@ class _BlogDetailPageState extends State<BlogDetailPage> {
   }
 }
 
-/// Smaller, contained cover image — rounded corners instead of an edge-to-edge
-/// banner, so it visually sits as a card rather than a full-bleed hero.
 class _CoverImage extends StatelessWidget {
   final BlogPost post;
   const _CoverImage({required this.post});
@@ -360,26 +356,14 @@ class _CoverImage extends StatelessWidget {
   Widget build(BuildContext context) {
     return ClipRRect(
       borderRadius: BorderRadius.circular(12),
-      child: AspectRatio(
-        aspectRatio: 16 / 10,
-        child: Container(
-          // Letterbox background so BoxFit.contain doesn't leave bare gaps —
-          // this shows the WHOLE image with nothing cropped, at the same
-          // box size as before.
-          color: const Color(0xFF1A1A1A),
-          child: post.coverImage != null
-              ? Image.network(
-                  post.coverImage!,
-                  fit: BoxFit.contain,
-                  errorBuilder: (context, error, stackTrace) => _placeholder(),
-                  loadingBuilder: (context, child, progress) {
-                    if (progress == null) return child;
-                    return _placeholder();
-                  },
-                )
-              : _placeholder(),
-        ),
-      ),
+      child: post.coverImage != null
+          ? Image.network(
+              post.coverImage!,
+              fit: BoxFit.fitWidth, // width fills, height adjusts naturally
+              width: double.infinity,
+              errorBuilder: (context, error, stackTrace) => _placeholder(),
+            )
+          : _placeholder(),
     );
   }
 
