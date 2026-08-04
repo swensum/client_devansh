@@ -208,14 +208,15 @@ class _BlogDetailPageState extends State<BlogDetailPage> {
                   );
 
                   if (isWide) {
-                    return Row(
-                      crossAxisAlignment:
-                          CrossAxisAlignment.start, // ← natural top alignment
-                      children: [
-                        Expanded(flex: 7, child: image),
-                        const SizedBox(width: 28),
-                        Expanded(flex: 3, child: recent),
-                      ],
+                    return IntrinsicHeight(
+                      child: Row(
+                        crossAxisAlignment: CrossAxisAlignment.stretch,
+                        children: [
+                          Expanded(flex: 7, child: image),
+                          const SizedBox(width: 28),
+                          Expanded(flex: 3, child: recent),
+                        ],
+                      ),
                     );
                   }
 
@@ -349,14 +350,23 @@ class _CoverImage extends StatelessWidget {
   Widget build(BuildContext context) {
     return ClipRRect(
       borderRadius: BorderRadius.circular(12),
-      child: post.coverImage != null
-          ? Image.network(
-              post.coverImage!,
-              fit: BoxFit.fitWidth, // width fills, height adjusts naturally
-              width: double.infinity,
-              errorBuilder: (context, error, stackTrace) => _placeholder(),
-            )
-          : _placeholder(),
+      child: AspectRatio(
+        aspectRatio: 16 / 9,
+        child: Container(
+          color: const Color(0xFF1A1A1A),
+          child: post.coverImage != null
+              ? Image.network(
+                  post.coverImage!,
+                  fit: BoxFit.contain,
+                  errorBuilder: (context, error, stackTrace) => _placeholder(),
+                  loadingBuilder: (context, child, progress) {
+                    if (progress == null) return child;
+                    return _placeholder();
+                  },
+                )
+              : _placeholder(),
+        ),
+      ),
     );
   }
 
