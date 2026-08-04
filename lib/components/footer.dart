@@ -13,7 +13,7 @@ class Footer extends StatefulWidget {
   static const List<_FooterLink> _quickLinks = [
     _FooterLink(label: "About Us", route: "/about"),
     _FooterLink(label: "Products", route: "/products"),
-    _FooterLink(label: "Reviews"),
+    _FooterLink(label: "Blogs", route: "/blog"),
     _FooterLink(label: "Contact", route: "/contact"),
   ];
 
@@ -107,15 +107,18 @@ class _FooterState extends State<Footer> {
                         ],
                       );
                     }
-
                     return Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         brand,
                         const SizedBox(height: 36),
-                        quick,
-                        const SizedBox(height: 36),
-                        categories,
+                        Row(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Expanded(flex: 3, child: quick),
+                            Expanded(flex: 4, child: categories),
+                          ],
+                        ),
                         const SizedBox(height: 36),
                         contact,
                       ],
@@ -301,10 +304,13 @@ class _FooterState extends State<Footer> {
           SizedBox(height: 16),
           _ContactRow(
             icon: Icons.location_on_outlined,
-            text: "123 Hardware Street, Industrial Area, City, State 12345",
+            text: "Sukhanagar(Old Napi Office),Butwal,Nepal",
           ),
           SizedBox(height: 14),
-          _ContactRow(icon: Icons.phone_outlined, text: "+91 98765 43210"),
+          _ContactRow(
+            icon: Icons.phone_outlined,
+            text: "+977 9857033614, +977 9857081383",
+          ),
           SizedBox(height: 14),
           _ContactRow(
             icon: Icons.email_outlined,
