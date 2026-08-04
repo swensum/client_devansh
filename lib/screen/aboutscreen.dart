@@ -711,9 +711,19 @@ class _BrandsSectionState extends State<_BrandsSection> {
 
                       return LayoutBuilder(
                         builder: (context, constraints) {
-                          const columns = 4;
-                          const spacing = 20.0;
                           final w = constraints.maxWidth;
+                          // Fewer columns as the screen narrows, so each
+                          // tile (and the logo inside it) shrinks gradually
+                          // instead of always splitting into 4 columns and
+                          // becoming unreadably small on phones.
+                          final columns = w > 900
+                              ? 4
+                              : w > 650
+                              ? 3
+                              : w > 420
+                              ? 2
+                              : 1;
+                          const spacing = 20.0;
                           final tileWidth =
                               (w - (columns - 1) * spacing) / columns;
 

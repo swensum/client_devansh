@@ -15,25 +15,14 @@ import 'package:go_router/go_router.dart';
 
 const _gold = Color.fromRGBO(245, 171, 30, 1);
 
-/// -------------------------------------------------------------------------
-/// Single source of truth for every size/spacing value the header uses.
-///
-/// Instead of repeating `isTight ? a : (isCompact ? b : c)` all over build(),
-/// we compute ONE of these from the available width, then every widget below
-/// just reads plain fields like `m.logoHeight` or `m.iconSize`.
-///
-/// To change how the header looks at a given width, edit this class only —
-/// nothing else in the file needs to know about breakpoints at all.
-/// -------------------------------------------------------------------------
 class _HeaderMetrics {
-  final bool showNavRow; // full desktop nav vs hamburger menu
-  final bool showAccountText; // name/register/login text next to person icon
-  final bool
-  showSearchInHeader; // false on mobile — search moves into the sidebar instead
+  final bool showNavRow;
+  final bool showAccountText;
+  final bool showSearchInHeader;
   final double horizontalPadding;
   final double logoHeight;
   final double logoWidth;
-  final double searchWidth; // null-ish sentinel: -1 means "flexible/Expanded"
+  final double searchWidth;
   final double iconSize;
   final double orderIconSize;
   final double hamburgerSize;
@@ -58,9 +47,6 @@ class _HeaderMetrics {
   });
 
   bool get searchIsFlexible => searchWidth < 0;
-
-  /// The three tiers below are the only breakpoints in the whole header.
-  /// Add/adjust a tier here if you need a new size step.
   factory _HeaderMetrics.of(double width) {
     if (width >= 1120) {
       // Full desktop
@@ -116,9 +102,6 @@ class _HeaderMetrics {
         gapLarge: 10,
       );
     }
-    // True mobile — search field moves into the sidebar entirely, so the
-    // header row only has logo + account icon + order icon + hamburger,
-    // none of which can overflow.
     return const _HeaderMetrics(
       showNavRow: false,
       showAccountText: false,
@@ -224,6 +207,7 @@ class _HeaderState extends State<Header> {
   bool _hoveredOrder = false;
   bool _hoveredPersonIcon = false;
   bool _hoveredHamburger = false;
+  bool _hoveredLogo = false;
   int _openIndex = -1;
 
   final CatalogService _catalogService = CatalogService();
@@ -428,6 +412,10 @@ class _HeaderState extends State<Header> {
             _mobileSidebarKey.currentState?.close();
             context.push(route);
           },
+          onHome: () {
+            _mobileSidebarKey.currentState?.close();
+            _goHome();
+          },
           onClosed: _removeMobileOverlay,
         );
       },
@@ -448,7 +436,9 @@ class _HeaderState extends State<Header> {
     web.window.location.reload();
   }
 
-  void _reloadHome() => web.window.location.reload();
+  void _goHome() {
+    web.window.location.href = '/';
+  }
 
   @override
   void dispose() {
@@ -472,14 +462,26 @@ class _HeaderState extends State<Header> {
         return Container(
           height: Header.height,
           padding: EdgeInsets.symmetric(horizontal: m.horizontalPadding),
-          color: const Color(0xFF1A1A1A),
+          color: const Color.fromARGB(255, 43, 43, 43),
           child: Row(
             children: [
-              Image.asset(
-                'assets/logo.png',
-                height: m.logoHeight,
-                width: m.logoWidth,
-                fit: BoxFit.contain,
+              MouseRegion(
+                cursor: SystemMouseCursors.click,
+                onEnter: (_) => setState(() => _hoveredLogo = true),
+                onExit: (_) => setState(() => _hoveredLogo = false),
+                child: GestureDetector(
+                  onTap: _goHome,
+                  child: AnimatedOpacity(
+                    duration: const Duration(milliseconds: 150),
+                    opacity: _hoveredLogo ? 0.85 : 1.0,
+                    child: Image.asset(
+                      'assets/logo.png',
+                      height: m.logoHeight,
+                      width: m.logoWidth,
+                      fit: BoxFit.contain,
+                    ),
+                  ),
+                ),
               ),
 
               if (m.showNavRow) const Spacer(flex: 2) else const Spacer(),
@@ -645,11 +647,13 @@ class _HeaderState extends State<Header> {
     );
 
     if (!showArrow) {
+      // "Home" — navigates to the homepage route from anywhere in the app,
+      // rather than reloading whatever page happens to be current.
       return MouseRegion(
         cursor: SystemMouseCursors.click,
         onEnter: (_) => setState(() => _hoveredIndex = index),
         onExit: (_) => setState(() => _hoveredIndex = -1),
-        child: GestureDetector(onTap: _reloadHome, child: content),
+        child: GestureDetector(onTap: _goHome, child: content),
       );
     }
 
@@ -1125,6 +1129,7 @@ class _MobileSidebar extends StatefulWidget {
   final Map<int, List<String>> dropdownItems;
   final void Function(String item) onSelect;
   final void Function(String route) onNavigate;
+  final VoidCallback onHome;
   final VoidCallback onClosed;
 
   const _MobileSidebar({
@@ -1136,6 +1141,7 @@ class _MobileSidebar extends StatefulWidget {
     required this.dropdownItems,
     required this.onSelect,
     required this.onNavigate,
+    required this.onHome,
     required this.onClosed,
   });
 
@@ -1317,6 +1323,7 @@ class _MobileSidebarState extends State<_MobileSidebar>
                                       dropdownItems: widget.dropdownItems,
                                       onSelect: widget.onSelect,
                                       onNavigate: widget.onNavigate,
+                                      onHome: widget.onHome,
                                     ),
                                   ),
                                 ),
@@ -1345,6 +1352,7 @@ class _MobileNavMenu extends StatelessWidget {
   final Map<int, List<String>> dropdownItems;
   final void Function(String item) onSelect;
   final void Function(String route) onNavigate;
+  final VoidCallback onHome;
 
   const _MobileNavMenu({
     required this.categories,
@@ -1354,6 +1362,7 @@ class _MobileNavMenu extends StatelessWidget {
     required this.dropdownItems,
     required this.onSelect,
     required this.onNavigate,
+    required this.onHome,
   });
 
   static const List<String> _labels = ["Home", "Shop", "Collection", "Pages"];
@@ -1446,13 +1455,15 @@ class _MobileNavMenu extends StatelessWidget {
         final subItems = dropdownItems[index];
 
         if (subItems == null) {
+          // "Home" — navigate to the homepage route, same as the desktop
+          // nav item and logo, instead of reloading the current page.
           return ListTile(
             dense: true,
             title: Text(
               label,
               style: const TextStyle(color: Colors.white, fontSize: 14),
             ),
-            onTap: () => web.window.location.reload(),
+            onTap: onHome,
           );
         }
 

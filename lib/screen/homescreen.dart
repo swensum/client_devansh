@@ -52,9 +52,12 @@ class _HomePageState extends State<HomePage> {
             controller: _scrollController,
             child: Column(
               children: [
-                SizedBox(
+                Container(
+                  width: double.infinity,
                   height: Header.height + TopBar.height,
-                ), // reserve space
+                  color: Colors.black, // matches header/topbar dark bg —
+                  // avoids a white flash while SiteHeader slides in on load
+                ),
                 const HeroCarousel(),
                 const _Divider(),
                 const StatsSection(),
@@ -226,8 +229,11 @@ class _HeroCarouselState extends State<HeroCarousel>
       aspectRatio = 16 / 7.6; // desktop – wider
     } else if (screenWidth > 600) {
       aspectRatio = 16 / 9; // tablet
+    } else if (screenWidth > 400) {
+      aspectRatio = 16 / 13; // mobile – taller
     } else {
-      aspectRatio = 16 / 10; // mobile – taller
+      aspectRatio =
+          16 / 15; // small mobile – tallest, avoids cramped/cut-off text
     }
 
     return AspectRatio(
@@ -342,52 +348,46 @@ class _HeroResponsive {
     required this.iconSize,
   });
 
+  // Linearly interpolates a value between [min] and [max] based on where
+  // [width] falls between [minWidth] and [maxWidth], clamped at the ends.
+  // This gives smooth, continuous scaling instead of jumping between
+  // fixed breakpoint presets.
+  static double _scale(
+    double width, {
+    required double min,
+    required double max,
+    double minWidth = 320,
+    double maxWidth = 1100,
+  }) {
+    if (maxWidth <= minWidth) return max;
+    final t = ((width - minWidth) / (maxWidth - minWidth)).clamp(0.0, 1.0);
+    return min + (max - min) * t;
+  }
+
   factory _HeroResponsive.of(double w) {
-    if (w > 900) {
-      return const _HeroResponsive(
-        headlineSize: 36,
-        subtextSize: 18,
-        hPadding: 60,
-        maxTextBoxWidth: 520,
-        btnPaddingH: 28,
-        btnPaddingV: 18,
-        btnFontSize: 15,
-        iconSize: 18,
-      );
-    }
-    if (w > 600) {
-      return const _HeroResponsive(
-        headlineSize: 30,
-        subtextSize: 16,
-        hPadding: 40,
-        maxTextBoxWidth: 420,
-        btnPaddingH: 28,
-        btnPaddingV: 18,
-        btnFontSize: 15,
-        iconSize: 18,
-      );
-    }
-    if (w > 400) {
-      return const _HeroResponsive(
-        headlineSize: 24,
-        subtextSize: 14.5,
-        hPadding: 24,
-        maxTextBoxWidth: double.infinity,
-        btnPaddingH: 20,
-        btnPaddingV: 12,
-        btnFontSize: 13.5,
-        iconSize: 16,
-      );
-    }
-    return const _HeroResponsive(
-      headlineSize: 20,
-      subtextSize: 13,
-      hPadding: 16,
-      maxTextBoxWidth: double.infinity,
-      btnPaddingH: 20,
-      btnPaddingV: 12,
-      btnFontSize: 13.5,
-      iconSize: 16,
+    final headlineSize = _scale(w, min: 18, max: 36);
+    final subtextSize = _scale(w, min: 12.5, max: 18);
+    final hPadding = _scale(w, min: 14, max: 60);
+    final btnPaddingH = _scale(w, min: 14, max: 28);
+    final btnPaddingV = _scale(w, min: 8, max: 18);
+    final btnFontSize = _scale(w, min: 11.5, max: 15);
+    final iconSize = _scale(w, min: 13, max: 18);
+
+    // Keep a fixed max width for the text box on large screens so lines
+    // don't stretch too wide, but let it use full width on small screens.
+    final maxTextBoxWidth = w > 600
+        ? _scale(w, min: 420, max: 520, minWidth: 600, maxWidth: 900)
+        : double.infinity;
+
+    return _HeroResponsive(
+      headlineSize: headlineSize,
+      subtextSize: subtextSize,
+      hPadding: hPadding,
+      maxTextBoxWidth: maxTextBoxWidth,
+      btnPaddingH: btnPaddingH,
+      btnPaddingV: btnPaddingV,
+      btnFontSize: btnFontSize,
+      iconSize: iconSize,
     );
   }
 }
@@ -496,27 +496,32 @@ class _HeroSlideViewState extends State<_HeroSlideView> {
                                 ),
                                 elevation: _isHovered ? 8 : 2,
                               ),
-                              child: Row(
-                                mainAxisSize: MainAxisSize.min,
-                                children: [
-                                  Text(
-                                    "Explore Collection",
-                                    style: TextStyle(
-                                      fontSize: r.btnFontSize,
-                                      fontWeight: FontWeight.w600,
+                              child: FittedBox(
+                                fit: BoxFit.scaleDown,
+                                child: Row(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    Text(
+                                      "Explore Collection",
+                                      style: TextStyle(
+                                        fontSize: r.btnFontSize,
+                                        fontWeight: FontWeight.w600,
+                                      ),
                                     ),
-                                  ),
-                                  SizedBox(width: r.btnFontSize * 0.6),
-                                  AnimatedRotation(
-                                    duration: const Duration(milliseconds: 300),
-                                    turns: _isHovered ? 0.125 : 0.0,
-                                    child: Icon(
-                                      Icons.arrow_forward,
-                                      size: r.iconSize,
-                                      color: Colors.black,
+                                    SizedBox(width: r.btnFontSize * 0.6),
+                                    AnimatedRotation(
+                                      duration: const Duration(
+                                        milliseconds: 300,
+                                      ),
+                                      turns: _isHovered ? 0.125 : 0.0,
+                                      child: Icon(
+                                        Icons.arrow_forward,
+                                        size: r.iconSize,
+                                        color: Colors.black,
+                                      ),
                                     ),
-                                  ),
-                                ],
+                                  ],
+                                ),
                               ),
                             ),
                           ),

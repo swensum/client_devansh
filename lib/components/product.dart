@@ -102,6 +102,16 @@ class _TopProductsSectionState extends State<TopProductsSection> {
           _currentPage = 0;
         }
 
+        // How many products are actually on the largest page. When there
+        // are fewer products than a full page (_perPage), this will be
+        // smaller than _perPage, so the grid only reserves the height it
+        // actually needs instead of leaving empty space below.
+        final maxPageLength = pages.isEmpty
+            ? 0
+            : pages.map((p) => p.length).reduce((a, b) => a > b ? a : b);
+
+        final hasMultiplePages = pages.length > 1;
+
         return VisibilityDetector(
           key: const Key('top-products-section-visibility'),
           onVisibilityChanged: _handleVisibility,
@@ -144,12 +154,18 @@ class _TopProductsSectionState extends State<TopProductsSection> {
                                       final cardHeight =
                                           cardWidth / r.childAspectRatio;
 
-                                      final rows = (_perPage / r.crossAxisCount)
-                                          .ceil();
-                                      final estimatedHeight =
-                                          rows * cardHeight +
-                                          (rows - 1) * r.gridSpacing +
-                                          (r.gridPadding * 2);
+                                      // Only reserve as many rows as the
+                                      // fullest page actually needs, not a
+                                      // fixed _perPage worth of rows.
+                                      final rows = maxPageLength == 0
+                                          ? 0
+                                          : (maxPageLength / r.crossAxisCount)
+                                                .ceil();
+                                      final estimatedHeight = rows == 0
+                                          ? 0.0
+                                          : rows * cardHeight +
+                                                (rows - 1) * r.gridSpacing +
+                                                (r.gridPadding * 2);
 
                                       return SizedBox(
                                         height: estimatedHeight,
@@ -204,42 +220,49 @@ class _TopProductsSectionState extends State<TopProductsSection> {
                                   ),
                                 ),
                                 SizedBox(height: r.headerGap * 0.6),
-                                _RevealOnVisible(
-                                  visible: _visible,
-                                  delay: const Duration(milliseconds: 500),
-                                  child: Row(
-                                    mainAxisAlignment: MainAxisAlignment.center,
-                                    children: List.generate(pages.length, (i) {
-                                      final isActive = i == _currentPage;
-                                      return AnimatedContainer(
-                                        duration: const Duration(
-                                          milliseconds: 300,
-                                        ),
-                                        margin: const EdgeInsets.symmetric(
-                                          horizontal: 4,
-                                        ),
-                                        width: isActive ? 20 : 8,
-                                        height: 8,
-                                        decoration: BoxDecoration(
-                                          color: isActive
-                                              ? const Color.fromRGBO(
-                                                  245,
-                                                  171,
-                                                  30,
-                                                  1,
-                                                )
-                                              : Colors.white.withValues(
-                                                  alpha: 0.3,
-                                                ),
-                                          borderRadius: BorderRadius.circular(
-                                            4,
+                                // Only show page-dot indicators when there's
+                                // actually more than one page to page through.
+                                if (hasMultiplePages) ...[
+                                  _RevealOnVisible(
+                                    visible: _visible,
+                                    delay: const Duration(milliseconds: 500),
+                                    child: Row(
+                                      mainAxisAlignment:
+                                          MainAxisAlignment.center,
+                                      children: List.generate(pages.length, (
+                                        i,
+                                      ) {
+                                        final isActive = i == _currentPage;
+                                        return AnimatedContainer(
+                                          duration: const Duration(
+                                            milliseconds: 300,
                                           ),
-                                        ),
-                                      );
-                                    }),
+                                          margin: const EdgeInsets.symmetric(
+                                            horizontal: 4,
+                                          ),
+                                          width: isActive ? 20 : 8,
+                                          height: 8,
+                                          decoration: BoxDecoration(
+                                            color: isActive
+                                                ? const Color.fromRGBO(
+                                                    245,
+                                                    171,
+                                                    30,
+                                                    1,
+                                                  )
+                                                : Colors.white.withValues(
+                                                    alpha: 0.3,
+                                                  ),
+                                            borderRadius: BorderRadius.circular(
+                                              4,
+                                            ),
+                                          ),
+                                        );
+                                      }),
+                                    ),
                                   ),
-                                ),
-                                SizedBox(height: r.headerGap * 0.6),
+                                  SizedBox(height: r.headerGap * 0.6),
+                                ],
                                 _RevealOnVisible(
                                   visible: _visible,
                                   delay: const Duration(milliseconds: 600),
@@ -249,7 +272,7 @@ class _TopProductsSectionState extends State<TopProductsSection> {
                             ),
                           ),
                         ),
-                        if (r.showNavArrows) ...[
+                        if (r.showNavArrows && hasMultiplePages) ...[
                           Positioned(
                             left: 0,
                             top: 0,
