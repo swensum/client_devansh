@@ -1,10 +1,10 @@
 // ignore_for_file: unused_element_parameter
 
-import 'package:devansh/components/footer.dart';
-import 'package:devansh/components/header.dart';
-import 'package:devansh/components/reviews.dart' show userAvatar;
-import 'package:devansh/components/stat.dart';
-import 'package:devansh/components/topbar.dart';
+import 'package:devansh/homecomponents/footer.dart';
+import 'package:devansh/homecomponents/header.dart';
+import 'package:devansh/homecomponents/reviews.dart' show userAvatar;
+import 'package:devansh/homecomponents/stat.dart';
+import 'package:devansh/homecomponents/topbar.dart';
 import 'package:devansh/models/authmodel.dart';
 import 'package:devansh/models/catalogmodels.dart';
 import 'package:devansh/models/reviewmodel.dart';
@@ -712,10 +712,6 @@ class _BrandsSectionState extends State<_BrandsSection> {
                       return LayoutBuilder(
                         builder: (context, constraints) {
                           final w = constraints.maxWidth;
-                          // Fewer columns as the screen narrows, so each
-                          // tile (and the logo inside it) shrinks gradually
-                          // instead of always splitting into 4 columns and
-                          // becoming unreadably small on phones.
                           final columns = w > 900
                               ? 4
                               : w > 650
@@ -866,12 +862,6 @@ class _ReviewFormSectionState extends State<_ReviewFormSection> {
   @override
   void initState() {
     super.initState();
-    // Kick off a load for whoever's already signed in (if anyone), and
-    // re-run whenever the signed-in user changes (sign in, sign out, or a
-    // different account). Doing this via a listener — rather than as a
-    // side-effect inside build() — avoids calling setState() synchronously
-    // during the build phase, which is what was leaving the spinner stuck
-    // forever after signing in from this page.
     AuthService.instance.currentUser.addListener(_onAuthChanged);
     _onAuthChanged();
   }
@@ -879,8 +869,6 @@ class _ReviewFormSectionState extends State<_ReviewFormSection> {
   void _onAuthChanged() {
     final user = AuthService.instance.currentUser.value;
     if (user == null) {
-      // Signed out: reset so a future sign-in (possibly a different
-      // account) triggers a fresh load instead of being skipped.
       if (_loadedForUid != null) {
         setState(() {
           _loadedForUid = null;

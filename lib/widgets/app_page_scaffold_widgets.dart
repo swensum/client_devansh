@@ -1,5 +1,5 @@
 // lib/components/app_page_scaffold.dart
-import 'package:devansh/components/header.dart';
+import 'package:devansh/homecomponents/header.dart';
 import 'package:flutter/material.dart';
 
 class AppPageScaffold extends StatefulWidget {

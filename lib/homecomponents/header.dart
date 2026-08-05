@@ -1,5 +1,7 @@
 import 'dart:async';
-import 'package:devansh/components/topbar.dart';
+import 'package:devansh/homecomponents/topbar.dart';
+import 'package:devansh/utils/navutils.dart';
+import 'package:devansh/widgets/hoverwidgets.dart';
 import 'package:web/web.dart' as web;
 import 'dart:ui';
 import 'package:devansh/data/catalog.dart';
@@ -11,7 +13,6 @@ import 'package:devansh/services/authservice.dart';
 
 import 'package:devansh/services/orderservice.dart';
 import 'package:flutter/material.dart';
-import 'package:go_router/go_router.dart';
 
 const _gold = Color.fromRGBO(245, 171, 30, 1);
 
@@ -336,7 +337,7 @@ class _HeaderState extends State<Header> {
                                     types: _types,
                                     onNavigate: (route) {
                                       _closeDropdown();
-                                      context.push(route);
+                                      context.goSmart(route);
                                     },
                                   )
                                 : isCollection
@@ -344,7 +345,7 @@ class _HeaderState extends State<Header> {
                                     companies: _companies,
                                     onNavigate: (route) {
                                       _closeDropdown();
-                                      context.push(route);
+                                      context.goSmart(route);
                                     },
                                   )
                                 : _DropdownList(
@@ -352,7 +353,9 @@ class _HeaderState extends State<Header> {
                                     onSelect: (item) {
                                       _closeDropdown();
                                       final route = _pageRoutes[item];
-                                      if (route != null) context.push(route);
+                                      if (route != null) {
+                                        context.goSmart(route);
+                                      }
                                     },
                                   ),
                           ),
@@ -406,15 +409,23 @@ class _HeaderState extends State<Header> {
           onSelect: (item) {
             _mobileSidebarKey.currentState?.close();
             final route = _pageRoutes[item];
-            if (route != null) context.push(route);
+            if (route != null) context.goSmart(route);
           },
           onNavigate: (route) {
             _mobileSidebarKey.currentState?.close();
-            context.push(route);
+            context.goSmart(route);
           },
           onHome: () {
             _mobileSidebarKey.currentState?.close();
             _goHome();
+          },
+          onSearchSubmit: (query) {
+            _mobileSidebarKey.currentState?.close();
+            context.goSmart(_searchRouteFor(query));
+          },
+          onSelectProduct: (product) {
+            _mobileSidebarKey.currentState?.close();
+            _handleSearchProductSelected(product);
           },
           onClosed: _removeMobileOverlay,
         );
@@ -437,7 +448,27 @@ class _HeaderState extends State<Header> {
   }
 
   void _goHome() {
+    // Kept as a hard browser navigation (not goSmart) intentionally:
+    // "logo tap" / "Home" is meant to feel like a full app reset from
+    // anywhere, not just a route change.
     web.window.location.href = '/';
+  }
+
+  String _searchRouteFor(String query) {
+    final trimmed = query.trim();
+    if (trimmed.isEmpty) return '/products';
+    return '/products?search=${Uri.encodeQueryComponent(trimmed)}';
+  }
+
+  void _handleSearchSubmit(String query) {
+    context.goSmart(_searchRouteFor(query));
+  }
+
+  void _handleSearchProductSelected(Product product) {
+    // Drill-down (list/search -> detail): pushSmart so "back" returns to
+    // where you were, but re-tapping the same product still reloads
+    // instead of stacking a duplicate detail page.
+    context.pushSmart('/product/${product.id}');
   }
 
   @override
@@ -505,6 +536,9 @@ class _HeaderState extends State<Header> {
                 _SearchField(
                   flexible: m.searchIsFlexible,
                   width: m.searchWidth,
+                  products: _products,
+                  onSubmit: _handleSearchSubmit,
+                  onSelectProduct: _handleSearchProductSelected,
                 ),
               ],
 
@@ -530,13 +564,13 @@ class _HeaderState extends State<Header> {
                 onLoginEnter: () => setState(() => _hoveredLogin = true),
                 onLoginExit: () => setState(() => _hoveredLogin = false),
                 onSignOut: _handleSignOut,
-                onGoAuth: () => context.push('/auth'),
+                onGoAuth: () => context.goSmart('/auth'),
               ),
 
               SizedBox(width: m.gapSmall),
 
               GestureDetector(
-                onTap: () => context.push('/orders'),
+                onTap: () => context.goSmart('/orders'),
                 child: MouseRegion(
                   cursor: SystemMouseCursors.click,
                   onEnter: (_) => setState(() => _hoveredOrder = true),
@@ -647,8 +681,6 @@ class _HeaderState extends State<Header> {
     );
 
     if (!showArrow) {
-      // "Home" — navigates to the homepage route from anywhere in the app,
-      // rather than reloading whatever page happens to be current.
       return MouseRegion(
         cursor: SystemMouseCursors.click,
         onEnter: (_) => setState(() => _hoveredIndex = index),
@@ -669,35 +701,178 @@ class _HeaderState extends State<Header> {
   }
 }
 
-/// Search box — either a fixed width (tablet/desktop) or Expanded/flexible
-/// (mobile), controlled entirely by the metrics object above.
-class _SearchField extends StatelessWidget {
+class _SearchField extends StatefulWidget {
   final bool flexible;
   final double width;
+  final List<Product> products;
+  final void Function(String query) onSubmit;
+  final void Function(Product product) onSelectProduct;
 
-  const _SearchField({required this.flexible, required this.width});
+  const _SearchField({
+    required this.flexible,
+    required this.width,
+    required this.products,
+    required this.onSubmit,
+    required this.onSelectProduct,
+  });
+
+  @override
+  State<_SearchField> createState() => _SearchFieldState();
+}
+
+class _SearchFieldState extends State<_SearchField> {
+  final TextEditingController _controller = TextEditingController();
+  final FocusNode _focusNode = FocusNode();
+  final LayerLink _layerLink = LayerLink();
+  OverlayEntry? _overlayEntry;
+  List<Product> _suggestions = [];
+
+  @override
+  void initState() {
+    super.initState();
+    _focusNode.addListener(_onFocusChange);
+    _controller.addListener(_onTextChanged);
+  }
+
+  void _onFocusChange() {
+    if (_focusNode.hasFocus) {
+      _updateSuggestions(_controller.text);
+    } else {
+      // Small delay so a tap on a suggestion registers as a tap before the
+      // overlay disappears out from under it.
+      Future.delayed(const Duration(milliseconds: 150), () {
+        if (mounted && !_focusNode.hasFocus) _removeOverlay();
+      });
+    }
+  }
+
+  void _onTextChanged() {
+    setState(() {}); // refresh the clear (x) button visibility
+    _updateSuggestions(_controller.text);
+  }
+
+  void _updateSuggestions(String query) {
+    final trimmed = query.trim().toLowerCase();
+    _suggestions = trimmed.isEmpty
+        ? []
+        : widget.products
+              .where((p) => p.name.toLowerCase().contains(trimmed))
+              .take(6)
+              .toList();
+    _showOverlay();
+  }
+
+  void _showOverlay() {
+    _removeOverlay();
+    if (_suggestions.isEmpty || !_focusNode.hasFocus) return;
+
+    final overlayWidth = widget.flexible
+        ? (context.findRenderObject() as RenderBox?)?.size.width ?? 200
+        : widget.width;
+
+    _overlayEntry = OverlayEntry(
+      builder: (context) {
+        return Positioned(
+          width: overlayWidth,
+          child: CompositedTransformFollower(
+            link: _layerLink,
+            showWhenUnlinked: false,
+            offset: const Offset(0, 44),
+            child: Material(
+              elevation: 8,
+              color: const Color(0xFF1A1A1A),
+              borderRadius: BorderRadius.circular(8),
+              clipBehavior: Clip.antiAlias,
+              child: ConstrainedBox(
+                constraints: const BoxConstraints(maxHeight: 260),
+                child: ListView.builder(
+                  padding: EdgeInsets.zero,
+                  shrinkWrap: true,
+                  itemCount: _suggestions.length,
+                  itemBuilder: (context, i) {
+                    final product = _suggestions[i];
+                    return _SearchSuggestionRow(
+                      name: product.name,
+                      query: _controller.text,
+                      onTap: () {
+                        _controller.clear();
+                        _removeOverlay();
+                        _focusNode.unfocus();
+                        widget.onSelectProduct(product);
+                      },
+                    );
+                  },
+                ),
+              ),
+            ),
+          ),
+        );
+      },
+    );
+    Overlay.of(context).insert(_overlayEntry!);
+  }
+
+  void _removeOverlay() {
+    _overlayEntry?.remove();
+    _overlayEntry = null;
+  }
+
+  void _submit() {
+    _removeOverlay();
+    _focusNode.unfocus();
+    widget.onSubmit(_controller.text);
+  }
+
+  @override
+  void dispose() {
+    _removeOverlay();
+    _focusNode.removeListener(_onFocusChange);
+    _controller.removeListener(_onTextChanged);
+    _focusNode.dispose();
+    _controller.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
     final field = TextField(
+      controller: _controller,
+      focusNode: _focusNode,
+      textInputAction: TextInputAction.search,
+      onSubmitted: (_) => _submit(),
       decoration: InputDecoration(
         hintText: "Search...",
-        hintStyle: TextStyle(color: Colors.grey, fontSize: flexible ? 13 : 14),
+        hintStyle: TextStyle(
+          color: Colors.grey,
+          fontSize: widget.flexible ? 13 : 14,
+        ),
         filled: true,
         fillColor: Colors.white,
-        isDense: flexible,
-        prefixIcon: Container(
-          margin: const EdgeInsets.all(2),
-          decoration: const BoxDecoration(
-            color: Colors.black,
-            shape: BoxShape.circle,
-          ),
-          child: Icon(
-            Icons.search,
-            color: Colors.white,
-            size: flexible ? 16 : 18,
+        isDense: widget.flexible,
+        prefixIcon: GestureDetector(
+          onTap: _submit,
+          child: Container(
+            margin: const EdgeInsets.all(2),
+            decoration: const BoxDecoration(
+              color: Colors.black,
+              shape: BoxShape.circle,
+            ),
+            child: Icon(
+              Icons.search,
+              color: Colors.white,
+              size: widget.flexible ? 16 : 18,
+            ),
           ),
         ),
+        suffixIcon: _controller.text.isEmpty
+            ? null
+            : GestureDetector(
+                onTap: () {
+                  _controller.clear();
+                  _updateSuggestions('');
+                },
+                child: const Icon(Icons.close, color: Colors.black45, size: 16),
+              ),
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(30),
           borderSide: BorderSide.none,
@@ -706,11 +881,85 @@ class _SearchField extends StatelessWidget {
       ),
     );
 
-    final sized = SizedBox(height: flexible ? 36 : 38, child: field);
+    final sized = SizedBox(height: widget.flexible ? 36 : 38, child: field);
 
-    return flexible
-        ? Expanded(child: sized)
-        : SizedBox(width: width, child: sized);
+    return CompositedTransformTarget(
+      link: _layerLink,
+      child: widget.flexible
+          ? Expanded(child: sized)
+          : SizedBox(width: widget.width, child: sized),
+    );
+  }
+}
+
+class _SearchSuggestionRow extends StatelessWidget {
+  final String name;
+  final String query;
+  final VoidCallback onTap;
+
+  const _SearchSuggestionRow({
+    required this.name,
+    required this.query,
+    required this.onTap,
+  });
+
+  List<TextSpan> _highlightedSpans(bool isHovered) {
+    final baseStyle = TextStyle(
+      color: isHovered ? _gold : Colors.white,
+      fontSize: 13.5,
+    );
+    final matchStyle = baseStyle.copyWith(
+      color: _gold,
+      fontWeight: FontWeight.w700,
+    );
+
+    final trimmedQuery = query.trim();
+    if (trimmedQuery.isEmpty) {
+      return [TextSpan(text: name, style: baseStyle)];
+    }
+
+    final lowerName = name.toLowerCase();
+    final lowerQuery = trimmedQuery.toLowerCase();
+    final spans = <TextSpan>[];
+    var start = 0;
+
+    while (true) {
+      final matchIndex = lowerName.indexOf(lowerQuery, start);
+      if (matchIndex == -1) {
+        spans.add(TextSpan(text: name.substring(start), style: baseStyle));
+        break;
+      }
+      if (matchIndex > start) {
+        spans.add(
+          TextSpan(text: name.substring(start, matchIndex), style: baseStyle),
+        );
+      }
+      spans.add(
+        TextSpan(
+          text: name.substring(matchIndex, matchIndex + lowerQuery.length),
+          style: matchStyle,
+        ),
+      );
+      start = matchIndex + lowerQuery.length;
+    }
+    return spans;
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return HoverRegion(
+      onTap: onTap,
+      builder: (context, hovered) => Container(
+        width: double.infinity,
+        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+        color: hovered ? _gold.withValues(alpha: 0.12) : Colors.transparent,
+        child: RichText(
+          overflow: TextOverflow.ellipsis,
+          maxLines: 1,
+          text: TextSpan(children: _highlightedSpans(hovered)),
+        ),
+      ),
+    );
   }
 }
 
@@ -1008,55 +1257,41 @@ class _DropdownColumn extends StatelessWidget {
   }
 }
 
-class _DropdownColumnRow extends StatefulWidget {
+class _DropdownColumnRow extends StatelessWidget {
   final _DropdownColumnItem item;
   final bool isSubItem;
 
   const _DropdownColumnRow({required this.item, this.isSubItem = false});
 
   @override
-  State<_DropdownColumnRow> createState() => _DropdownColumnRowState();
-}
-
-class _DropdownColumnRowState extends State<_DropdownColumnRow> {
-  bool _isHovered = false;
-
-  @override
   Widget build(BuildContext context) {
-    return MouseRegion(
-      cursor: SystemMouseCursors.click,
-      onEnter: (_) => setState(() => _isHovered = true),
-      onExit: (_) => setState(() => _isHovered = false),
-      child: GestureDetector(
-        onTap: widget.item.onTap,
-        child: Container(
-          width: double.infinity,
-          padding: EdgeInsets.only(
-            left: widget.isSubItem ? 28 : 16,
-            right: 16,
-            top: widget.isSubItem ? 6 : 8,
-            bottom: widget.isSubItem ? 6 : 8,
-          ),
-          decoration: BoxDecoration(
-            color: _isHovered
-                ? _gold.withValues(alpha: 0.15)
-                : Colors.transparent,
-            border: Border(
-              left: BorderSide(
-                color: _isHovered ? _gold : Colors.transparent,
-                width: 3,
-              ),
+    return HoverRegion(
+      onTap: item.onTap,
+      builder: (context, hovered) => Container(
+        width: double.infinity,
+        padding: EdgeInsets.only(
+          left: isSubItem ? 28 : 16,
+          right: 16,
+          top: isSubItem ? 6 : 8,
+          bottom: isSubItem ? 6 : 8,
+        ),
+        decoration: BoxDecoration(
+          color: hovered ? _gold.withValues(alpha: 0.15) : Colors.transparent,
+          border: Border(
+            left: BorderSide(
+              color: hovered ? _gold : Colors.transparent,
+              width: 3,
             ),
           ),
-          child: Text(
-            widget.item.label,
-            style: TextStyle(
-              color: _isHovered
-                  ? _gold
-                  : (widget.isSubItem ? Colors.white70 : Colors.white),
-              fontSize: widget.isSubItem ? 12.5 : 13.5,
-              fontWeight: widget.isSubItem ? FontWeight.w400 : FontWeight.w500,
-            ),
+        ),
+        child: Text(
+          item.label,
+          style: TextStyle(
+            color: hovered
+                ? _gold
+                : (isSubItem ? Colors.white70 : Colors.white),
+            fontSize: isSubItem ? 12.5 : 13.5,
+            fontWeight: isSubItem ? FontWeight.w400 : FontWeight.w500,
           ),
         ),
       ),
@@ -1064,54 +1299,39 @@ class _DropdownColumnRowState extends State<_DropdownColumnRow> {
   }
 }
 
-class _DropdownList extends StatefulWidget {
+class _DropdownList extends StatelessWidget {
   final List<String> items;
   final void Function(String item) onSelect;
 
   const _DropdownList({required this.items, required this.onSelect});
 
   @override
-  State<_DropdownList> createState() => _DropdownListState();
-}
-
-class _DropdownListState extends State<_DropdownList> {
-  int _hoveredItem = -1;
-
-  @override
   Widget build(BuildContext context) {
     return Column(
       mainAxisSize: MainAxisSize.min,
       crossAxisAlignment: CrossAxisAlignment.start,
-      children: widget.items.asMap().entries.map((entry) {
-        final i = entry.key;
-        final item = entry.value;
-        final isHovered = _hoveredItem == i;
-
-        return MouseRegion(
-          onEnter: (_) => setState(() => _hoveredItem = i),
-          onExit: (_) => setState(() => _hoveredItem = -1),
-          child: GestureDetector(
-            onTap: () => widget.onSelect(item),
-            child: Container(
-              width: double.infinity,
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-              decoration: BoxDecoration(
-                color: isHovered
-                    ? _gold.withValues(alpha: 0.1)
-                    : Colors.transparent,
-                border: Border(
-                  right: BorderSide(
-                    color: isHovered ? _gold : Colors.transparent,
-                    width: 3,
-                  ),
+      children: items.map((item) {
+        return HoverRegion(
+          onTap: () => onSelect(item),
+          builder: (context, hovered) => Container(
+            width: double.infinity,
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+            decoration: BoxDecoration(
+              color: hovered
+                  ? _gold.withValues(alpha: 0.1)
+                  : Colors.transparent,
+              border: Border(
+                right: BorderSide(
+                  color: hovered ? _gold : Colors.transparent,
+                  width: 3,
                 ),
               ),
-              child: Text(
-                item,
-                style: TextStyle(
-                  color: isHovered ? _gold : Colors.white,
-                  fontSize: 14,
-                ),
+            ),
+            child: Text(
+              item,
+              style: TextStyle(
+                color: hovered ? _gold : Colors.white,
+                fontSize: 14,
               ),
             ),
           ),
@@ -1130,6 +1350,8 @@ class _MobileSidebar extends StatefulWidget {
   final void Function(String item) onSelect;
   final void Function(String route) onNavigate;
   final VoidCallback onHome;
+  final void Function(String query) onSearchSubmit;
+  final void Function(Product product) onSelectProduct;
   final VoidCallback onClosed;
 
   const _MobileSidebar({
@@ -1142,6 +1364,8 @@ class _MobileSidebar extends StatefulWidget {
     required this.onSelect,
     required this.onNavigate,
     required this.onHome,
+    required this.onSearchSubmit,
+    required this.onSelectProduct,
     required this.onClosed,
   });
 
@@ -1153,6 +1377,8 @@ class _MobileSidebarState extends State<_MobileSidebar>
     with SingleTickerProviderStateMixin {
   late final AnimationController _controller;
   late final Animation<Offset> _slide;
+  final TextEditingController _searchController = TextEditingController();
+  List<Product> _suggestions = [];
 
   static const double _sidebarWidth = 280;
 
@@ -1168,6 +1394,19 @@ class _MobileSidebarState extends State<_MobileSidebar>
       end: Offset.zero,
     ).animate(CurvedAnimation(parent: _controller, curve: Curves.easeOut));
     _controller.forward();
+    _searchController.addListener(_updateSuggestions);
+  }
+
+  void _updateSuggestions() {
+    final query = _searchController.text.trim().toLowerCase();
+    setState(() {
+      _suggestions = query.isEmpty
+          ? []
+          : widget.products
+                .where((p) => p.name.toLowerCase().contains(query))
+                .take(6)
+                .toList();
+    });
   }
 
   Future<void> close() async {
@@ -1179,9 +1418,20 @@ class _MobileSidebarState extends State<_MobileSidebar>
     widget.onClosed();
   }
 
+  void _submitSearch() {
+    widget.onSearchSubmit(_searchController.text);
+  }
+
+  void _selectSuggestion(Product product) {
+    _searchController.clear();
+    widget.onSelectProduct(product);
+  }
+
   @override
   void dispose() {
     _controller.dispose();
+    _searchController.removeListener(_updateSuggestions);
+    _searchController.dispose();
     super.dispose();
   }
 
@@ -1272,6 +1522,9 @@ class _MobileSidebarState extends State<_MobileSidebar>
                                   child: SizedBox(
                                     height: 40,
                                     child: TextField(
+                                      controller: _searchController,
+                                      textInputAction: TextInputAction.search,
+                                      onSubmitted: (_) => _submitSearch(),
                                       decoration: InputDecoration(
                                         hintText: "Search...",
                                         hintStyle: const TextStyle(
@@ -1281,18 +1534,34 @@ class _MobileSidebarState extends State<_MobileSidebar>
                                         filled: true,
                                         fillColor: Colors.white,
                                         isDense: true,
-                                        prefixIcon: Container(
-                                          margin: const EdgeInsets.all(2),
-                                          decoration: const BoxDecoration(
-                                            color: Colors.black,
-                                            shape: BoxShape.circle,
-                                          ),
-                                          child: const Icon(
-                                            Icons.search,
-                                            color: Colors.white,
-                                            size: 16,
+                                        prefixIcon: GestureDetector(
+                                          onTap: _submitSearch,
+                                          child: Container(
+                                            margin: const EdgeInsets.all(2),
+                                            decoration: const BoxDecoration(
+                                              color: Colors.black,
+                                              shape: BoxShape.circle,
+                                            ),
+                                            child: const Icon(
+                                              Icons.search,
+                                              color: Colors.white,
+                                              size: 16,
+                                            ),
                                           ),
                                         ),
+                                        suffixIcon:
+                                            _searchController.text.isEmpty
+                                            ? null
+                                            : GestureDetector(
+                                                onTap: () {
+                                                  _searchController.clear();
+                                                },
+                                                child: const Icon(
+                                                  Icons.close,
+                                                  color: Colors.black45,
+                                                  size: 16,
+                                                ),
+                                              ),
                                         border: OutlineInputBorder(
                                           borderRadius: BorderRadius.circular(
                                             30,
@@ -1307,6 +1576,37 @@ class _MobileSidebarState extends State<_MobileSidebar>
                                     ),
                                   ),
                                 ),
+                                // Live suggestions — shown inline (not as a
+                                // floating overlay) since the sidebar is
+                                // already its own scrollable panel.
+                                if (_suggestions.isNotEmpty)
+                                  Padding(
+                                    padding: const EdgeInsets.fromLTRB(
+                                      16,
+                                      6,
+                                      16,
+                                      0,
+                                    ),
+                                    child: Container(
+                                      decoration: BoxDecoration(
+                                        color: const Color(0xFF262626),
+                                        borderRadius: BorderRadius.circular(8),
+                                      ),
+                                      clipBehavior: Clip.antiAlias,
+                                      child: Column(
+                                        mainAxisSize: MainAxisSize.min,
+                                        children: [
+                                          for (final product in _suggestions)
+                                            _SearchSuggestionRow(
+                                              name: product.name,
+                                              query: _searchController.text,
+                                              onTap: () =>
+                                                  _selectSuggestion(product),
+                                            ),
+                                        ],
+                                      ),
+                                    ),
+                                  ),
                                 const SizedBox(height: 14),
                                 const Divider(
                                   height: 1,
@@ -1455,8 +1755,6 @@ class _MobileNavMenu extends StatelessWidget {
         final subItems = dropdownItems[index];
 
         if (subItems == null) {
-          // "Home" — navigate to the homepage route, same as the desktop
-          // nav item and logo, instead of reloading the current page.
           return ListTile(
             dense: true,
             title: Text(

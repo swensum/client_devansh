@@ -7,9 +7,9 @@ import 'package:go_router/go_router.dart';
 import 'package:devansh/models/blogmodel.dart';
 import 'package:devansh/services/blogservice.dart';
 import 'package:devansh/widgets/blogwidgets.dart';
-import 'package:devansh/components/header.dart';
-import 'package:devansh/components/footer.dart';
-import 'package:devansh/components/topbar.dart';
+import 'package:devansh/homecomponents/header.dart';
+import 'package:devansh/homecomponents/footer.dart';
+import 'package:devansh/homecomponents/topbar.dart';
 
 MarkdownStyleSheet _blogMarkdownStyleSheet() {
   final bodyColor = Colors.white.withValues(alpha: 0.72);

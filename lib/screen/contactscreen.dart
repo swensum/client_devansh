@@ -1,9 +1,9 @@
 import 'dart:ui_web' as ui_web;
 
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:devansh/components/footer.dart';
-import 'package:devansh/components/header.dart';
-import 'package:devansh/components/topbar.dart';
+import 'package:devansh/homecomponents/footer.dart';
+import 'package:devansh/homecomponents/header.dart';
+import 'package:devansh/homecomponents/topbar.dart';
 
 import 'package:devansh/widgets/app_page_scaffold_widgets.dart';
 import 'package:flutter/material.dart';

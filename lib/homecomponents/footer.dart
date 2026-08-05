@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'package:web/web.dart' as web;
 
 import 'package:devansh/models/catalogmodels.dart';
 import 'package:devansh/services/catalogservice.dart';
@@ -385,8 +386,28 @@ class _FooterLinkTextState extends State<_FooterLinkText> {
       onExit: (_) => setState(() => _isHovered = false),
       child: GestureDetector(
         onTap: () {
-          if (widget.route != null) {
-            context.push(widget.route!);
+          final route = widget.route;
+          if (route == null) return;
+
+          // `go` replaces the current route stack to match the target
+          // location, instead of pushing a new page on top of it — so
+          // tapping "About" while already on /about would normally just
+          // stay put instead of stacking a second identical page.
+          // Reserve `push` for cases where "back" should return to a
+          // specific prior page (e.g. list → detail navigation).
+          //
+          // The catch: if we're ALREADY on the target route, go() is a
+          // no-op (the location doesn't change, so GoRouter never
+          // rebuilds anything) — which made it look like the footer link
+          // was "broken" when tapped from the same page. So: if the
+          // target route matches where we already are, force a real
+          // reload instead, same as how the header's Home button behaves
+          // (it uses a hard browser navigation, which always reloads).
+          final currentPath = GoRouterState.of(context).uri.toString();
+          if (currentPath == route) {
+            web.window.location.reload();
+          } else {
+            context.go(route);
           }
         },
         child: AnimatedDefaultTextStyle(

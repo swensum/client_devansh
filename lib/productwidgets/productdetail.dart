@@ -1,8 +1,8 @@
 import 'dart:async';
 
-import 'package:devansh/components/footer.dart';
-import 'package:devansh/components/header.dart';
-import 'package:devansh/components/topbar.dart';
+import 'package:devansh/homecomponents/footer.dart';
+import 'package:devansh/homecomponents/header.dart';
+import 'package:devansh/homecomponents/topbar.dart';
 
 import 'package:devansh/data/catalog.dart';
 import 'package:devansh/models/catalogmodels.dart';
