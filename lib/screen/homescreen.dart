@@ -1,14 +1,14 @@
-import 'package:devansh/components/about.dart';
-import 'package:devansh/components/blog.dart';
-import 'package:devansh/components/categories.dart';
-import 'package:devansh/components/footer.dart';
-import 'package:devansh/components/header.dart';
-import 'package:devansh/components/product.dart';
-import 'package:devansh/components/reviews.dart';
-import 'package:devansh/components/stat.dart';
+import 'package:devansh/homecomponents/about.dart';
+import 'package:devansh/homecomponents/blog.dart';
+import 'package:devansh/homecomponents/categories.dart';
+import 'package:devansh/homecomponents/footer.dart';
+import 'package:devansh/homecomponents/header.dart';
+import 'package:devansh/homecomponents/product.dart';
+import 'package:devansh/homecomponents/reviews.dart';
+import 'package:devansh/homecomponents/stat.dart';
 
-import 'package:devansh/components/topbar.dart';
-import 'package:devansh/dialog/faq.dart';
+import 'package:devansh/homecomponents/topbar.dart';
+import 'package:devansh/homecomponents/faq.dart';
 
 import 'package:flutter/material.dart';
 import 'dart:async';

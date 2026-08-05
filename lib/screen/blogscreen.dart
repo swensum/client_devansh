@@ -1,5 +1,5 @@
 import 'dart:async';
-import 'package:devansh/components/topbar.dart';
+import 'package:devansh/homecomponents/topbar.dart';
 import 'package:devansh/models/blogmodel.dart';
 import 'package:devansh/widgets/app_page_scaffold_widgets.dart';
 import 'package:devansh/widgets/blogwidgets.dart';
@@ -7,8 +7,8 @@ import 'package:flutter/material.dart';
 
 import 'package:devansh/services/blogservice.dart';
 
-import 'package:devansh/components/header.dart';
-import 'package:devansh/components/footer.dart';
+import 'package:devansh/homecomponents/header.dart';
+import 'package:devansh/homecomponents/footer.dart';
 
 class BlogsListPage extends StatefulWidget {
   const BlogsListPage({super.key});

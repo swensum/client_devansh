@@ -129,13 +129,16 @@ class _WhoAreWe extends StatelessWidget {
           visible: visible,
           delay: const Duration(milliseconds: 300),
           child: Text(
-            "For years, we've been delivering premium cabinet handles, door fittings, "
-            "mortice locks, aldrops, and architectural hardware that blend exceptional "
-            "durability with timeless design. Every product is crafted with precision "
-            "using high-quality materials to ensure lasting performance, reliability, "
-            "and elegance. Whether for modern homes, commercial spaces, or custom "
-            "interiors, our hardware is designed to enhance every detail while providing "
-            "strength, security, and a flawless finish that stands the test of time.",
+            "At Devansh Hardware, we are committed to providing premium-quality "
+            "hardware solutions that combine durability, functionality, and modern "
+            "design. Our carefully selected range includes cabinet handles, door "
+            "fittings, mortice locks, aldrops, tower bolts, hinges, and other "
+            "architectural hardware designed to meet the needs of both residential "
+            "and commercial projects. We believe that quality products and dependable"
+            " service go hand in hand. Whether you are building a new space, renovating"
+            "an existing one, or working on a custom interior project, our goal is to"
+            "provide reliable products at competitive prices while helping you find the"
+            "right solution for your requirements.",
             style: TextStyle(
               fontSize: r.bodySize,
               height: 1.6,

@@ -1,6 +1,6 @@
-import 'package:devansh/components/footer.dart';
-import 'package:devansh/components/header.dart';
-import 'package:devansh/components/topbar.dart';
+import 'package:devansh/homecomponents/footer.dart';
+import 'package:devansh/homecomponents/header.dart';
+import 'package:devansh/homecomponents/topbar.dart';
 
 import 'package:devansh/data/catalog.dart';
 import 'package:devansh/models/catalogmodels.dart';
@@ -20,11 +20,14 @@ class ProductsPage extends StatefulWidget {
   final String? initialCategoryId;
   final String? initialCompanyId;
   final String? initialTypeId;
+  final String? initialSearchQuery;
+
   const ProductsPage({
     super.key,
     this.initialCategoryId,
     this.initialCompanyId,
     this.initialTypeId,
+    this.initialSearchQuery,
   });
 
   @override
@@ -38,6 +41,7 @@ class _ProductsPageState extends State<ProductsPage> {
   SortOption _sortOption = SortOption.relevance;
   String? _selectedMaterialId;
   String? _selectedTypeId;
+  String? _searchQuery;
 
   final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
   final CatalogService _catalogService = CatalogService();
@@ -48,6 +52,24 @@ class _ProductsPageState extends State<ProductsPage> {
     _selectedCategoryId = widget.initialCategoryId;
     _selectedCompanyId = widget.initialCompanyId;
     _selectedTypeId = widget.initialTypeId;
+    _searchQuery = widget.initialSearchQuery?.trim().isEmpty == true
+        ? null
+        : widget.initialSearchQuery;
+  }
+
+  @override
+  void didUpdateWidget(covariant ProductsPage oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    // If the user searches again while already on this page (same route,
+    // new query param), pick up the new value instead of being stuck on
+    // whatever the page first loaded with.
+    if (widget.initialSearchQuery != oldWidget.initialSearchQuery) {
+      setState(() {
+        _searchQuery = widget.initialSearchQuery?.trim().isEmpty == true
+            ? null
+            : widget.initialSearchQuery;
+      });
+    }
   }
 
   void _selectCategory(String? id) {
@@ -70,6 +92,16 @@ class _ProductsPageState extends State<ProductsPage> {
 
   void _selectType(String? id) {
     setState(() => _selectedTypeId = id);
+  }
+
+  void _clearSearch() {
+    setState(() => _searchQuery = null);
+  }
+
+  List<Product> _applySearch(List<Product> input) {
+    final query = _searchQuery?.trim().toLowerCase();
+    if (query == null || query.isEmpty) return input;
+    return input.where((p) => p.name.toLowerCase().contains(query)).toList();
   }
 
   List<Product> _applySort(List<Product> input) {
@@ -169,12 +201,14 @@ class _ProductsPageState extends State<ProductsPage> {
     final material = _findById(allMaterials, _selectedMaterialId, (m) => m.id);
 
     final products = _applySort(
-      Catalog.filtered(
-        allProducts,
-        categoryId: _selectedCategoryId,
-        companyId: _selectedCompanyId,
-        materialId: _selectedMaterialId,
-        typeId: _selectedTypeId,
+      _applySearch(
+        Catalog.filtered(
+          allProducts,
+          categoryId: _selectedCategoryId,
+          companyId: _selectedCompanyId,
+          materialId: _selectedMaterialId,
+          typeId: _selectedTypeId,
+        ),
       ),
     );
 
@@ -229,6 +263,13 @@ class _ProductsPageState extends State<ProductsPage> {
                   height: Header.height + TopBar.height,
                 ), // reserve space
                 const _ProductsBanner(),
+                if (_searchQuery != null)
+                  _SearchResultsBar(
+                    query: _searchQuery!,
+                    resultCount: products.length,
+                    onClear: _clearSearch,
+                    horizontalPadding: r.hPadding,
+                  ),
                 Padding(
                   padding: EdgeInsets.all(r.hPadding),
                   child: Row(
@@ -250,12 +291,76 @@ class _ProductsPageState extends State<ProductsPage> {
             children: [
               SizedBox(height: Header.height + TopBar.height), // reserve space
               const _ProductsBanner(),
+              if (_searchQuery != null)
+                _SearchResultsBar(
+                  query: _searchQuery!,
+                  resultCount: products.length,
+                  onClear: _clearSearch,
+                  horizontalPadding: r.hPadding,
+                ),
               Padding(padding: EdgeInsets.all(r.hPadding), child: panel),
               const _Divider(),
               const Footer(),
             ],
           );
         },
+      ),
+    );
+  }
+}
+
+/// Shown above the product grid when arriving via a header search, so it's
+/// clear what's being filtered and gives an easy way back to the full
+/// catalog without touching category/company filters.
+class _SearchResultsBar extends StatelessWidget {
+  final String query;
+  final int resultCount;
+  final VoidCallback onClear;
+  final double horizontalPadding;
+
+  const _SearchResultsBar({
+    required this.query,
+    required this.resultCount,
+    required this.onClear,
+    required this.horizontalPadding,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: EdgeInsets.fromLTRB(horizontalPadding, 16, horizontalPadding, 0),
+      child: Row(
+        children: [
+          Expanded(
+            child: RichText(
+              text: TextSpan(
+                style: const TextStyle(color: Colors.white70, fontSize: 14),
+                children: [
+                  TextSpan(
+                    text:
+                        '$resultCount result${resultCount == 1 ? '' : 's'} for "',
+                  ),
+                  TextSpan(
+                    text: query,
+                    style: const TextStyle(
+                      color: _kAmber,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                  const TextSpan(text: '"'),
+                ],
+              ),
+            ),
+          ),
+          TextButton.icon(
+            onPressed: onClear,
+            icon: const Icon(Icons.close, size: 16, color: Colors.white70),
+            label: const Text(
+              'Clear search',
+              style: TextStyle(color: Colors.white70, fontSize: 13),
+            ),
+          ),
+        ],
       ),
     );
   }

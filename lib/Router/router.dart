@@ -10,6 +10,7 @@ import 'package:devansh/screen/contactscreen.dart';
 import 'package:devansh/screen/homescreen.dart';
 import 'package:devansh/screen/orderscreen.dart';
 import 'package:devansh/screen/productscreen.dart'; // ProductsPage
+import 'package:devansh/services/catalogservice.dart';
 
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/foundation.dart';
@@ -93,12 +94,14 @@ final GoRouter appRouter = GoRouter(
         final categoryId = state.uri.queryParameters['category'];
         final companyId = state.uri.queryParameters['company'];
         final typeId = state.uri.queryParameters['type'];
+        final searchQuery = state.uri.queryParameters['search'];
         return _slideFromRightPage(
           key: state.pageKey,
           child: ProductsPage(
             initialCategoryId: categoryId,
             initialCompanyId: companyId,
             initialTypeId: typeId,
+            initialSearchQuery: searchQuery,
           ),
         );
       },
@@ -155,20 +158,21 @@ final GoRouter appRouter = GoRouter(
       pageBuilder: (context, state) {
         final productId = state.pathParameters['id'];
         final extraProduct = state.extra;
+
+        // Fast path: we arrived via an in-app tap (search suggestion,
+        // product card, etc.) that attached the full Product as `extra`.
         if (extraProduct is Product) {
           return _slideFromRightPage(
             key: state.pageKey,
             child: ProductDetailPage(product: extraProduct),
           );
         }
-        Product? product;
-        for (final p in kProducts) {
-          if (p.id == productId) {
-            product = p;
-            break;
-          }
-        }
-        if (product == null) {
+
+        // Slow path: `extra` is never part of the URL, so it's null on
+        // browser back/forward, refresh, or a direct/shared link. Look the
+        // product up live from the catalog instead of the old kProducts
+        // list (which is never populated) so those cases work too.
+        if (productId == null) {
           return _slideFromRightPage(
             key: state.pageKey,
             child: const _ProductNotFoundPage(),
@@ -176,13 +180,55 @@ final GoRouter appRouter = GoRouter(
         }
         return _slideFromRightPage(
           key: state.pageKey,
-          child: ProductDetailPage(product: product),
+          child: _ProductDetailLoader(productId: productId),
         );
       },
     ),
   ],
   errorBuilder: (context, state) => const _ProductNotFoundPage(),
 );
+
+/// Looks a product up from the live catalog by id. Used whenever the
+/// product-detail route is reached without `extra` already attached —
+/// browser back/forward, a page refresh, or someone opening a shared link
+/// directly.
+class _ProductDetailLoader extends StatelessWidget {
+  final String productId;
+
+  const _ProductDetailLoader({required this.productId});
+
+  @override
+  Widget build(BuildContext context) {
+    return StreamBuilder<List<Product>>(
+      stream: CatalogService().watchProducts(),
+      builder: (context, snapshot) {
+        if (!snapshot.hasData) {
+          return const Scaffold(
+            backgroundColor: Colors.black,
+            body: Center(
+              child: CircularProgressIndicator(
+                color: Color.fromRGBO(245, 171, 30, 1),
+              ),
+            ),
+          );
+        }
+
+        Product? product;
+        for (final p in snapshot.data!) {
+          if (p.id == productId) {
+            product = p;
+            break;
+          }
+        }
+
+        if (product == null) {
+          return const _ProductNotFoundPage();
+        }
+        return ProductDetailPage(product: product);
+      },
+    );
+  }
+}
 
 class _ProductNotFoundPage extends StatelessWidget {
   const _ProductNotFoundPage();
