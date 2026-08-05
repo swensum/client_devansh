@@ -60,14 +60,36 @@ class _ProductsPageState extends State<ProductsPage> {
   @override
   void didUpdateWidget(covariant ProductsPage oldWidget) {
     super.didUpdateWidget(oldWidget);
-    // If the user searches again while already on this page (same route,
-    // new query param), pick up the new value instead of being stuck on
-    // whatever the page first loaded with.
+
+    // GoRouter reuses this State object when navigating between /products
+    // URLs (it doesn't call initState again) — it just rebuilds with a new
+    // `widget`. So every field we read only in initState needs to be
+    // re-synced here too, or the UI keeps showing stale filters until a
+    // hard reload re-runs initState.
+
     if (widget.initialSearchQuery != oldWidget.initialSearchQuery) {
       setState(() {
         _searchQuery = widget.initialSearchQuery?.trim().isEmpty == true
             ? null
             : widget.initialSearchQuery;
+      });
+    }
+
+    final categoryChanged =
+        widget.initialCategoryId != oldWidget.initialCategoryId;
+    final companyChanged =
+        widget.initialCompanyId != oldWidget.initialCompanyId;
+    final typeChanged = widget.initialTypeId != oldWidget.initialTypeId;
+
+    if (categoryChanged || companyChanged || typeChanged) {
+      setState(() {
+        _selectedCategoryId = widget.initialCategoryId;
+        _selectedCompanyId = widget.initialCompanyId;
+        _selectedTypeId = widget.initialTypeId;
+        // Material is always category-dependent, so any incoming filter
+        // change from the header (which never carries a materialId)
+        // should clear whatever was locally selected before.
+        _selectedMaterialId = null;
       });
     }
   }
