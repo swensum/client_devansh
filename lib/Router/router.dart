@@ -1,5 +1,7 @@
 import 'dart:async';
 
+import 'package:devansh/dialog/privacypolicies.dart';
+import 'package:devansh/dialog/termsscreen.dart';
 import 'package:devansh/models/catalogmodels.dart';
 import 'package:devansh/productwidgets/productdetail.dart';
 import 'package:devansh/screen/aboutscreen.dart';
@@ -138,6 +140,26 @@ final GoRouter appRouter = GoRouter(
         return _slideFromRightPage(
           key: state.pageKey,
           child: const ContactPage(),
+        );
+      },
+    ),
+    GoRoute(
+      path: '/privacy',
+      name: 'privacy',
+      pageBuilder: (context, state) {
+        return _slideFromRightPage(
+          key: state.pageKey,
+          child: const PrivacyPolicyPage(),
+        );
+      },
+    ),
+    GoRoute(
+      path: '/terms',
+      name: 'terms',
+      pageBuilder: (context, state) {
+        return _slideFromRightPage(
+          key: state.pageKey,
+          child: const TermsOfServicePage(),
         );
       },
     ),

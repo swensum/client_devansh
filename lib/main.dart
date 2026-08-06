@@ -2,6 +2,8 @@ import 'dart:async';
 
 import 'package:devansh/Router/router.dart';
 import 'package:devansh/firebase_options.dart';
+import 'package:devansh/utils/whatsappfloating.dart';
+import 'package:devansh/widgets/scrolltotop_widgets.dart';
 
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_core/firebase_core.dart';
@@ -57,6 +59,23 @@ class MyApp extends StatelessWidget {
       title: 'Devansh Hardware',
       debugShowCheckedModeBanner: false,
       routerConfig: appRouter,
+
+      builder: (context, child) {
+        return ScrollToTopOverlay(
+          margin: const EdgeInsets.only(right: 24, bottom: 24),
+          child: Stack(
+            children: [
+              ?child,
+              const WhatsAppFloatButton(
+                phoneNumber: "9779857033614", // no + or spaces
+                message: "Hi, I have a question about your products",
+                alignment: Alignment.bottomLeft,
+                margin: EdgeInsets.only(left: 24, bottom: 24),
+              ),
+            ],
+          ),
+        );
+      },
     );
   }
 }

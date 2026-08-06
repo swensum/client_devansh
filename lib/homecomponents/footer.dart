@@ -1,6 +1,10 @@
 import 'dart:async';
+
 import 'package:flutter/material.dart';
+
+import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:go_router/go_router.dart';
+import 'package:url_launcher/link.dart';
 import 'package:web/web.dart' as web;
 
 import 'package:devansh/models/catalogmodels.dart';
@@ -19,10 +23,22 @@ class Footer extends StatefulWidget {
   ];
 
   static const List<_SocialIconData> _socials = [
-    _SocialIconData(icon: Icons.facebook),
-    _SocialIconData(icon: Icons.camera_alt_outlined), // Instagram stand-in
-    _SocialIconData(icon: Icons.alternate_email), // Twitter/X stand-in
-    _SocialIconData(icon: Icons.chat_bubble_outline), // WhatsApp stand-in
+    _SocialIconData(
+      icon: FontAwesomeIcons.facebookF,
+      url: "https://facebook.com/devanshhardware",
+    ),
+    _SocialIconData(
+      icon: FontAwesomeIcons.instagram,
+      url: "https://instagram.com/devanshhardware",
+    ),
+    _SocialIconData(
+      icon: FontAwesomeIcons.whatsapp,
+      url: "https://wa.me/9779857033614",
+    ),
+    _SocialIconData(
+      icon: FontAwesomeIcons.tiktok,
+      url: "https://tiktok.com/@devanshhardware",
+    ),
   ];
 
   @override
@@ -96,15 +112,23 @@ class _FooterState extends State<Footer> {
                     final contact = _buildContactColumn();
 
                     if (isWide) {
-                      // Give the categories block more room as it grows extra columns.
-                      final categoriesFlex = 2 * categoryColumns.length;
+                      // Give the categories block more room as it grows extra columns,
+                      // but cap it so it doesn't crowd out the other columns when
+                      // there are many category columns.
+                      final categoriesFlex = (2 * categoryColumns.length).clamp(
+                        2,
+                        6,
+                      );
                       return Row(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Expanded(flex: 4, child: brand),
+                          Expanded(flex: 3, child: brand),
+                          const SizedBox(width: 32),
                           Expanded(flex: 2, child: quick),
+                          const SizedBox(width: 32),
                           Expanded(flex: categoriesFlex, child: categories),
-                          Expanded(flex: 4, child: contact),
+                          const SizedBox(width: 32),
+                          Expanded(flex: 3, child: contact),
                         ],
                       );
                     }
@@ -117,6 +141,7 @@ class _FooterState extends State<Footer> {
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             Expanded(flex: 3, child: quick),
+                            const SizedBox(width: 24),
                             Expanded(flex: 4, child: categories),
                           ],
                         ),
@@ -152,8 +177,8 @@ class _FooterState extends State<Footer> {
                     final legalLinks = Wrap(
                       spacing: 20,
                       children: const [
-                        _LegalLink(label: "Privacy Policy"),
-                        _LegalLink(label: "Terms of Service"),
+                        _LegalLink(label: "Privacy Policy", route: "/privacy"),
+                        _LegalLink(label: "Terms of Service", route: "/terms"),
                       ],
                     );
 
@@ -182,7 +207,7 @@ class _FooterState extends State<Footer> {
 
   Widget _buildBrandColumn() {
     return Padding(
-      padding: const EdgeInsets.only(right: 20, bottom: 10),
+      padding: const EdgeInsets.only(bottom: 10),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -208,7 +233,7 @@ class _FooterState extends State<Footer> {
                 .map(
                   (s) => Padding(
                     padding: const EdgeInsets.only(right: 10),
-                    child: _SocialIcon(icon: s.icon),
+                    child: _SocialIcon(icon: s.icon, url: s.url),
                   ),
                 )
                 .toList(),
@@ -220,7 +245,7 @@ class _FooterState extends State<Footer> {
 
   Widget _buildLinkColumn(String title, List<_FooterLink> links) {
     return Padding(
-      padding: const EdgeInsets.only(right: 20, bottom: 10),
+      padding: const EdgeInsets.only(bottom: 10),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -247,7 +272,7 @@ class _FooterState extends State<Footer> {
 
   Widget _buildCategoriesSection(List<List<_FooterLink>> columns) {
     return Padding(
-      padding: const EdgeInsets.only(right: 20, bottom: 10),
+      padding: const EdgeInsets.only(bottom: 10),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -335,8 +360,9 @@ class _FooterLink {
 }
 
 class _SocialIconData {
-  final IconData icon;
-  const _SocialIconData({required this.icon});
+  final FaIconData icon;
+  final String url;
+  const _SocialIconData({required this.icon, required this.url});
 }
 
 class _ContactRow extends StatelessWidget {
@@ -380,54 +406,54 @@ class _FooterLinkTextState extends State<_FooterLinkText> {
 
   @override
   Widget build(BuildContext context) {
-    return MouseRegion(
+    final route = widget.route;
+
+    final content = MouseRegion(
       cursor: SystemMouseCursors.click,
       onEnter: (_) => setState(() => _isHovered = true),
       onExit: (_) => setState(() => _isHovered = false),
-      child: GestureDetector(
-        onTap: () {
-          final route = widget.route;
-          if (route == null) return;
-
-          // `go` replaces the current route stack to match the target
-          // location, instead of pushing a new page on top of it — so
-          // tapping "About" while already on /about would normally just
-          // stay put instead of stacking a second identical page.
-          // Reserve `push` for cases where "back" should return to a
-          // specific prior page (e.g. list → detail navigation).
-          //
-          // The catch: if we're ALREADY on the target route, go() is a
-          // no-op (the location doesn't change, so GoRouter never
-          // rebuilds anything) — which made it look like the footer link
-          // was "broken" when tapped from the same page. So: if the
-          // target route matches where we already are, force a real
-          // reload instead, same as how the header's Home button behaves
-          // (it uses a hard browser navigation, which always reloads).
-          final currentPath = GoRouterState.of(context).uri.toString();
-          if (currentPath == route) {
-            web.window.location.reload();
-          } else {
-            context.go(route);
-          }
-        },
-        child: AnimatedDefaultTextStyle(
-          duration: const Duration(milliseconds: 200),
-          style: TextStyle(
-            fontSize: 13.5,
-            color: _isHovered
-                ? Footer._accent
-                : Colors.white.withValues(alpha: 0.65),
-          ),
-          child: Text(widget.label),
+      child: AnimatedDefaultTextStyle(
+        duration: const Duration(milliseconds: 200),
+        style: TextStyle(
+          fontSize: 13.5,
+          color: _isHovered
+              ? Footer._accent
+              : Colors.white.withValues(alpha: 0.65),
         ),
+        child: Text(widget.label),
       ),
+    );
+
+    if (route == null) return content;
+
+    // Link renders a real <a href> under the hood on web, so search
+    // engines can crawl it and users get standard browser link behavior
+    // (hover preview, right-click "open in new tab", ctrl/cmd+click) —
+    // while our own onTap still drives the actual SPA navigation via
+    // GoRouter, same "reload if already here" behavior as before.
+    return Link(
+      uri: Uri.parse(route),
+      builder: (context, followLink) {
+        return GestureDetector(
+          onTap: () {
+            final currentPath = GoRouterState.of(context).uri.toString();
+            if (currentPath == route) {
+              web.window.location.reload();
+            } else {
+              context.go(route);
+            }
+          },
+          child: content,
+        );
+      },
     );
   }
 }
 
 class _LegalLink extends StatefulWidget {
   final String label;
-  const _LegalLink({required this.label});
+  final String route;
+  const _LegalLink({required this.label, required this.route});
 
   @override
   State<_LegalLink> createState() => _LegalLinkState();
@@ -438,32 +464,45 @@ class _LegalLinkState extends State<_LegalLink> {
 
   @override
   Widget build(BuildContext context) {
-    return MouseRegion(
+    final content = MouseRegion(
       cursor: SystemMouseCursors.click,
       onEnter: (_) => setState(() => _isHovered = true),
       onExit: (_) => setState(() => _isHovered = false),
-      child: GestureDetector(
-        onTap: () {
-          // Add navigation logic here
-        },
-        child: AnimatedDefaultTextStyle(
-          duration: const Duration(milliseconds: 200),
-          style: TextStyle(
-            fontSize: 12.5,
-            color: _isHovered
-                ? Footer._accent
-                : Colors.white.withValues(alpha: 0.5),
-          ),
-          child: Text(widget.label),
+      child: AnimatedDefaultTextStyle(
+        duration: const Duration(milliseconds: 200),
+        style: TextStyle(
+          fontSize: 12.5,
+          color: _isHovered
+              ? Footer._accent
+              : Colors.white.withValues(alpha: 0.5),
         ),
+        child: Text(widget.label),
       ),
+    );
+
+    return Link(
+      uri: Uri.parse(widget.route),
+      builder: (context, followLink) {
+        return GestureDetector(
+          onTap: () {
+            final currentPath = GoRouterState.of(context).uri.toString();
+            if (currentPath == widget.route) {
+              web.window.location.reload();
+            } else {
+              context.go(widget.route);
+            }
+          },
+          child: content,
+        );
+      },
     );
   }
 }
 
 class _SocialIcon extends StatefulWidget {
-  final IconData icon;
-  const _SocialIcon({required this.icon});
+  final FaIconData icon;
+  final String url;
+  const _SocialIcon({required this.icon, required this.url});
 
   @override
   State<_SocialIcon> createState() => _SocialIconState();
@@ -474,38 +513,42 @@ class _SocialIconState extends State<_SocialIcon> {
 
   @override
   Widget build(BuildContext context) {
-    return MouseRegion(
+    final content = MouseRegion(
       cursor: SystemMouseCursors.click,
       onEnter: (_) => setState(() => _isHovered = true),
       onExit: (_) => setState(() => _isHovered = false),
-      child: GestureDetector(
-        onTap: () {
-          // Add navigation/link-launch logic here
-        },
-        child: AnimatedContainer(
-          duration: const Duration(milliseconds: 200),
-          width: 36,
-          height: 36,
-          decoration: BoxDecoration(
-            shape: BoxShape.circle,
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 200),
+        width: 36,
+        height: 36,
+        alignment: Alignment.center,
+        decoration: BoxDecoration(
+          shape: BoxShape.circle,
+          color: _isHovered
+              ? Footer._accent
+              : Colors.white.withValues(alpha: 0.08),
+          border: Border.all(
             color: _isHovered
                 ? Footer._accent
-                : Colors.white.withValues(alpha: 0.08),
-            border: Border.all(
-              color: _isHovered
-                  ? Footer._accent
-                  : Colors.white.withValues(alpha: 0.15),
-            ),
-          ),
-          child: Icon(
-            widget.icon,
-            size: 16,
-            color: _isHovered
-                ? Colors.black
-                : Colors.white.withValues(alpha: 0.8),
+                : Colors.white.withValues(alpha: 0.15),
           ),
         ),
+        child: FaIcon(
+          widget.icon,
+          size: 15,
+          color: _isHovered
+              ? Colors.black
+              : Colors.white.withValues(alpha: 0.8),
+        ),
       ),
+    );
+
+    return Link(
+      uri: Uri.parse(widget.url),
+      target: LinkTarget.blank,
+      builder: (context, followLink) {
+        return GestureDetector(onTap: followLink, child: content);
+      },
     );
   }
 }
