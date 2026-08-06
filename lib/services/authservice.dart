@@ -25,11 +25,46 @@ class AuthService {
 
   Stream<User?> get authStateChanges => _auth.authStateChanges();
 
-  // --- Google sign-in (popup, web) ---
+  // --- Google sign-in (redirect, web-safe) ---
+  //
+  // We use signInWithRedirect instead of signInWithPopup because the popup
+  // flow depends on the popup window being able to postMessage back to the
+  // opener (and on the opener being able to check window.closed). That
+  // breaks under a Cross-Origin-Opener-Policy: same-origin header, and can
+  // also misbehave with Flutter web's visibility/reload handling — both of
+  // which surface as a spurious "popup-closed-by-user" error even though
+  // the user did complete sign-in. Redirect doesn't have this problem.
+  //
+  // NOTE: this navigates the whole page away to Google and back, so there
+  // is nothing meaningful to await here on web — listen to `currentUser`
+  // (or authStateChanges) to know when sign-in actually completes.
   Future<void> signInWithGoogle() {
     final provider = GoogleAuthProvider()
       ..setCustomParameters({'prompt': 'select_account'});
-    return _auth.signInWithPopup(provider);
+
+    if (kIsWeb) {
+      return _auth.signInWithRedirect(provider);
+    }
+
+    // Non-web platforms (if you ever build for them) can still use the
+    // popup-style call, which maps to the native provider flow there.
+    return _auth.signInWithProvider(provider);
+  }
+
+  /// Call this once, early, on any screen that can be the target of the
+  /// Google redirect (i.e. AuthScreen's initState). It resolves with the
+  /// signed-in user if the app just came back from a successful redirect,
+  /// null if there's no pending redirect, or throws a [FirebaseAuthException]
+  /// if the redirect sign-in failed — so you can surface a real error
+  /// message instead of the misleading "popup closed by user" one.
+  ///
+  /// Note: `currentUser` / `authStateChanges` will also update on success,
+  /// independently of this call — this method exists specifically so the UI
+  /// can read the *error* case too.
+  Future<AppUser?> checkRedirectResult() async {
+    final result = await _auth.getRedirectResult();
+    final user = result.user;
+    return user == null ? null : AppUser.fromFirebaseUser(user);
   }
 
   // --- Persistence: controls "Remember me" ---

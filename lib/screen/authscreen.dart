@@ -30,6 +30,10 @@ class _AuthScreenState extends State<AuthScreen> {
   bool _submitLoading = false;
   String? _error;
 
+  // Guards against acting on the redirect-completion listener more than
+  // once (e.g. if currentUser fires again for an unrelated reason later).
+  bool _handledGoogleRedirect = false;
+
   // --- In-app "set new password" flow (reached via the reset-password
   // email link, which points back into this app instead of Firebase's
   // generic hosted page) ---
@@ -48,16 +52,82 @@ class _AuthScreenState extends State<AuthScreen> {
   void initState() {
     super.initState();
     _checkForPasswordResetLink();
+
+    // If we're not in the middle of the password-reset deep link, this
+    // screen might instead be the target of a Google sign-in redirect
+    // coming back from accounts.google.com. Check for that, and also start
+    // listening to currentUser so we navigate away as soon as sign-in
+    // actually completes (authStateChanges fires independently of the
+    // redirect-result check below).
+    if (!_isPasswordResetMode) {
+      _checkGoogleRedirectResult();
+    }
+    AuthService.instance.currentUser.addListener(_onCurrentUserChanged);
   }
 
   @override
   void dispose() {
+    AuthService.instance.currentUser.removeListener(_onCurrentUserChanged);
     _emailController.dispose();
     _passwordController.dispose();
     _confirmPasswordController.dispose();
     _newPasswordController.dispose();
     _confirmNewPasswordController.dispose();
     super.dispose();
+  }
+
+  // --- Google redirect handling ---
+
+  Future<void> _checkGoogleRedirectResult() async {
+    // Only relevant if we actually just came back from a redirect; if the
+    // user is opening /auth normally there's nothing pending and this
+    // resolves to null quickly.
+    setState(() => _googleLoading = true);
+    try {
+      final user = await AuthService.instance.checkRedirectResult();
+      if (!mounted) return;
+      if (user != null) {
+        // Success — _onCurrentUserChanged will also fire via
+        // authStateChanges, but handle it here too in case that races.
+        _handleSuccessfulGoogleSignIn();
+      }
+    } on FirebaseAuthException catch (e) {
+      if (!mounted) return;
+      setState(() => _error = e.message ?? 'Google sign-in failed.');
+    } catch (_) {
+      // No pending redirect / benign — nothing to show the user.
+    } finally {
+      if (mounted) setState(() => _googleLoading = false);
+    }
+  }
+
+  void _onCurrentUserChanged() {
+    if (AuthService.instance.currentUser.value != null) {
+      _handleSuccessfulGoogleSignIn();
+    }
+  }
+
+  void _handleSuccessfulGoogleSignIn() {
+    if (_handledGoogleRedirect || !mounted) return;
+    // Only auto-navigate here if we're actually the ones that were waiting
+    // on a Google sign-in (avoids interfering with the email/password flow,
+    // which already does its own snackbar + navigation in _submit()).
+    if (!_googleLoading) return;
+    _handledGoogleRedirect = true;
+
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: const Text('Signed in successfully!'),
+        backgroundColor: _kSurface,
+        behavior: SnackBarBehavior.floating,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+        duration: const Duration(seconds: 2),
+      ),
+    );
+
+    Future.delayed(const Duration(milliseconds: 700), () {
+      if (mounted) _returnAfterSignIn();
+    });
   }
 
   void _checkForPasswordResetLink() {
@@ -207,6 +277,11 @@ class _AuthScreenState extends State<AuthScreen> {
     }
   }
 
+  /// Kicks off the Google sign-in redirect. On web this navigates the whole
+  /// page away to accounts.google.com and back — there is nothing to await
+  /// here that resumes after success. Success/failure is instead handled by
+  /// _checkGoogleRedirectResult() / _onCurrentUserChanged() above, which run
+  /// again once this screen (re)mounts after the redirect returns.
   Future<void> _signInWithGoogle() async {
     if (_googleLoading) return;
     setState(() {
@@ -215,20 +290,8 @@ class _AuthScreenState extends State<AuthScreen> {
     });
     try {
       await AuthService.instance.signInWithGoogle();
-      if (!mounted) return;
-
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: const Text('Signed in successfully!'),
-          backgroundColor: _kSurface,
-          behavior: SnackBarBehavior.floating,
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-          duration: const Duration(seconds: 2),
-        ),
-      );
-
-      await Future.delayed(const Duration(milliseconds: 700));
-      _returnAfterSignIn();
+      // On web, execution never really reaches here — the page navigates
+      // away first. This path matters mainly for non-web platforms.
     } on FirebaseAuthException catch (e) {
       if (mounted) {
         setState(() => _error = e.message ?? 'Google sign-in failed.');
