@@ -2,6 +2,7 @@ import 'dart:async';
 import 'package:devansh/homecomponents/topbar.dart';
 import 'package:devansh/utils/navutils.dart';
 import 'package:devansh/widgets/hoverwidgets.dart';
+import 'package:url_launcher/link.dart';
 import 'package:web/web.dart' as web;
 import 'dart:ui';
 import 'package:devansh/data/catalog.dart';
@@ -350,6 +351,7 @@ class _HeaderState extends State<Header> {
                                   )
                                 : _DropdownList(
                                     items: _dropdownItems[index] ?? [],
+                                    routeFor: (item) => _pageRoutes[item],
                                     onSelect: (item) {
                                       _closeDropdown();
                                       final route = _pageRoutes[item];
@@ -406,6 +408,7 @@ class _HeaderState extends State<Header> {
           types: _types,
           companies: _companies,
           dropdownItems: _dropdownItems,
+          pageRoutes: _pageRoutes,
           onSelect: (item) {
             _mobileSidebarKey.currentState?.close();
             final route = _pageRoutes[item];
@@ -496,23 +499,13 @@ class _HeaderState extends State<Header> {
           color: const Color.fromARGB(255, 43, 43, 43),
           child: Row(
             children: [
-              MouseRegion(
-                cursor: SystemMouseCursors.click,
-                onEnter: (_) => setState(() => _hoveredLogo = true),
-                onExit: (_) => setState(() => _hoveredLogo = false),
-                child: GestureDetector(
-                  onTap: _goHome,
-                  child: AnimatedOpacity(
-                    duration: const Duration(milliseconds: 150),
-                    opacity: _hoveredLogo ? 0.85 : 1.0,
-                    child: Image.asset(
-                      'assets/logo.png',
-                      height: m.logoHeight,
-                      width: m.logoWidth,
-                      fit: BoxFit.contain,
-                    ),
-                  ),
-                ),
+              _LogoLink(
+                hovered: _hoveredLogo,
+                onEnter: () => setState(() => _hoveredLogo = true),
+                onExit: () => setState(() => _hoveredLogo = false),
+                onTap: _goHome,
+                height: m.logoHeight,
+                width: m.logoWidth,
               ),
 
               if (m.showNavRow) const Spacer(flex: 2) else const Spacer(),
@@ -569,62 +562,11 @@ class _HeaderState extends State<Header> {
 
               SizedBox(width: m.gapSmall),
 
-              GestureDetector(
-                onTap: () => context.goSmart('/orders'),
-                child: MouseRegion(
-                  cursor: SystemMouseCursors.click,
-                  onEnter: (_) => setState(() => _hoveredOrder = true),
-                  onExit: (_) => setState(() => _hoveredOrder = false),
-                  child: ValueListenableBuilder<List<PendingOrderItem>>(
-                    valueListenable: OrderCartService.instance.items,
-                    builder: (context, pendingItems, _) {
-                      final count = pendingItems.length;
-                      return Stack(
-                        clipBehavior: Clip.none,
-                        children: [
-                          Icon(
-                            Icons.receipt_long,
-                            color: _hoveredOrder ? _gold : Colors.white,
-                            size: m.orderIconSize,
-                          ),
-                          if (count > 0)
-                            Positioned(
-                              right: -6,
-                              top: -6,
-                              child: Container(
-                                padding: const EdgeInsets.symmetric(
-                                  horizontal: 5,
-                                  vertical: 1,
-                                ),
-                                constraints: const BoxConstraints(
-                                  minWidth: 16,
-                                  minHeight: 16,
-                                ),
-                                decoration: BoxDecoration(
-                                  color: _gold,
-                                  borderRadius: BorderRadius.circular(10),
-                                  border: Border.all(
-                                    color: const Color(0xFF1A1A1A),
-                                    width: 1.5,
-                                  ),
-                                ),
-                                child: Text(
-                                  '$count',
-                                  textAlign: TextAlign.center,
-                                  style: const TextStyle(
-                                    color: Colors.black,
-                                    fontSize: 10,
-                                    fontWeight: FontWeight.w700,
-                                    height: 1.2,
-                                  ),
-                                ),
-                              ),
-                            ),
-                        ],
-                      );
-                    },
-                  ),
-                ),
+              _OrdersLink(
+                hovered: _hoveredOrder,
+                onEnter: () => setState(() => _hoveredOrder = true),
+                onExit: () => setState(() => _hoveredOrder = false),
+                iconSize: m.orderIconSize,
               ),
 
               if (!m.showNavRow) ...[
@@ -681,14 +623,25 @@ class _HeaderState extends State<Header> {
     );
 
     if (!showArrow) {
-      return MouseRegion(
-        cursor: SystemMouseCursors.click,
-        onEnter: (_) => setState(() => _hoveredIndex = index),
-        onExit: (_) => setState(() => _hoveredIndex = -1),
-        child: GestureDetector(onTap: _goHome, child: content),
+      // "Home" — a genuine navigational link (goes to '/'), so give it a
+      // real <a href="/"> via Link, same click behavior as before.
+      return Link(
+        uri: Uri.parse('/'),
+        builder: (context, followLink) {
+          return MouseRegion(
+            cursor: SystemMouseCursors.click,
+            onEnter: (_) => setState(() => _hoveredIndex = index),
+            onExit: (_) => setState(() => _hoveredIndex = -1),
+            child: GestureDetector(onTap: _goHome, child: content),
+          );
+        },
       );
     }
 
+    // Shop/Collection/Pages are dropdown *triggers*, not direct links —
+    // they open a menu on hover rather than navigating anywhere
+    // themselves, so there's no single destination URL to give them.
+    // The real links live inside each dropdown's items instead.
     return CompositedTransformTarget(
       link: _layerLinks[index]!,
       child: MouseRegion(
@@ -697,6 +650,135 @@ class _HeaderState extends State<Header> {
         onExit: (_) => _scheduleClose(),
         child: content,
       ),
+    );
+  }
+}
+
+/// Logo — doubles as the "go home" link. Wrapped in Link so it renders as
+/// a real <a href="/">, giving the standard browser hover/right-click
+/// link behavior, while still triggering the intentional hard reload.
+class _LogoLink extends StatelessWidget {
+  final bool hovered;
+  final VoidCallback onEnter;
+  final VoidCallback onExit;
+  final VoidCallback onTap;
+  final double height;
+  final double width;
+
+  const _LogoLink({
+    required this.hovered,
+    required this.onEnter,
+    required this.onExit,
+    required this.onTap,
+    required this.height,
+    required this.width,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Link(
+      uri: Uri.parse('/'),
+      builder: (context, followLink) {
+        return MouseRegion(
+          cursor: SystemMouseCursors.click,
+          onEnter: (_) => onEnter(),
+          onExit: (_) => onExit(),
+          child: GestureDetector(
+            onTap: onTap,
+            child: AnimatedOpacity(
+              duration: const Duration(milliseconds: 150),
+              opacity: hovered ? 0.85 : 1.0,
+              child: Image.asset(
+                'assets/logo.png',
+                height: height,
+                width: width,
+                fit: BoxFit.contain,
+              ),
+            ),
+          ),
+        );
+      },
+    );
+  }
+}
+
+/// Orders icon — real link to /orders.
+class _OrdersLink extends StatelessWidget {
+  final bool hovered;
+  final VoidCallback onEnter;
+  final VoidCallback onExit;
+  final double iconSize;
+
+  const _OrdersLink({
+    required this.hovered,
+    required this.onEnter,
+    required this.onExit,
+    required this.iconSize,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Link(
+      uri: Uri.parse('/orders'),
+      builder: (context, followLink) {
+        return GestureDetector(
+          onTap: () => context.goSmart('/orders'),
+          child: MouseRegion(
+            cursor: SystemMouseCursors.click,
+            onEnter: (_) => onEnter(),
+            onExit: (_) => onExit(),
+            child: ValueListenableBuilder<List<PendingOrderItem>>(
+              valueListenable: OrderCartService.instance.items,
+              builder: (context, pendingItems, _) {
+                final count = pendingItems.length;
+                return Stack(
+                  clipBehavior: Clip.none,
+                  children: [
+                    Icon(
+                      Icons.receipt_long,
+                      color: hovered ? _gold : Colors.white,
+                      size: iconSize,
+                    ),
+                    if (count > 0)
+                      Positioned(
+                        right: -6,
+                        top: -6,
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 5,
+                            vertical: 1,
+                          ),
+                          constraints: const BoxConstraints(
+                            minWidth: 16,
+                            minHeight: 16,
+                          ),
+                          decoration: BoxDecoration(
+                            color: _gold,
+                            borderRadius: BorderRadius.circular(10),
+                            border: Border.all(
+                              color: const Color(0xFF1A1A1A),
+                              width: 1.5,
+                            ),
+                          ),
+                          child: Text(
+                            '$count',
+                            textAlign: TextAlign.center,
+                            style: const TextStyle(
+                              color: Colors.black,
+                              fontSize: 10,
+                              fontWeight: FontWeight.w700,
+                              height: 1.2,
+                            ),
+                          ),
+                        ),
+                      ),
+                  ],
+                );
+              },
+            ),
+          ),
+        );
+      },
     );
   }
 }
@@ -1028,10 +1110,9 @@ class _AccountSection extends StatelessWidget {
           child: Row(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              GestureDetector(
-                onTap: () {
-                  if (!signedIn) onGoAuth();
-                },
+              _AuthLinkWrap(
+                enabled: !signedIn,
+                onTap: onGoAuth,
                 child: MouseRegion(
                   cursor: SystemMouseCursors.click,
                   onEnter: (_) => onPersonEnter(),
@@ -1051,10 +1132,9 @@ class _AccountSection extends StatelessWidget {
                   mainAxisAlignment: MainAxisAlignment.center,
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    GestureDetector(
-                      onTap: () {
-                        if (!signedIn) onGoAuth();
-                      },
+                    _AuthLinkWrap(
+                      enabled: !signedIn,
+                      onTap: onGoAuth,
                       child: MouseRegion(
                         cursor: SystemMouseCursors.click,
                         onEnter: (_) => onAccountEnter(),
@@ -1128,20 +1208,54 @@ class _AccountSection extends StatelessWidget {
     VoidCallback onExit,
     VoidCallback onTap,
   ) {
-    return GestureDetector(
-      onTap: onTap,
-      child: MouseRegion(
-        cursor: SystemMouseCursors.click,
-        onEnter: (_) => onEnter(),
-        onExit: (_) => onExit(),
-        child: Text(
-          title,
-          style: TextStyle(
-            color: hovered ? _gold : Colors.white70,
-            fontSize: 11,
+    // Register/Login both go to /auth — real link.
+    return Link(
+      uri: Uri.parse('/auth'),
+      builder: (context, followLink) {
+        return GestureDetector(
+          onTap: onTap,
+          child: MouseRegion(
+            cursor: SystemMouseCursors.click,
+            onEnter: (_) => onEnter(),
+            onExit: (_) => onExit(),
+            child: Text(
+              title,
+              style: TextStyle(
+                color: hovered ? _gold : Colors.white70,
+                fontSize: 11,
+              ),
+            ),
           ),
-        ),
-      ),
+        );
+      },
+    );
+  }
+}
+
+/// Wraps a widget in a real /auth link only while relevant (i.e. while
+/// signed out — once signed in, the person icon/name are no longer a
+/// navigational link).
+class _AuthLinkWrap extends StatelessWidget {
+  final bool enabled;
+  final VoidCallback onTap;
+  final Widget child;
+
+  const _AuthLinkWrap({
+    required this.enabled,
+    required this.onTap,
+    required this.child,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    if (!enabled) {
+      return GestureDetector(onTap: () {}, child: child);
+    }
+    return Link(
+      uri: Uri.parse('/auth'),
+      builder: (context, followLink) {
+        return GestureDetector(onTap: onTap, child: child);
+      },
     );
   }
 }
@@ -1168,6 +1282,7 @@ class _ShopDropdownContent extends StatelessWidget {
           _DropdownColumnRow(
             item: _DropdownColumnItem(
               label: category.name,
+              route: '/products?category=${category.id}',
               onTap: () => onNavigate('/products?category=${category.id}'),
             ),
           ),
@@ -1179,6 +1294,7 @@ class _ShopDropdownContent extends StatelessWidget {
             _DropdownColumnRow(
               item: _DropdownColumnItem(
                 label: '- ${type.name}',
+                route: '/products?category=${category.id}&type=${type.id}',
                 onTap: () => onNavigate(
                   '/products?category=${category.id}&type=${type.id}',
                 ),
@@ -1213,6 +1329,7 @@ class _CollectionDropdownContent extends StatelessWidget {
           _DropdownColumnRow(
             item: _DropdownColumnItem(
               label: company.name,
+              route: '/products?company=${company.id}',
               onTap: () => onNavigate('/products?company=${company.id}'),
             ),
           ),
@@ -1223,8 +1340,13 @@ class _CollectionDropdownContent extends StatelessWidget {
 
 class _DropdownColumnItem {
   final String label;
+  final String route;
   final VoidCallback onTap;
-  const _DropdownColumnItem({required this.label, required this.onTap});
+  const _DropdownColumnItem({
+    required this.label,
+    required this.route,
+    required this.onTap,
+  });
 }
 
 class _DropdownColumn extends StatelessWidget {
@@ -1265,7 +1387,7 @@ class _DropdownColumnRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return HoverRegion(
+    final row = HoverRegion(
       onTap: item.onTap,
       builder: (context, hovered) => Container(
         width: double.infinity,
@@ -1296,14 +1418,27 @@ class _DropdownColumnRow extends StatelessWidget {
         ),
       ),
     );
+
+    // Every category/type/company row is a genuine destination — wrap in
+    // Link for a real <a href>, keep HoverRegion's own onTap for the
+    // actual SPA navigation (goSmart), same pattern as the footer.
+    return Link(
+      uri: Uri.parse(item.route),
+      builder: (context, followLink) => row,
+    );
   }
 }
 
 class _DropdownList extends StatelessWidget {
   final List<String> items;
+  final String? Function(String item) routeFor;
   final void Function(String item) onSelect;
 
-  const _DropdownList({required this.items, required this.onSelect});
+  const _DropdownList({
+    required this.items,
+    required this.routeFor,
+    required this.onSelect,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -1311,7 +1446,7 @@ class _DropdownList extends StatelessWidget {
       mainAxisSize: MainAxisSize.min,
       crossAxisAlignment: CrossAxisAlignment.start,
       children: items.map((item) {
-        return HoverRegion(
+        final row = HoverRegion(
           onTap: () => onSelect(item),
           builder: (context, hovered) => Container(
             width: double.infinity,
@@ -1336,6 +1471,14 @@ class _DropdownList extends StatelessWidget {
             ),
           ),
         );
+
+        final route = routeFor(item);
+        if (route == null) return row;
+
+        return Link(
+          uri: Uri.parse(route),
+          builder: (context, followLink) => row,
+        );
       }).toList(),
     );
   }
@@ -1347,6 +1490,7 @@ class _MobileSidebar extends StatefulWidget {
   final List<ProductType> types;
   final List<Company> companies;
   final Map<int, List<String>> dropdownItems;
+  final Map<String, String> pageRoutes;
   final void Function(String item) onSelect;
   final void Function(String route) onNavigate;
   final VoidCallback onHome;
@@ -1361,6 +1505,7 @@ class _MobileSidebar extends StatefulWidget {
     required this.types,
     required this.companies,
     required this.dropdownItems,
+    required this.pageRoutes,
     required this.onSelect,
     required this.onNavigate,
     required this.onHome,
@@ -1621,6 +1766,7 @@ class _MobileSidebarState extends State<_MobileSidebar>
                                       types: widget.types,
                                       companies: widget.companies,
                                       dropdownItems: widget.dropdownItems,
+                                      pageRoutes: widget.pageRoutes,
                                       onSelect: widget.onSelect,
                                       onNavigate: widget.onNavigate,
                                       onHome: widget.onHome,
@@ -1644,12 +1790,29 @@ class _MobileSidebarState extends State<_MobileSidebar>
   }
 }
 
+/// Wraps a ListTile's normal onTap in a real <a href> for the given
+/// route, so mobile menu items behave like genuine links too — hover
+/// preview doesn't really apply on touch devices, but this still gives
+/// crawlers and "long-press > open in new tab" style behavior on mobile
+/// browsers, and is consistent with the rest of the site.
+class _LinkedListTile extends StatelessWidget {
+  final String route;
+  final Widget child;
+  const _LinkedListTile({required this.route, required this.child});
+
+  @override
+  Widget build(BuildContext context) {
+    return Link(uri: Uri.parse(route), builder: (context, followLink) => child);
+  }
+}
+
 class _MobileNavMenu extends StatelessWidget {
   final List<Category> categories;
   final List<Product> products;
   final List<ProductType> types;
   final List<Company> companies;
   final Map<int, List<String>> dropdownItems;
+  final Map<String, String> pageRoutes;
   final void Function(String item) onSelect;
   final void Function(String route) onNavigate;
   final VoidCallback onHome;
@@ -1660,6 +1823,7 @@ class _MobileNavMenu extends StatelessWidget {
     required this.types,
     required this.companies,
     required this.dropdownItems,
+    required this.pageRoutes,
     required this.onSelect,
     required this.onNavigate,
     required this.onHome,
@@ -1687,36 +1851,46 @@ class _MobileNavMenu extends StatelessWidget {
             ),
             children: [
               for (final category in categories) ...[
-                ListTile(
-                  dense: true,
-                  contentPadding: const EdgeInsets.only(left: 32, right: 16),
-                  title: Text(
-                    category.name,
-                    style: const TextStyle(
-                      color: Colors.white,
-                      fontSize: 13.5,
-                      fontWeight: FontWeight.w500,
+                _LinkedListTile(
+                  route: '/products?category=${category.id}',
+                  child: ListTile(
+                    dense: true,
+                    contentPadding: const EdgeInsets.only(left: 32, right: 16),
+                    title: Text(
+                      category.name,
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontSize: 13.5,
+                        fontWeight: FontWeight.w500,
+                      ),
                     ),
+                    onTap: () =>
+                        onNavigate('/products?category=${category.id}'),
                   ),
-                  onTap: () => onNavigate('/products?category=${category.id}'),
                 ),
                 for (final type in Catalog.typesInCategory(
                   products,
                   types,
                   category.id,
                 ))
-                  ListTile(
-                    dense: true,
-                    contentPadding: const EdgeInsets.only(left: 48, right: 16),
-                    title: Text(
-                      type.name,
-                      style: const TextStyle(
-                        color: Colors.white70,
-                        fontSize: 12.5,
+                  _LinkedListTile(
+                    route: '/products?category=${category.id}&type=${type.id}',
+                    child: ListTile(
+                      dense: true,
+                      contentPadding: const EdgeInsets.only(
+                        left: 48,
+                        right: 16,
                       ),
-                    ),
-                    onTap: () => onNavigate(
-                      '/products?category=${category.id}&type=${type.id}',
+                      title: Text(
+                        type.name,
+                        style: const TextStyle(
+                          color: Colors.white70,
+                          fontSize: 12.5,
+                        ),
+                      ),
+                      onTap: () => onNavigate(
+                        '/products?category=${category.id}&type=${type.id}',
+                      ),
                     ),
                   ),
               ],
@@ -1739,14 +1913,20 @@ class _MobileNavMenu extends StatelessWidget {
             ),
             children: [
               for (final company in visibleCompanies)
-                ListTile(
-                  dense: true,
-                  contentPadding: const EdgeInsets.only(left: 32, right: 16),
-                  title: Text(
-                    company.name,
-                    style: const TextStyle(color: Colors.white70, fontSize: 13),
+                _LinkedListTile(
+                  route: '/products?company=${company.id}',
+                  child: ListTile(
+                    dense: true,
+                    contentPadding: const EdgeInsets.only(left: 32, right: 16),
+                    title: Text(
+                      company.name,
+                      style: const TextStyle(
+                        color: Colors.white70,
+                        fontSize: 13,
+                      ),
+                    ),
+                    onTap: () => onNavigate('/products?company=${company.id}'),
                   ),
-                  onTap: () => onNavigate('/products?company=${company.id}'),
                 ),
             ],
           );
@@ -1755,13 +1935,17 @@ class _MobileNavMenu extends StatelessWidget {
         final subItems = dropdownItems[index];
 
         if (subItems == null) {
-          return ListTile(
-            dense: true,
-            title: Text(
-              label,
-              style: const TextStyle(color: Colors.white, fontSize: 14),
+          // "Home"
+          return _LinkedListTile(
+            route: '/',
+            child: ListTile(
+              dense: true,
+              title: Text(
+                label,
+                style: const TextStyle(color: Colors.white, fontSize: 14),
+              ),
+              onTap: onHome,
             ),
-            onTap: onHome,
           );
         }
 
@@ -1773,19 +1957,21 @@ class _MobileNavMenu extends StatelessWidget {
             label,
             style: const TextStyle(color: Colors.white, fontSize: 14),
           ),
-          children: subItems
-              .map(
-                (item) => ListTile(
-                  dense: true,
-                  contentPadding: const EdgeInsets.only(left: 32, right: 16),
-                  title: Text(
-                    item,
-                    style: const TextStyle(color: Colors.white70, fontSize: 13),
-                  ),
-                  onTap: () => onSelect(item),
-                ),
-              )
-              .toList(),
+          children: subItems.map((item) {
+            final route = pageRoutes[item];
+            final tile = ListTile(
+              dense: true,
+              contentPadding: const EdgeInsets.only(left: 32, right: 16),
+              title: Text(
+                item,
+                style: const TextStyle(color: Colors.white70, fontSize: 13),
+              ),
+              onTap: () => onSelect(item),
+            );
+            return route == null
+                ? tile
+                : _LinkedListTile(route: route, child: tile);
+          }).toList(),
         );
       }).toList(),
     );
