@@ -7,6 +7,7 @@ import 'package:devansh/services/catalogservice.dart';
 
 import 'package:flutter/material.dart' hide MaterialType;
 import 'package:go_router/go_router.dart';
+import 'package:url_launcher/link.dart';
 
 const _kAmber = Color.fromRGBO(245, 171, 30, 1);
 
@@ -681,154 +682,170 @@ class _ProductListTileState extends State<_ProductListTile> {
   Widget build(BuildContext context) {
     final product = widget.product;
     final company = Catalog.companyFor(product, widget.companies);
+    // Fixed per-item destination — shared by the real <a href> (Link) and
+    // the SPA navigation (context.push) below, so they always agree.
+    final route = '/product/${product.id}';
 
     return MouseRegion(
       cursor: SystemMouseCursors.click,
       onEnter: (_) => setState(() => _isHovered = true),
       onExit: (_) => setState(() => _isHovered = false),
-      child: GestureDetector(
-        onTap: () {
-          context.push('/product/${product.id}', extra: product);
-        },
-        child: AnimatedContainer(
-          duration: const Duration(milliseconds: 200),
-          padding: const EdgeInsets.all(22),
-          decoration: BoxDecoration(
-            color: Colors.white.withValues(alpha: _isHovered ? 0.12 : 0.08),
-            borderRadius: BorderRadius.circular(18),
-            border: Border.all(
-              color: _isHovered
-                  ? _kAmber.withValues(alpha: 0.6)
-                  : Colors.white.withValues(alpha: 0.12),
-              width: 1.5,
-            ),
-            boxShadow: [
-              BoxShadow(
-                color: Colors.black.withValues(alpha: _isHovered ? 0.2 : 0.0),
-                blurRadius: 20,
-                offset: const Offset(0, 8),
+      child: Link(
+        uri: Uri.parse(route),
+        builder: (context, followLink) {
+          return GestureDetector(
+            onTap: () {
+              context.push(route, extra: product);
+            },
+            child: AnimatedContainer(
+              duration: const Duration(milliseconds: 200),
+              padding: const EdgeInsets.all(22),
+              decoration: BoxDecoration(
+                color: Colors.white.withValues(alpha: _isHovered ? 0.12 : 0.08),
+                borderRadius: BorderRadius.circular(18),
+                border: Border.all(
+                  color: _isHovered
+                      ? _kAmber.withValues(alpha: 0.6)
+                      : Colors.white.withValues(alpha: 0.12),
+                  width: 1.5,
+                ),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withValues(
+                      alpha: _isHovered ? 0.2 : 0.0,
+                    ),
+                    blurRadius: 20,
+                    offset: const Offset(0, 8),
+                  ),
+                ],
               ),
-            ],
-          ),
-          child: Row(
-            crossAxisAlignment: CrossAxisAlignment.center,
-            children: [
-              ClipRRect(
-                borderRadius: BorderRadius.circular(12),
-                child: product.imageUrl.isNotEmpty
-                    ? Image.network(
-                        product.imageUrl,
-                        width: 150,
-                        height: 150,
-                        fit: BoxFit.cover,
-                        loadingBuilder: (context, child, progress) {
-                          if (progress == null) return child;
-                          return Container(
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.center,
+                children: [
+                  ClipRRect(
+                    borderRadius: BorderRadius.circular(12),
+                    child: product.imageUrl.isNotEmpty
+                        ? Image.network(
+                            product.imageUrl,
                             width: 150,
                             height: 150,
-                            color: Colors.grey.shade900,
-                            child: const Center(
-                              child: CircularProgressIndicator(
-                                color: _kAmber,
-                                strokeWidth: 2,
+                            fit: BoxFit.cover,
+                            loadingBuilder: (context, child, progress) {
+                              if (progress == null) return child;
+                              return Container(
+                                width: 150,
+                                height: 150,
+                                color: Colors.grey.shade900,
+                                child: const Center(
+                                  child: CircularProgressIndicator(
+                                    color: _kAmber,
+                                    strokeWidth: 2,
+                                  ),
+                                ),
+                              );
+                            },
+                            errorBuilder: (context, error, stackTrace) =>
+                                Container(
+                                  width: 150,
+                                  height: 150,
+                                  color: Colors.grey.shade800,
+                                  child: const Icon(
+                                    Icons.image_not_supported_outlined,
+                                    color: Colors.white38,
+                                    size: 32,
+                                  ),
+                                ),
+                          )
+                        : Container(
+                            width: 150,
+                            height: 150,
+                            color: Colors.grey.shade800,
+                            child: const Icon(
+                              Icons.image_not_supported_outlined,
+                              color: Colors.white38,
+                              size: 32,
+                            ),
+                          ),
+                  ),
+                  const SizedBox(width: 26),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          product.name,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: const TextStyle(
+                            color: Colors.white,
+                            fontWeight: FontWeight.w700,
+                            fontSize: 21,
+                          ),
+                        ),
+                        if (company != null) ...[
+                          const SizedBox(height: 8),
+                          Text(
+                            company.name,
+                            style: TextStyle(
+                              color: Colors.white.withValues(alpha: 0.55),
+                              fontSize: 15,
+                            ),
+                          ),
+                        ],
+                        const SizedBox(height: 14),
+                        Row(
+                          children: [
+                            ...List.generate(
+                              5,
+                              (index) => Icon(
+                                Icons.star,
+                                size: 18,
+                                color: index < 4
+                                    ? _kAmber
+                                    : Colors.grey.shade700,
                               ),
                             ),
-                          );
-                        },
-                        errorBuilder: (context, error, stackTrace) => Container(
-                          width: 150,
-                          height: 150,
-                          color: Colors.grey.shade800,
-                          child: const Icon(
-                            Icons.image_not_supported_outlined,
-                            color: Colors.white38,
-                            size: 32,
-                          ),
-                        ),
-                      )
-                    : Container(
-                        width: 150,
-                        height: 150,
-                        color: Colors.grey.shade800,
-                        child: const Icon(
-                          Icons.image_not_supported_outlined,
-                          color: Colors.white38,
-                          size: 32,
-                        ),
-                      ),
-              ),
-              const SizedBox(width: 26),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      product.name,
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style: const TextStyle(
-                        color: Colors.white,
-                        fontWeight: FontWeight.w700,
-                        fontSize: 21,
-                      ),
-                    ),
-                    if (company != null) ...[
-                      const SizedBox(height: 8),
-                      Text(
-                        company.name,
-                        style: TextStyle(
-                          color: Colors.white.withValues(alpha: 0.55),
-                          fontSize: 15,
-                        ),
-                      ),
-                    ],
-                    const SizedBox(height: 14),
-                    Row(
-                      children: [
-                        ...List.generate(
-                          5,
-                          (index) => Icon(
-                            Icons.star,
-                            size: 18,
-                            color: index < 4 ? _kAmber : Colors.grey.shade700,
-                          ),
-                        ),
-                        const SizedBox(width: 8),
-                        Text(
-                          '(124)',
-                          style: TextStyle(
-                            color: Colors.white.withValues(alpha: 0.5),
-                            fontSize: 14,
-                          ),
+                            const SizedBox(width: 8),
+                            Text(
+                              '(124)',
+                              style: TextStyle(
+                                color: Colors.white.withValues(alpha: 0.5),
+                                fontSize: 14,
+                              ),
+                            ),
+                          ],
                         ),
                       ],
                     ),
-                  ],
-                ),
-              ),
-              const SizedBox(width: 20),
-              AnimatedOpacity(
-                duration: const Duration(milliseconds: 200),
-                opacity: _isHovered ? 1.0 : 0.0,
-                child: GestureDetector(
-                  onTap: () => _handleOrderTap(context),
-                  child: Container(
-                    padding: const EdgeInsets.all(10),
-                    decoration: const BoxDecoration(
-                      color: _kAmber,
-                      shape: BoxShape.circle,
-                    ),
-                    child: const Icon(
-                      Icons.shopping_bag_outlined,
-                      size: 18,
-                      color: Colors.black,
+                  ),
+                  const SizedBox(width: 20),
+                  // Quick "order" action — opens a dialog in place, NOT a
+                  // navigation, so this stays a plain GestureDetector (no
+                  // Link) even though it's nested inside the tile's Link.
+                  AnimatedOpacity(
+                    duration: const Duration(milliseconds: 200),
+                    opacity: _isHovered ? 1.0 : 0.0,
+                    child: GestureDetector(
+                      onTap: () => _handleOrderTap(context),
+                      child: Container(
+                        padding: const EdgeInsets.all(10),
+                        decoration: const BoxDecoration(
+                          color: _kAmber,
+                          shape: BoxShape.circle,
+                        ),
+                        child: const Icon(
+                          Icons.shopping_bag_outlined,
+                          size: 18,
+                          color: Colors.black,
+                        ),
+                      ),
                     ),
                   ),
-                ),
+                ],
               ),
-            ],
-          ),
-        ),
+            ),
+          );
+        },
       ),
     );
   }
@@ -897,180 +914,198 @@ class _ProductCardState extends State<_ProductCard>
   Widget build(BuildContext context) {
     final product = widget.product;
     final company = Catalog.companyFor(product, widget.companies);
+    // Fixed per-item destination — shared by the real <a href> (Link) and
+    // the SPA navigation (context.push) below, so they always agree.
+    final route = '/product/${product.id}';
 
     return MouseRegion(
       cursor: SystemMouseCursors.click,
       onEnter: (_) => _setHovered(true),
       onExit: (_) => _setHovered(false),
-      child: GestureDetector(
-        onTap: () {
-          context.push('/product/${product.id}', extra: product);
-        },
-        child: RepaintBoundary(
-          child: ScaleTransition(
-            scale: _scaleAnimation,
-            child: Container(
-              decoration: BoxDecoration(
-                color: Colors.white.withValues(alpha: 0.12),
-                borderRadius: BorderRadius.circular(_cardRadius),
-                border: Border.all(
-                  color: _isHovered
-                      ? _kAmber.withValues(alpha: 0.6)
-                      : Colors.white.withValues(alpha: 0.12),
-                  width: 1.5,
-                ),
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.black.withValues(
-                      alpha: _isHovered ? 0.15 : 0.06,
+      child: Link(
+        uri: Uri.parse(route),
+        builder: (context, followLink) {
+          return GestureDetector(
+            onTap: () {
+              context.push(route, extra: product);
+            },
+            child: RepaintBoundary(
+              child: ScaleTransition(
+                scale: _scaleAnimation,
+                child: Container(
+                  decoration: BoxDecoration(
+                    color: Colors.white.withValues(alpha: 0.12),
+                    borderRadius: BorderRadius.circular(_cardRadius),
+                    border: Border.all(
+                      color: _isHovered
+                          ? _kAmber.withValues(alpha: 0.6)
+                          : Colors.white.withValues(alpha: 0.12),
+                      width: 1.5,
                     ),
-                    blurRadius: _isHovered ? 20 : 8,
-                    offset: Offset(0, _isHovered ? 8 : 4),
-                    spreadRadius: _isHovered ? 2 : 0,
-                  ),
-                ],
-              ),
-              clipBehavior: Clip.antiAlias,
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Expanded(
-                    child: ClipRRect(
-                      borderRadius: const BorderRadius.only(
-                        topLeft: Radius.circular(_cardRadius),
-                        topRight: Radius.circular(_cardRadius),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black.withValues(
+                          alpha: _isHovered ? 0.15 : 0.06,
+                        ),
+                        blurRadius: _isHovered ? 20 : 8,
+                        offset: Offset(0, _isHovered ? 8 : 4),
+                        spreadRadius: _isHovered ? 2 : 0,
                       ),
-                      child: Container(
-                        width: double.infinity,
-                        color: Colors.grey.shade50,
-                        child: Stack(
-                          fit: StackFit.expand,
-                          children: [
-                            product.imageUrl.isNotEmpty
-                                ? Image.network(
-                                    product.imageUrl,
-                                    fit: BoxFit.cover,
-                                    loadingBuilder: (context, child, progress) {
-                                      if (progress == null) return child;
-                                      return const Center(
-                                        child: CircularProgressIndicator(
-                                          color: _kAmber,
-                                          strokeWidth: 2,
-                                        ),
-                                      );
-                                    },
-                                    errorBuilder:
-                                        (
-                                          context,
-                                          error,
-                                          stackTrace,
-                                        ) => Container(
-                                          color: Colors.grey.shade800,
-                                          child: const Center(
-                                            child: Icon(
-                                              Icons
-                                                  .image_not_supported_outlined,
-                                              color: Colors.white38,
+                    ],
+                  ),
+                  clipBehavior: Clip.antiAlias,
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Expanded(
+                        child: ClipRRect(
+                          borderRadius: const BorderRadius.only(
+                            topLeft: Radius.circular(_cardRadius),
+                            topRight: Radius.circular(_cardRadius),
+                          ),
+                          child: Container(
+                            width: double.infinity,
+                            color: Colors.grey.shade50,
+                            child: Stack(
+                              fit: StackFit.expand,
+                              children: [
+                                product.imageUrl.isNotEmpty
+                                    ? Image.network(
+                                        product.imageUrl,
+                                        fit: BoxFit.cover,
+                                        loadingBuilder:
+                                            (context, child, progress) {
+                                              if (progress == null) {
+                                                return child;
+                                              }
+                                              return const Center(
+                                                child:
+                                                    CircularProgressIndicator(
+                                                      color: _kAmber,
+                                                      strokeWidth: 2,
+                                                    ),
+                                              );
+                                            },
+                                        errorBuilder:
+                                            (
+                                              context,
+                                              error,
+                                              stackTrace,
+                                            ) => Container(
+                                              color: Colors.grey.shade800,
+                                              child: const Center(
+                                                child: Icon(
+                                                  Icons
+                                                      .image_not_supported_outlined,
+                                                  color: Colors.white38,
+                                                ),
+                                              ),
                                             ),
+                                      )
+                                    : Container(
+                                        color: Colors.grey.shade800,
+                                        child: const Center(
+                                          child: Icon(
+                                            Icons.image_not_supported_outlined,
+                                            color: Colors.white38,
                                           ),
                                         ),
-                                  )
-                                : Container(
-                                    color: Colors.grey.shade800,
-                                    child: const Center(
-                                      child: Icon(
-                                        Icons.image_not_supported_outlined,
-                                        color: Colors.white38,
+                                      ),
+                                AnimatedOpacity(
+                                  duration: const Duration(milliseconds: 200),
+                                  opacity: _isHovered ? 0.3 : 0.0,
+                                  child: Container(
+                                    decoration: BoxDecoration(
+                                      gradient: LinearGradient(
+                                        begin: Alignment.topCenter,
+                                        end: Alignment.bottomCenter,
+                                        colors: [
+                                          Colors.transparent,
+                                          Colors.black.withValues(alpha: 0.7),
+                                        ],
                                       ),
                                     ),
                                   ),
-                            AnimatedOpacity(
-                              duration: const Duration(milliseconds: 200),
-                              opacity: _isHovered ? 0.3 : 0.0,
-                              child: Container(
-                                decoration: BoxDecoration(
-                                  gradient: LinearGradient(
-                                    begin: Alignment.topCenter,
-                                    end: Alignment.bottomCenter,
-                                    colors: [
-                                      Colors.transparent,
-                                      Colors.black.withValues(alpha: 0.7),
-                                    ],
+                                ),
+                                Positioned(
+                                  top: 10,
+                                  right: 10,
+                                  child: AnimatedOpacity(
+                                    duration: const Duration(milliseconds: 200),
+                                    opacity: _isHovered ? 1.0 : 0.0,
+                                    child: _buildQuickActionButton(
+                                      Icons.favorite_border,
+                                      Colors.white,
+                                    ),
                                   ),
                                 ),
+                              ],
+                            ),
+                          ),
+                        ),
+                      ),
+
+                      Padding(
+                        padding: const EdgeInsets.all(12),
+                        child: Row(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    product.name,
+                                    maxLines: 2,
+                                    overflow: TextOverflow.ellipsis,
+                                    style: const TextStyle(
+                                      color: Colors.white,
+                                      fontWeight: FontWeight.w600,
+                                      fontSize: 13.5,
+                                    ),
+                                  ),
+                                  const SizedBox(height: 4),
+                                  if (company != null)
+                                    Text(
+                                      company.name,
+                                      style: TextStyle(
+                                        color: Colors.white.withValues(
+                                          alpha: 0.55,
+                                        ),
+                                        fontSize: 11,
+                                      ),
+                                    ),
+                                ],
                               ),
                             ),
-                            Positioned(
-                              top: 10,
-                              right: 10,
-                              child: AnimatedOpacity(
-                                duration: const Duration(milliseconds: 200),
-                                opacity: _isHovered ? 1.0 : 0.0,
+                            const SizedBox(width: 8),
+                            // Quick "order" action — opens a dialog in
+                            // place, NOT a navigation, so this stays a
+                            // plain GestureDetector (no Link) even though
+                            // it's nested inside the card's Link.
+                            AnimatedOpacity(
+                              duration: const Duration(milliseconds: 200),
+                              opacity: _isHovered ? 1.0 : 0.0,
+                              child: GestureDetector(
+                                onTap: () => _handleOrderTap(context),
                                 child: _buildQuickActionButton(
-                                  Icons.favorite_border,
-                                  Colors.white,
+                                  Icons.shopping_bag_outlined,
+                                  Colors.black,
+                                  backgroundColor: _kAmber,
+                                  borderColor: Colors.transparent,
                                 ),
                               ),
                             ),
                           ],
                         ),
                       ),
-                    ),
+                    ],
                   ),
-
-                  Padding(
-                    padding: const EdgeInsets.all(12),
-                    child: Row(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(
-                                product.name,
-                                maxLines: 2,
-                                overflow: TextOverflow.ellipsis,
-                                style: const TextStyle(
-                                  color: Colors.white,
-                                  fontWeight: FontWeight.w600,
-                                  fontSize: 13.5,
-                                ),
-                              ),
-                              const SizedBox(height: 4),
-                              if (company != null)
-                                Text(
-                                  company.name,
-                                  style: TextStyle(
-                                    color: Colors.white.withValues(alpha: 0.55),
-                                    fontSize: 11,
-                                  ),
-                                ),
-                            ],
-                          ),
-                        ),
-                        const SizedBox(width: 8),
-                        AnimatedOpacity(
-                          duration: const Duration(milliseconds: 200),
-                          opacity: _isHovered ? 1.0 : 0.0,
-                          child: GestureDetector(
-                            onTap: () => _handleOrderTap(context),
-                            child: _buildQuickActionButton(
-                              Icons.shopping_bag_outlined,
-                              Colors.black,
-                              backgroundColor: _kAmber,
-                              borderColor: Colors.transparent,
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ],
+                ),
               ),
             ),
-          ),
-        ),
+          );
+        },
       ),
     );
   }

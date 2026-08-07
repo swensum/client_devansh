@@ -39,14 +39,16 @@ class _OrdersPageState extends State<OrdersPage> {
   final _cityController = TextEditingController();
   final _taxIdController = TextEditingController();
   final _noteController = TextEditingController();
+  AppUser? _autofilledFor;
 
   @override
   void initState() {
     super.initState();
     final currentUser = AuthService.instance.currentUser.value;
-    if (currentUser != null && currentUser.name != null) {
-      _ownerNameController.text = currentUser.name!;
+    if (currentUser != null) {
+      _autofillFromUser(currentUser);
     }
+    AuthService.instance.currentUser.addListener(_handleUserChanged);
 
     _categoriesSub = _catalogService.watchCategories().listen((categories) {
       if (!mounted) return;
@@ -56,8 +58,34 @@ class _OrdersPageState extends State<OrdersPage> {
     });
   }
 
+  void _handleUserChanged() {
+    final user = AuthService.instance.currentUser.value;
+    if (user != null && user != _autofilledFor) {
+      _autofillFromUser(user);
+    }
+  }
+
+  void _autofillFromUser(AppUser user) {
+    _autofilledFor = user;
+    final name = user.name;
+    final email = user.email;
+
+    if (_ownerNameController.text.trim().isEmpty &&
+        name != null &&
+        name.trim().isNotEmpty) {
+      _ownerNameController.text = name;
+    }
+    if (_emailController.text.trim().isEmpty &&
+        email != null &&
+        email.trim().isNotEmpty) {
+      _emailController.text = email;
+    }
+    if (mounted) setState(() {});
+  }
+
   @override
   void dispose() {
+    AuthService.instance.currentUser.removeListener(_handleUserChanged);
     _categoriesSub?.cancel();
     _shopNameController.dispose();
     _ownerNameController.dispose();
@@ -97,9 +125,6 @@ class _OrdersPageState extends State<OrdersPage> {
   }
 
   void _goToSignIn(BuildContext context) {
-    // Send the user to the real auth screen; router redirect will bring
-    // them back here automatically once they're signed in (see appRouter's
-    // redirect using state.uri.queryParameters['redirect']).
     context.push('/auth?redirect=${Uri.encodeComponent('/orders')}');
   }
 
@@ -243,8 +268,6 @@ class _OrdersPageState extends State<OrdersPage> {
   }
 }
 
-/// Centralizes every size that scales with screen width, computed once
-/// per build instead of scattered magic numbers through the tree.
 class _OrdersResponsive {
   final bool stacked;
   final double pageHPadding;
@@ -547,8 +570,6 @@ class _DetailsPane extends StatelessWidget {
   }
 }
 
-/// Lays two fields side-by-side on wide screens, stacked on narrow ones —
-/// used for Owner/Phone and City/Tax-ID pairs.
 class _ResponsiveFieldRow extends StatelessWidget {
   final bool stacked;
   final _OrdersResponsive r;
@@ -750,8 +771,9 @@ class _FormField extends StatelessWidget {
   }
 }
 
-/// Right pane — order line items (name, category, quantity only — no
-/// pricing shown), plus a total-quantity summary at the bottom.
+/// Right pane — order line items (name, model if applicable, category,
+/// quantity — no pricing shown), plus a total-quantity summary at the
+/// bottom.
 class _OrdersSummaryPane extends StatelessWidget {
   final _OrdersResponsive r;
   final List<PendingOrderItem> items;
@@ -866,6 +888,7 @@ class _OrderRow extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final product = item.product;
+    final variant = item.variant;
     final thumbSize = r.stacked ? 52.0 : 60.0;
 
     return Row(
@@ -911,12 +934,42 @@ class _OrderRow extends StatelessWidget {
                 ),
               ),
               const SizedBox(height: 4),
-              Text(
-                categoryName,
-                style: TextStyle(
-                  color: Colors.white.withValues(alpha: 0.45),
-                  fontSize: r.labelSize,
-                ),
+              // Category, and — for products sold as multiple models
+              // (e.g. kitchen baskets) — the specific model chosen, so
+              // two lines for the same product are still distinguishable.
+              Row(
+                children: [
+                  Flexible(
+                    child: Text(
+                      categoryName,
+                      overflow: TextOverflow.ellipsis,
+                      style: TextStyle(
+                        color: Colors.white.withValues(alpha: 0.45),
+                        fontSize: r.labelSize,
+                      ),
+                    ),
+                  ),
+                  if (variant != null) ...[
+                    Text(
+                      '  ·  ',
+                      style: TextStyle(
+                        color: Colors.white.withValues(alpha: 0.3),
+                        fontSize: r.labelSize,
+                      ),
+                    ),
+                    Flexible(
+                      child: Text(
+                        'Model ${variant.model}',
+                        overflow: TextOverflow.ellipsis,
+                        style: TextStyle(
+                          color: _kAmber.withValues(alpha: 0.85),
+                          fontSize: r.labelSize,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                    ),
+                  ],
+                ],
               ),
             ],
           ),

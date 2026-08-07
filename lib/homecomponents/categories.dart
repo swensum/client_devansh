@@ -2,6 +2,7 @@ import 'package:devansh/models/catalogmodels.dart';
 import 'package:devansh/services/catalogservice.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'package:url_launcher/link.dart';
 import 'package:visibility_detector/visibility_detector.dart';
 
 class CategoriesSection extends StatefulWidget {
@@ -214,84 +215,92 @@ class _CompanyLogoBoxState extends State<_CompanyLogoBox> {
   Widget build(BuildContext context) {
     final logoAsset = widget.company.imageUrl;
     final isNetworkImage = logoAsset != null && logoAsset.startsWith('http');
+    final route = '/products?company=${widget.company.id}';
 
     return MouseRegion(
       cursor: SystemMouseCursors.click,
       onEnter: (_) => setState(() => _isHovered = true),
       onExit: (_) => setState(() => _isHovered = false),
-      child: GestureDetector(
-        onTap: () {
-          context.push('/products?company=${widget.company.id}');
-        },
-        child: Transform.scale(
-          scale: _isHovered ? 1.04 : 1.0,
-          child: AnimatedContainer(
-            duration: const Duration(milliseconds: 200),
-            curve: Curves.easeOut,
-            width: 180,
-            height: 115,
-            padding: const EdgeInsets.symmetric(horizontal: 22, vertical: 18),
-            decoration: BoxDecoration(
-              color: Colors.white, // solid white so logos are clearly visible
-              borderRadius: BorderRadius.circular(12),
-              border: Border.all(
-                color: _isHovered
-                    ? const Color.fromRGBO(245, 171, 30, 1)
-                    : Colors.black.withValues(alpha: 0.08),
-                width: _isHovered ? 2 : 1,
-              ),
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.black.withValues(
-                    alpha: _isHovered ? 0.25 : 0.12,
-                  ),
-                  blurRadius: _isHovered ? 16 : 8,
-                  offset: const Offset(0, 4),
+      child: Link(
+        uri: Uri.parse(route),
+        builder: (context, followLink) {
+          return GestureDetector(
+            onTap: () => context.push(route),
+            child: Transform.scale(
+              scale: _isHovered ? 1.04 : 1.0,
+              child: AnimatedContainer(
+                duration: const Duration(milliseconds: 200),
+                curve: Curves.easeOut,
+                width: 180,
+                height: 115,
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 22,
+                  vertical: 18,
                 ),
-              ],
-            ),
-            child: Center(
-              child: logoAsset == null
-                  ? Text(
-                      widget.company.name,
-                      textAlign: TextAlign.center,
-                      style: const TextStyle(
-                        fontSize: 14,
-                        fontWeight: FontWeight.w600,
-                        color: Colors.black87, // dark text on white bg
+                decoration: BoxDecoration(
+                  color:
+                      Colors.white, // solid white so logos are clearly visible
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(
+                    color: _isHovered
+                        ? const Color.fromRGBO(245, 171, 30, 1)
+                        : Colors.black.withValues(alpha: 0.08),
+                    width: _isHovered ? 2 : 1,
+                  ),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withValues(
+                        alpha: _isHovered ? 0.25 : 0.12,
                       ),
-                    )
-                  : isNetworkImage
-                  ? Image.network(
-                      logoAsset,
-                      fit: BoxFit.contain,
-                      cacheWidth: 280,
-                      errorBuilder: (context, error, stackTrace) => Text(
-                        widget.company.name,
-                        textAlign: TextAlign.center,
-                        style: const TextStyle(
-                          fontSize: 14,
-                          fontWeight: FontWeight.w600,
-                          color: Colors.black87,
-                        ),
-                      ),
-                    )
-                  : Image.asset(
-                      logoAsset,
-                      fit: BoxFit.contain,
-                      errorBuilder: (context, error, stackTrace) => Text(
-                        widget.company.name,
-                        textAlign: TextAlign.center,
-                        style: const TextStyle(
-                          fontSize: 14,
-                          fontWeight: FontWeight.w600,
-                          color: Colors.black87,
-                        ),
-                      ),
+                      blurRadius: _isHovered ? 16 : 8,
+                      offset: const Offset(0, 4),
                     ),
+                  ],
+                ),
+                child: Center(
+                  child: logoAsset == null
+                      ? Text(
+                          widget.company.name,
+                          textAlign: TextAlign.center,
+                          style: const TextStyle(
+                            fontSize: 14,
+                            fontWeight: FontWeight.w600,
+                            color: Colors.black87, // dark text on white bg
+                          ),
+                        )
+                      : isNetworkImage
+                      ? Image.network(
+                          logoAsset,
+                          fit: BoxFit.contain,
+                          cacheWidth: 280,
+                          errorBuilder: (context, error, stackTrace) => Text(
+                            widget.company.name,
+                            textAlign: TextAlign.center,
+                            style: const TextStyle(
+                              fontSize: 14,
+                              fontWeight: FontWeight.w600,
+                              color: Colors.black87,
+                            ),
+                          ),
+                        )
+                      : Image.asset(
+                          logoAsset,
+                          fit: BoxFit.contain,
+                          errorBuilder: (context, error, stackTrace) => Text(
+                            widget.company.name,
+                            textAlign: TextAlign.center,
+                            style: const TextStyle(
+                              fontSize: 14,
+                              fontWeight: FontWeight.w600,
+                              color: Colors.black87,
+                            ),
+                          ),
+                        ),
+                ),
+              ),
             ),
-          ),
-        ),
+          );
+        },
       ),
     );
   }
@@ -313,48 +322,51 @@ class _ViewAllButtonState extends State<_ViewAllButton> {
       cursor: SystemMouseCursors.click,
       onEnter: (_) => setState(() => _isHovered = true),
       onExit: (_) => setState(() => _isHovered = false),
-      child: GestureDetector(
-        onTap: () {
-          context.push('/products');
-        },
-        child: AnimatedContainer(
-          duration: const Duration(milliseconds: 200),
-          padding: const EdgeInsets.symmetric(horizontal: 26, vertical: 12),
-          decoration: BoxDecoration(
-            border: Border.all(
-              color: Color.fromRGBO(245, 171, 30, _isHovered ? 1.0 : 0.6),
-              width: 1.5,
+      child: Link(
+        uri: Uri.parse('/products'),
+        builder: (context, followLink) {
+          return GestureDetector(
+            onTap: () => context.push('/products'),
+            child: AnimatedContainer(
+              duration: const Duration(milliseconds: 200),
+              padding: const EdgeInsets.symmetric(horizontal: 26, vertical: 12),
+              decoration: BoxDecoration(
+                border: Border.all(
+                  color: Color.fromRGBO(245, 171, 30, _isHovered ? 1.0 : 0.6),
+                  width: 1.5,
+                ),
+                borderRadius: BorderRadius.circular(8),
+                color: _isHovered
+                    ? const Color.fromRGBO(245, 171, 30, 0.08)
+                    : Colors.transparent,
+              ),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  const Text(
+                    "View All Products",
+                    style: TextStyle(
+                      fontSize: 14,
+                      fontWeight: FontWeight.w600,
+                      color: Colors.white,
+                      letterSpacing: 0.3,
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  AnimatedRotation(
+                    duration: const Duration(milliseconds: 300),
+                    turns: _isHovered ? 0.125 : 0.0,
+                    child: const Icon(
+                      Icons.arrow_forward,
+                      color: Color.fromRGBO(245, 171, 30, 1),
+                      size: 16,
+                    ),
+                  ),
+                ],
+              ),
             ),
-            borderRadius: BorderRadius.circular(8),
-            color: _isHovered
-                ? const Color.fromRGBO(245, 171, 30, 0.08)
-                : Colors.transparent,
-          ),
-          child: Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              const Text(
-                "View All Products",
-                style: TextStyle(
-                  fontSize: 14,
-                  fontWeight: FontWeight.w600,
-                  color: Colors.white,
-                  letterSpacing: 0.3,
-                ),
-              ),
-              const SizedBox(width: 8),
-              AnimatedRotation(
-                duration: const Duration(milliseconds: 300),
-                turns: _isHovered ? 0.125 : 0.0,
-                child: const Icon(
-                  Icons.arrow_forward,
-                  color: Color.fromRGBO(245, 171, 30, 1),
-                  size: 16,
-                ),
-              ),
-            ],
-          ),
-        ),
+          );
+        },
       ),
     );
   }

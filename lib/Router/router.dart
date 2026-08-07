@@ -68,19 +68,18 @@ final GoRouter appRouter = GoRouter(
   initialLocation: '/',
   refreshListenable: _authRefresh,
   redirect: (context, state) {
-    final loggedIn = FirebaseAuth.instance.currentUser != null;
+    final user = FirebaseAuth.instance.currentUser;
+    final loggedIn = user != null && user.emailVerified;
     final goingToAuth = state.matchedLocation == '/auth';
     final goingToProtected = _protectedPaths.contains(state.matchedLocation);
 
     if (!loggedIn && goingToProtected) {
       return '/auth?redirect=${Uri.encodeComponent(state.matchedLocation)}';
     }
-
     if (loggedIn && goingToAuth) {
       final redirectTo = state.uri.queryParameters['redirect'];
       return (redirectTo != null && redirectTo.isNotEmpty) ? redirectTo : '/';
     }
-
     return null; // no redirect needed
   },
   routes: [

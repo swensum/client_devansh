@@ -1,11 +1,5 @@
 library;
 
-/// ---------------------------------------------------------------------
-/// MODELS
-/// Each model now has a `fromMap` factory so it can be built directly
-/// from a Firestore document snapshot (id + data map).
-/// ---------------------------------------------------------------------
-
 class Category {
   final String id;
   final String name;
@@ -60,6 +54,32 @@ class ProductType {
   }
 }
 
+class ProductVariant {
+  final String model;
+  final String? width;
+  final String? depth;
+  final String? height;
+  final String? availability;
+
+  const ProductVariant({
+    required this.model,
+    this.width,
+    this.depth,
+    this.height,
+    this.availability,
+  });
+
+  factory ProductVariant.fromMap(Map<String, dynamic> data) {
+    return ProductVariant(
+      model: data['model']?.toString() ?? '',
+      width: data['width']?.toString(),
+      depth: data['depth']?.toString(),
+      height: data['height']?.toString(),
+      availability: data['availability']?.toString(),
+    );
+  }
+}
+
 class Product {
   final String id;
   final String name;
@@ -77,6 +97,12 @@ class Product {
   final String? availability;
   final bool isTopProduct;
 
+  /// Present only for products sold as multiple models (e.g. kitchen
+  /// baskets). Empty for ordinary single-SKU products.
+  final List<ProductVariant> variants;
+
+  bool get hasVariants => variants.isNotEmpty;
+
   const Product({
     required this.id,
     required this.name,
@@ -93,6 +119,7 @@ class Product {
     this.finish,
     this.availability,
     this.isTopProduct = false,
+    this.variants = const [],
   });
 
   factory Product.fromMap(String id, Map<String, dynamic> data) {
@@ -112,6 +139,11 @@ class Product {
       finish: data['finish'],
       availability: data['availability'],
       isTopProduct: data['isTopProduct'] ?? false,
+      variants:
+          (data['variants'] as List<dynamic>?)
+              ?.map((v) => ProductVariant.fromMap(v as Map<String, dynamic>))
+              .toList() ??
+          const [],
     );
   }
 }

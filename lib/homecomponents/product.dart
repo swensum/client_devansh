@@ -5,6 +5,7 @@ import 'package:devansh/services/catalogservice.dart';
 
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'package:url_launcher/link.dart';
 import 'package:visibility_detector/visibility_detector.dart';
 
 String _optimizedImageUrl(String url, {int width = 400}) {
@@ -602,6 +603,9 @@ class _PremiumProductCardState extends State<_PremiumProductCard>
     final r = widget.r;
     final product = widget.product;
     final imageUrl = _optimizedImageUrl(product.imageUrl, width: 400);
+    // Fixed per-item destination — used for both the real <a href> (Link)
+    // and the SPA navigation (context.push) below, so they always agree.
+    final route = '/product/${product.id}';
 
     final staticImage = Image.network(
       imageUrl,
@@ -642,216 +646,233 @@ class _PremiumProductCardState extends State<_PremiumProductCard>
       cursor: SystemMouseCursors.click,
       onEnter: (_) => _setHovered(true),
       onExit: (_) => _setHovered(false),
-      child: GestureDetector(
-        onTap: () => context.push('/product/${product.id}', extra: product),
-        child: RepaintBoundary(
-          child: AnimatedBuilder(
-            animation: _hoverController,
-            child: staticImage,
-            builder: (context, image) {
-              final t = _hoverController.value;
-              return Transform.scale(
-                scale: 1.0 + (0.03 * t),
-                child: Container(
-                  decoration: BoxDecoration(
-                    color: Colors.white.withValues(alpha: 0.12),
-                    borderRadius: BorderRadius.circular(_cardRadius),
-                    border: Border.all(
-                      color: Color.lerp(
-                        Colors.white.withValues(alpha: 0.12),
-                        const Color.fromRGBO(245, 171, 30, 0.6),
-                        t,
-                      )!,
-                      width: 1.5,
-                    ),
-                    boxShadow: [
-                      BoxShadow(
-                        color: Colors.black.withValues(
-                          alpha: 0.06 + (0.09 * t),
+      // Real <a href="/product/{id}"> so the card gets the browser's
+      // bottom-left URL preview, right-click, and middle-click/open-in-new-
+      // tab behavior — same pattern as the header's Link-wrapped items.
+      child: Link(
+        uri: Uri.parse(route),
+        builder: (context, followLink) {
+          return GestureDetector(
+            onTap: () => context.push(route, extra: product),
+            child: RepaintBoundary(
+              child: AnimatedBuilder(
+                animation: _hoverController,
+                child: staticImage,
+                builder: (context, image) {
+                  final t = _hoverController.value;
+                  return Transform.scale(
+                    scale: 1.0 + (0.03 * t),
+                    child: Container(
+                      decoration: BoxDecoration(
+                        color: Colors.white.withValues(alpha: 0.12),
+                        borderRadius: BorderRadius.circular(_cardRadius),
+                        border: Border.all(
+                          color: Color.lerp(
+                            Colors.white.withValues(alpha: 0.12),
+                            const Color.fromRGBO(245, 171, 30, 0.6),
+                            t,
+                          )!,
+                          width: 1.5,
                         ),
-                        blurRadius: 8 + (12 * t),
-                        offset: Offset(0, 4 + (4 * t)),
-                        spreadRadius: 2 * t,
-                      ),
-                    ],
-                  ),
-                  clipBehavior: Clip.antiAlias,
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Expanded(
-                        child: ClipRRect(
-                          borderRadius: const BorderRadius.only(
-                            topLeft: Radius.circular(_cardRadius),
-                            topRight: Radius.circular(_cardRadius),
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.black.withValues(
+                              alpha: 0.06 + (0.09 * t),
+                            ),
+                            blurRadius: 8 + (12 * t),
+                            offset: Offset(0, 4 + (4 * t)),
+                            spreadRadius: 2 * t,
                           ),
-                          child: Container(
-                            width: double.infinity,
-                            color: Colors.grey.shade50,
-                            child: Stack(
-                              fit: StackFit.expand,
-                              children: [
-                                image!, // the static Image — untouched by hover
-                                Opacity(
-                                  opacity: 0.3 * t,
-                                  child: Container(
-                                    decoration: BoxDecoration(
-                                      gradient: LinearGradient(
-                                        begin: Alignment.topCenter,
-                                        end: Alignment.bottomCenter,
-                                        colors: [
-                                          Colors.transparent,
-                                          Colors.black.withValues(alpha: 0.7),
-                                        ],
+                        ],
+                      ),
+                      clipBehavior: Clip.antiAlias,
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Expanded(
+                            child: ClipRRect(
+                              borderRadius: const BorderRadius.only(
+                                topLeft: Radius.circular(_cardRadius),
+                                topRight: Radius.circular(_cardRadius),
+                              ),
+                              child: Container(
+                                width: double.infinity,
+                                color: Colors.grey.shade50,
+                                child: Stack(
+                                  fit: StackFit.expand,
+                                  children: [
+                                    image!, // the static Image — untouched by hover
+                                    Opacity(
+                                      opacity: 0.3 * t,
+                                      child: Container(
+                                        decoration: BoxDecoration(
+                                          gradient: LinearGradient(
+                                            begin: Alignment.topCenter,
+                                            end: Alignment.bottomCenter,
+                                            colors: [
+                                              Colors.transparent,
+                                              Colors.black.withValues(
+                                                alpha: 0.7,
+                                              ),
+                                            ],
+                                          ),
+                                        ),
                                       ),
                                     ),
+                                    Positioned(
+                                      top: 10,
+                                      right: 10,
+                                      child: Opacity(
+                                        opacity: t,
+                                        child: _buildQuickActionButton(
+                                          Icons.favorite_border,
+                                          Colors.white,
+                                        ),
+                                      ),
+                                    ),
+                                    Positioned(
+                                      top: 10,
+                                      left: 10,
+                                      child: Container(
+                                        padding: const EdgeInsets.symmetric(
+                                          horizontal: 10,
+                                          vertical: 4,
+                                        ),
+                                        decoration: BoxDecoration(
+                                          color: const Color.fromRGBO(
+                                            245,
+                                            171,
+                                            30,
+                                            1,
+                                          ),
+                                          borderRadius: BorderRadius.circular(
+                                            20,
+                                          ),
+                                        ),
+                                        child: const Text(
+                                          "BEST SELLER",
+                                          style: TextStyle(
+                                            fontSize: 9,
+                                            fontWeight: FontWeight.w700,
+                                            color: Colors.black,
+                                            letterSpacing: 0.5,
+                                          ),
+                                        ),
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ),
+                          ),
+                          Container(
+                            height: r.cardContentHeight,
+                            padding: const EdgeInsets.all(14),
+                            child: Row(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Expanded(
+                                  child: Column(
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
+                                    children: [
+                                      Text(
+                                        product.name,
+                                        maxLines: 2,
+                                        overflow: TextOverflow.ellipsis,
+                                        style: TextStyle(
+                                          fontSize: r.cardTitleFont,
+                                          fontWeight: FontWeight.w600,
+                                          color: Colors.white,
+                                          height: 1.3,
+                                        ),
+                                      ),
+                                      const SizedBox(height: 4),
+                                      Row(
+                                        children: [
+                                          ...List.generate(
+                                            5,
+                                            (index) => Icon(
+                                              Icons.star,
+                                              size: 13,
+                                              color: index < 4
+                                                  ? const Color.fromRGBO(
+                                                      245,
+                                                      171,
+                                                      30,
+                                                      1,
+                                                    )
+                                                  : Colors.grey.shade300,
+                                            ),
+                                          ),
+                                          const SizedBox(width: 4),
+                                          Text(
+                                            "(124)",
+                                            style: TextStyle(
+                                              fontSize: 11,
+                                              color: Colors.grey.shade500,
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                    ],
                                   ),
                                 ),
-                                Positioned(
-                                  top: 10,
-                                  right: 10,
-                                  child: Opacity(
-                                    opacity: t,
+                                const SizedBox(width: 8),
+                                // Quick "order" action — opens a dialog in
+                                // place, NOT a navigation, so this stays a
+                                // plain GestureDetector (no Link) even
+                                // though it's nested inside the card's Link.
+                                Opacity(
+                                  opacity: t,
+                                  child: GestureDetector(
+                                    onTap: () async {
+                                      final catalogService = CatalogService();
+                                      final allProducts = await catalogService
+                                          .watchProducts()
+                                          .first;
+                                      final related = allProducts
+                                          .where(
+                                            (p) =>
+                                                p.categoryId ==
+                                                    product.categoryId &&
+                                                p.id != product.id,
+                                          )
+                                          .toList();
+
+                                      if (context.mounted) {
+                                        handleOrderTap(
+                                          context,
+                                          product,
+                                          relatedProducts: related,
+                                        );
+                                      }
+                                    },
                                     child: _buildQuickActionButton(
-                                      Icons.favorite_border,
-                                      Colors.white,
-                                    ),
-                                  ),
-                                ),
-                                Positioned(
-                                  top: 10,
-                                  left: 10,
-                                  child: Container(
-                                    padding: const EdgeInsets.symmetric(
-                                      horizontal: 10,
-                                      vertical: 4,
-                                    ),
-                                    decoration: BoxDecoration(
-                                      color: const Color.fromRGBO(
+                                      Icons.shopping_bag_outlined,
+                                      Colors.black,
+                                      backgroundColor: const Color.fromRGBO(
                                         245,
                                         171,
                                         30,
                                         1,
                                       ),
-                                      borderRadius: BorderRadius.circular(20),
-                                    ),
-                                    child: const Text(
-                                      "BEST SELLER",
-                                      style: TextStyle(
-                                        fontSize: 9,
-                                        fontWeight: FontWeight.w700,
-                                        color: Colors.black,
-                                        letterSpacing: 0.5,
-                                      ),
+                                      borderColor: Colors.transparent,
                                     ),
                                   ),
                                 ),
                               ],
                             ),
                           ),
-                        ),
+                        ],
                       ),
-                      Container(
-                        height: r.cardContentHeight,
-                        padding: const EdgeInsets.all(14),
-                        child: Row(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Expanded(
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Text(
-                                    product.name,
-                                    maxLines: 2,
-                                    overflow: TextOverflow.ellipsis,
-                                    style: TextStyle(
-                                      fontSize: r.cardTitleFont,
-                                      fontWeight: FontWeight.w600,
-                                      color: Colors.white,
-                                      height: 1.3,
-                                    ),
-                                  ),
-                                  const SizedBox(height: 4),
-                                  Row(
-                                    children: [
-                                      ...List.generate(
-                                        5,
-                                        (index) => Icon(
-                                          Icons.star,
-                                          size: 13,
-                                          color: index < 4
-                                              ? const Color.fromRGBO(
-                                                  245,
-                                                  171,
-                                                  30,
-                                                  1,
-                                                )
-                                              : Colors.grey.shade300,
-                                        ),
-                                      ),
-                                      const SizedBox(width: 4),
-                                      Text(
-                                        "(124)",
-                                        style: TextStyle(
-                                          fontSize: 11,
-                                          color: Colors.grey.shade500,
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                                ],
-                              ),
-                            ),
-                            const SizedBox(width: 8),
-                            Opacity(
-                              opacity: t,
-                              child: GestureDetector(
-                                onTap: () async {
-                                  final catalogService = CatalogService();
-                                  final allProducts = await catalogService
-                                      .watchProducts()
-                                      .first;
-                                  final related = allProducts
-                                      .where(
-                                        (p) =>
-                                            p.categoryId ==
-                                                product.categoryId &&
-                                            p.id != product.id,
-                                      )
-                                      .toList();
-
-                                  if (context.mounted) {
-                                    handleOrderTap(
-                                      context,
-                                      product,
-                                      relatedProducts: related,
-                                    );
-                                  }
-                                },
-                                child: _buildQuickActionButton(
-                                  Icons.shopping_bag_outlined,
-                                  Colors.black,
-                                  backgroundColor: const Color.fromRGBO(
-                                    245,
-                                    171,
-                                    30,
-                                    1,
-                                  ),
-                                  borderColor: Colors.transparent,
-                                ),
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              );
-            },
-          ),
-        ),
+                    ),
+                  );
+                },
+              ),
+            ),
+          );
+        },
       ),
     );
   }
@@ -893,48 +914,51 @@ class _ViewAllProductsButtonState extends State<_ViewAllProductsButton> {
       cursor: SystemMouseCursors.click,
       onEnter: (_) => setState(() => _isHovered = true),
       onExit: (_) => setState(() => _isHovered = false),
-      child: GestureDetector(
-        onTap: () {
-          context.push('/products');
-        },
-        child: AnimatedContainer(
-          duration: const Duration(milliseconds: 200),
-          padding: const EdgeInsets.symmetric(horizontal: 26, vertical: 12),
-          decoration: BoxDecoration(
-            border: Border.all(
-              color: Color.fromRGBO(245, 171, 30, _isHovered ? 1.0 : 0.6),
-              width: 1.5,
+      child: Link(
+        uri: Uri.parse('/products'),
+        builder: (context, followLink) {
+          return GestureDetector(
+            onTap: () => context.push('/products'),
+            child: AnimatedContainer(
+              duration: const Duration(milliseconds: 200),
+              padding: const EdgeInsets.symmetric(horizontal: 26, vertical: 12),
+              decoration: BoxDecoration(
+                border: Border.all(
+                  color: Color.fromRGBO(245, 171, 30, _isHovered ? 1.0 : 0.6),
+                  width: 1.5,
+                ),
+                borderRadius: BorderRadius.circular(8),
+                color: _isHovered
+                    ? const Color.fromRGBO(245, 171, 30, 0.08)
+                    : Colors.transparent,
+              ),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  const Text(
+                    "View All Products",
+                    style: TextStyle(
+                      fontSize: 14,
+                      fontWeight: FontWeight.w600,
+                      color: Colors.white,
+                      letterSpacing: 0.3,
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  AnimatedRotation(
+                    duration: const Duration(milliseconds: 300),
+                    turns: _isHovered ? 0.125 : 0.0,
+                    child: const Icon(
+                      Icons.arrow_forward,
+                      color: Color.fromRGBO(245, 171, 30, 1),
+                      size: 16,
+                    ),
+                  ),
+                ],
+              ),
             ),
-            borderRadius: BorderRadius.circular(8),
-            color: _isHovered
-                ? const Color.fromRGBO(245, 171, 30, 0.08)
-                : Colors.transparent,
-          ),
-          child: Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              const Text(
-                "View All Products",
-                style: TextStyle(
-                  fontSize: 14,
-                  fontWeight: FontWeight.w600,
-                  color: Colors.white,
-                  letterSpacing: 0.3,
-                ),
-              ),
-              const SizedBox(width: 8),
-              AnimatedRotation(
-                duration: const Duration(milliseconds: 300),
-                turns: _isHovered ? 0.125 : 0.0,
-                child: const Icon(
-                  Icons.arrow_forward,
-                  color: Color.fromRGBO(245, 171, 30, 1),
-                  size: 16,
-                ),
-              ),
-            ],
-          ),
-        ),
+          );
+        },
       ),
     );
   }

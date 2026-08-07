@@ -12,6 +12,7 @@ import 'package:flutter/material.dart' hide MaterialType;
 
 import 'package:flutter_markdown_plus/flutter_markdown_plus.dart';
 import 'package:go_router/go_router.dart';
+import 'package:url_launcher/link.dart';
 
 const _kAmber = Color.fromRGBO(245, 171, 30, 1);
 const _kGreen = Color(0xFF4CAF50);
@@ -719,182 +720,197 @@ class _RelatedProductCardState extends State<_RelatedProductCard>
   Widget build(BuildContext context) {
     final product = widget.product;
     final company = Catalog.companyFor(product, widget.companies);
+    // Fixed per-item destination — shared by the real <a href> (Link) and
+    // the SPA navigation (context.push) below, so they always agree.
+    final route = '/product/${product.id}';
 
     return MouseRegion(
       cursor: SystemMouseCursors.click,
       onEnter: (_) => _setHovered(true),
       onExit: (_) => _setHovered(false),
-      child: GestureDetector(
-        onTap: () {
-          context.push('/product/${product.id}', extra: product);
-        },
-        child: RepaintBoundary(
-          child: ScaleTransition(
-            scale: _scaleAnimation,
-            child: Container(
-              decoration: BoxDecoration(
-                color: Colors.white.withValues(alpha: 0.08),
-                borderRadius: BorderRadius.circular(_cardRadius),
-                border: Border.all(
-                  color: _isHovered
-                      ? _kAmber.withValues(alpha: 0.6)
-                      : Colors.white.withValues(alpha: 0.12),
-                  width: 1.5,
-                ),
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.black.withValues(
-                      alpha: _isHovered ? 0.15 : 0.06,
+      child: Link(
+        uri: Uri.parse(route),
+        builder: (context, followLink) {
+          return GestureDetector(
+            onTap: () {
+              context.push(route, extra: product);
+            },
+            child: RepaintBoundary(
+              child: ScaleTransition(
+                scale: _scaleAnimation,
+                child: Container(
+                  decoration: BoxDecoration(
+                    color: Colors.white.withValues(alpha: 0.08),
+                    borderRadius: BorderRadius.circular(_cardRadius),
+                    border: Border.all(
+                      color: _isHovered
+                          ? _kAmber.withValues(alpha: 0.6)
+                          : Colors.white.withValues(alpha: 0.12),
+                      width: 1.5,
                     ),
-                    blurRadius: _isHovered ? 20 : 8,
-                    offset: Offset(0, _isHovered ? 8 : 4),
-                    spreadRadius: _isHovered ? 2 : 0,
-                  ),
-                ],
-              ),
-              clipBehavior: Clip.antiAlias,
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Expanded(
-                    child: ClipRRect(
-                      borderRadius: const BorderRadius.only(
-                        topLeft: Radius.circular(_cardRadius),
-                        topRight: Radius.circular(_cardRadius),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black.withValues(
+                          alpha: _isHovered ? 0.15 : 0.06,
+                        ),
+                        blurRadius: _isHovered ? 20 : 8,
+                        offset: Offset(0, _isHovered ? 8 : 4),
+                        spreadRadius: _isHovered ? 2 : 0,
                       ),
-                      child: Container(
-                        width: double.infinity,
-                        color: Colors.grey.shade900,
-                        child: Stack(
-                          fit: StackFit.expand,
-                          children: [
-                            product.imageUrl.isNotEmpty
-                                ? Image.network(
-                                    product.imageUrl,
-                                    fit: BoxFit.cover,
-                                    loadingBuilder: (context, child, progress) {
-                                      if (progress == null) return child;
-                                      return const Center(
-                                        child: CircularProgressIndicator(
-                                          color: _kAmber,
-                                          strokeWidth: 2,
-                                        ),
-                                      );
-                                    },
-                                    errorBuilder:
-                                        (
-                                          context,
-                                          error,
-                                          stackTrace,
-                                        ) => Container(
-                                          color: Colors.grey.shade800,
-                                          child: const Center(
-                                            child: Icon(
-                                              Icons
-                                                  .image_not_supported_outlined,
-                                              color: Colors.white38,
+                    ],
+                  ),
+                  clipBehavior: Clip.antiAlias,
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Expanded(
+                        child: ClipRRect(
+                          borderRadius: const BorderRadius.only(
+                            topLeft: Radius.circular(_cardRadius),
+                            topRight: Radius.circular(_cardRadius),
+                          ),
+                          child: Container(
+                            width: double.infinity,
+                            color: Colors.grey.shade900,
+                            child: Stack(
+                              fit: StackFit.expand,
+                              children: [
+                                product.imageUrl.isNotEmpty
+                                    ? Image.network(
+                                        product.imageUrl,
+                                        fit: BoxFit.cover,
+                                        loadingBuilder:
+                                            (context, child, progress) {
+                                              if (progress == null) {
+                                                return child;
+                                              }
+                                              return const Center(
+                                                child:
+                                                    CircularProgressIndicator(
+                                                      color: _kAmber,
+                                                      strokeWidth: 2,
+                                                    ),
+                                              );
+                                            },
+                                        errorBuilder:
+                                            (
+                                              context,
+                                              error,
+                                              stackTrace,
+                                            ) => Container(
+                                              color: Colors.grey.shade800,
+                                              child: const Center(
+                                                child: Icon(
+                                                  Icons
+                                                      .image_not_supported_outlined,
+                                                  color: Colors.white38,
+                                                ),
+                                              ),
                                             ),
+                                      )
+                                    : Container(
+                                        color: Colors.grey.shade800,
+                                        child: const Center(
+                                          child: Icon(
+                                            Icons.image_not_supported_outlined,
+                                            color: Colors.white38,
                                           ),
                                         ),
-                                  )
-                                : Container(
-                                    color: Colors.grey.shade800,
-                                    child: const Center(
-                                      child: Icon(
-                                        Icons.image_not_supported_outlined,
-                                        color: Colors.white38,
+                                      ),
+                                AnimatedOpacity(
+                                  duration: const Duration(milliseconds: 200),
+                                  opacity: _isHovered ? 0.3 : 0.0,
+                                  child: Container(
+                                    decoration: BoxDecoration(
+                                      gradient: LinearGradient(
+                                        begin: Alignment.topCenter,
+                                        end: Alignment.bottomCenter,
+                                        colors: [
+                                          Colors.transparent,
+                                          Colors.black.withValues(alpha: 0.7),
+                                        ],
                                       ),
                                     ),
                                   ),
-                            AnimatedOpacity(
-                              duration: const Duration(milliseconds: 200),
-                              opacity: _isHovered ? 0.3 : 0.0,
-                              child: Container(
-                                decoration: BoxDecoration(
-                                  gradient: LinearGradient(
-                                    begin: Alignment.topCenter,
-                                    end: Alignment.bottomCenter,
-                                    colors: [
-                                      Colors.transparent,
-                                      Colors.black.withValues(alpha: 0.7),
-                                    ],
+                                ),
+                                Positioned(
+                                  top: 10,
+                                  right: 10,
+                                  child: AnimatedOpacity(
+                                    duration: const Duration(milliseconds: 200),
+                                    opacity: _isHovered ? 1.0 : 0.0,
+                                    child: _buildQuickActionButton(
+                                      Icons.favorite_border,
+                                      Colors.white,
+                                    ),
                                   ),
                                 ),
+                              ],
+                            ),
+                          ),
+                        ),
+                      ),
+                      Padding(
+                        padding: const EdgeInsets.all(10),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              product.name,
+                              maxLines: 2,
+                              overflow: TextOverflow.ellipsis,
+                              style: const TextStyle(
+                                color: Colors.white,
+                                fontWeight: FontWeight.w600,
+                                fontSize: 12.5,
                               ),
                             ),
-                            Positioned(
-                              top: 10,
-                              right: 10,
-                              child: AnimatedOpacity(
-                                duration: const Duration(milliseconds: 200),
-                                opacity: _isHovered ? 1.0 : 0.0,
-                                child: _buildQuickActionButton(
-                                  Icons.favorite_border,
-                                  Colors.white,
+                            const SizedBox(height: 4),
+                            if (company != null)
+                              Text(
+                                company.name,
+                                style: TextStyle(
+                                  color: Colors.white.withValues(alpha: 0.55),
+                                  fontSize: 11,
                                 ),
                               ),
+                            const SizedBox(height: 6),
+                            Row(
+                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                              children: [
+                                Text(
+                                  '\$${product.price.toStringAsFixed(2)}',
+                                  style: const TextStyle(
+                                    color: _kAmber,
+                                    fontWeight: FontWeight.bold,
+                                    fontSize: 13.5,
+                                  ),
+                                ),
+                                // Quick "order" action — currently purely
+                                // visual (no onTap wired), so no Link
+                                // conflict here either way.
+                                AnimatedOpacity(
+                                  duration: const Duration(milliseconds: 200),
+                                  opacity: _isHovered ? 1.0 : 0.0,
+                                  child: _buildQuickActionButton(
+                                    Icons.shopping_bag_outlined,
+                                    Colors.black,
+                                    backgroundColor: _kAmber,
+                                    borderColor: Colors.transparent,
+                                  ),
+                                ),
+                              ],
                             ),
                           ],
                         ),
                       ),
-                    ),
+                    ],
                   ),
-                  Padding(
-                    padding: const EdgeInsets.all(10),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          product.name,
-                          maxLines: 2,
-                          overflow: TextOverflow.ellipsis,
-                          style: const TextStyle(
-                            color: Colors.white,
-                            fontWeight: FontWeight.w600,
-                            fontSize: 12.5,
-                          ),
-                        ),
-                        const SizedBox(height: 4),
-                        if (company != null)
-                          Text(
-                            company.name,
-                            style: TextStyle(
-                              color: Colors.white.withValues(alpha: 0.55),
-                              fontSize: 11,
-                            ),
-                          ),
-                        const SizedBox(height: 6),
-                        Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                          children: [
-                            Text(
-                              '\$${product.price.toStringAsFixed(2)}',
-                              style: const TextStyle(
-                                color: _kAmber,
-                                fontWeight: FontWeight.bold,
-                                fontSize: 13.5,
-                              ),
-                            ),
-                            AnimatedOpacity(
-                              duration: const Duration(milliseconds: 200),
-                              opacity: _isHovered ? 1.0 : 0.0,
-                              child: _buildQuickActionButton(
-                                Icons.shopping_bag_outlined,
-                                Colors.black,
-                                backgroundColor: _kAmber,
-                                borderColor: Colors.transparent,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ],
-                    ),
-                  ),
-                ],
+                ),
               ),
             ),
-          ),
-        ),
+          );
+        },
       ),
     );
   }
