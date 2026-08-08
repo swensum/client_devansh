@@ -25,46 +25,61 @@ class AuthService {
 
   Stream<User?> get authStateChanges => _auth.authStateChanges();
 
-  // --- Google sign-in (redirect, web-safe) ---
+  // --- Google sign-in (web) ---
   //
-  // We use signInWithRedirect instead of signInWithPopup because the popup
-  // flow depends on the popup window being able to postMessage back to the
-  // opener (and on the opener being able to check window.closed). That
-  // breaks under a Cross-Origin-Opener-Policy: same-origin header, and can
-  // also misbehave with Flutter web's visibility/reload handling — both of
-  // which surface as a spurious "popup-closed-by-user" error even though
-  // the user did complete sign-in. Redirect doesn't have this problem.
-  //
-  // NOTE: this navigates the whole page away to Google and back, so there
-  // is nothing meaningful to await here on web — listen to `currentUser`
-  // (or authStateChanges) to know when sign-in actually completes.
-  Future<void> signInWithGoogle() {
+  // Popup sign-in relies on a hidden iframe on the Firebase authDomain
+  // relaying the credential back to this tab via IndexedDB. Safari (ITP)
+  // and Brave (Shields) block that cross-origin storage access by default,
+  // so the popup finishes on Google's side but the result never makes it
+  // back — Firebase then times out and reports `popup-closed-by-user` even
+  // though the user actually completed the sign-in. Redirect sign-in
+  // doesn't depend on that relay, so we fall back to it when popup fails
+  // for that class of reason.
+  Future<void> signInWithGoogle() async {
     final provider = GoogleAuthProvider()
       ..setCustomParameters({'prompt': 'select_account'});
 
-    if (kIsWeb) {
-      return _auth.signInWithRedirect(provider);
+    if (!kIsWeb) {
+      await _auth.signInWithPopup(provider);
+      return;
     }
 
-    // Non-web platforms (if you ever build for them) can still use the
-    // popup-style call, which maps to the native provider flow there.
-    return _auth.signInWithProvider(provider);
+    try {
+      await _auth.signInWithPopup(provider);
+    } on FirebaseAuthException catch (e) {
+      if (_shouldFallBackToRedirect(e.code)) {
+        await _auth.signInWithRedirect(provider);
+        // Execution ends here — the page will navigate away to Google
+        // and back. The result is picked up by getRedirectResult() on
+        // the next app load (see AuthScreen.initState).
+        return;
+      }
+      rethrow;
+    }
   }
 
-  /// Call this once, early, on any screen that can be the target of the
-  /// Google redirect (i.e. AuthScreen's initState). It resolves with the
-  /// signed-in user if the app just came back from a successful redirect,
-  /// null if there's no pending redirect, or throws a [FirebaseAuthException]
-  /// if the redirect sign-in failed — so you can surface a real error
-  /// message instead of the misleading "popup closed by user" one.
-  ///
-  /// Note: `currentUser` / `authStateChanges` will also update on success,
-  /// independently of this call — this method exists specifically so the UI
-  /// can read the *error* case too.
-  Future<AppUser?> checkRedirectResult() async {
+  bool _shouldFallBackToRedirect(String code) {
+    switch (code) {
+      case 'auth/popup-closed-by-user':
+      case 'auth/popup-blocked':
+      case 'auth/cancelled-popup-request':
+      case 'auth/web-storage-unsupported':
+      case 'auth/operation-not-supported-in-this-environment':
+        return true;
+      default:
+        return false;
+    }
+  }
+
+  /// Call once on app/screen startup (web only) to pick up the result of a
+  /// signInWithRedirect() call from a previous page load. Returns the
+  /// UserCredential if a redirect sign-in just completed, or null if there
+  /// was no pending redirect result to process.
+  Future<UserCredential?> getRedirectResult() async {
+    if (!kIsWeb) return null;
     final result = await _auth.getRedirectResult();
-    final user = result.user;
-    return user == null ? null : AppUser.fromFirebaseUser(user);
+    if (result.user == null) return null;
+    return result;
   }
 
   // --- Persistence: controls "Remember me" ---
@@ -77,25 +92,83 @@ class AuthService {
   }
 
   // --- Email / Password ---
+
+  /// Signs in with email/password. Unverified accounts are immediately
+  /// signed back out and rejected with a synthetic `email-not-verified`
+  /// error code — an unverified account can't be used to sign in.
   Future<UserCredential> signInWithEmailPassword(
     String email,
     String password, {
     bool rememberMe = true,
   }) async {
     await _applyPersistence(rememberMe);
-    return _auth.signInWithEmailAndPassword(email: email, password: password);
+    final credential = await _auth.signInWithEmailAndPassword(
+      email: email,
+      password: password,
+    );
+
+    if (credential.user != null && !credential.user!.emailVerified) {
+      await _auth.signOut();
+      throw FirebaseAuthException(
+        code: 'email-not-verified',
+        message: 'Please verify your email before signing in.',
+      );
+    }
+
+    return credential;
   }
 
+  /// Creates the account and immediately sends a verification email. The
+  /// account exists in Firebase after this returns, but AuthScreen treats
+  /// sign-up as incomplete until the email is verified — see the
+  /// verify-email dialog flow there. If the user never verifies, they'll
+  /// simply be rejected on their next sign-in attempt (see above) until
+  /// they do.
   Future<UserCredential> signUpWithEmailPassword(
     String email,
     String password, {
     bool rememberMe = true,
   }) async {
     await _applyPersistence(rememberMe);
-    return _auth.createUserWithEmailAndPassword(
+    final credential = await _auth.createUserWithEmailAndPassword(
       email: email,
       password: password,
     );
+    await credential.user?.sendEmailVerification();
+    return credential;
+  }
+
+  /// Resends a verification email to the currently signed-in user. Used
+  /// while the "verify your email" dialog is open right after sign-up.
+  Future<void> sendEmailVerification() async {
+    final user = _auth.currentUser;
+    if (user == null) return;
+    await user.sendEmailVerification();
+  }
+
+  /// Reloads the current user from Firebase and reports whether their
+  /// email is now verified. Returns false if nobody is signed in.
+  Future<bool> reloadAndCheckEmailVerified() async {
+    final user = _auth.currentUser;
+    if (user == null) return false;
+    await user.reload();
+    return _auth.currentUser?.emailVerified ?? false;
+  }
+
+  /// Resends a verification email for an account the user is NOT currently
+  /// signed in to (e.g. they tried to sign in, got blocked as unverified,
+  /// and want another link). Signs in just long enough to trigger the
+  /// email, then signs back out — the account stays "not signed in" either
+  /// way.
+  Future<void> resendVerificationEmail(String email, String password) async {
+    final credential = await _auth.signInWithEmailAndPassword(
+      email: email,
+      password: password,
+    );
+    if (credential.user != null && !credential.user!.emailVerified) {
+      await credential.user!.sendEmailVerification();
+    }
+    await _auth.signOut();
   }
 
   Future<void> sendPasswordResetEmail(String email) {

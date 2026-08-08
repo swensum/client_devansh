@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:devansh/services/authservice.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
@@ -29,14 +31,12 @@ class _AuthScreenState extends State<AuthScreen> {
   bool _googleLoading = false;
   bool _submitLoading = false;
   String? _error;
+  bool _showResendVerification = false;
+  bool _resendingVerification = false;
 
-  // Guards against acting on the redirect-completion listener more than
-  // once (e.g. if currentUser fires again for an unrelated reason later).
-  bool _handledGoogleRedirect = false;
+  // --- Redirect sign-in (Safari/Brave popup fallback) ---
+  bool _checkingRedirectResult = true;
 
-  // --- In-app "set new password" flow (reached via the reset-password
-  // email link, which points back into this app instead of Firebase's
-  // generic hosted page) ---
   bool _isPasswordResetMode = false;
   bool _resetVerifying = true;
   String? _resetOobCode;
@@ -52,22 +52,15 @@ class _AuthScreenState extends State<AuthScreen> {
   void initState() {
     super.initState();
     _checkForPasswordResetLink();
-
-    // If we're not in the middle of the password-reset deep link, this
-    // screen might instead be the target of a Google sign-in redirect
-    // coming back from accounts.google.com. Check for that, and also start
-    // listening to currentUser so we navigate away as soon as sign-in
-    // actually completes (authStateChanges fires independently of the
-    // redirect-result check below).
     if (!_isPasswordResetMode) {
-      _checkGoogleRedirectResult();
+      _checkRedirectResult();
+    } else {
+      _checkingRedirectResult = false;
     }
-    AuthService.instance.currentUser.addListener(_onCurrentUserChanged);
   }
 
   @override
   void dispose() {
-    AuthService.instance.currentUser.removeListener(_onCurrentUserChanged);
     _emailController.dispose();
     _passwordController.dispose();
     _confirmPasswordController.dispose();
@@ -76,58 +69,31 @@ class _AuthScreenState extends State<AuthScreen> {
     super.dispose();
   }
 
-  // --- Google redirect handling ---
-
-  Future<void> _checkGoogleRedirectResult() async {
-    // Only relevant if we actually just came back from a redirect; if the
-    // user is opening /auth normally there's nothing pending and this
-    // resolves to null quickly.
-    setState(() => _googleLoading = true);
+  /// Picks up the result of a signInWithRedirect() call from a previous
+  /// page load (used as a fallback when popup sign-in is blocked by
+  /// Safari's ITP or Brave Shields).
+  Future<void> _checkRedirectResult() async {
     try {
-      final user = await AuthService.instance.checkRedirectResult();
+      final credential = await AuthService.instance.getRedirectResult();
       if (!mounted) return;
-      if (user != null) {
-        // Success — _onCurrentUserChanged will also fire via
-        // authStateChanges, but handle it here too in case that races.
-        _handleSuccessfulGoogleSignIn();
+
+      if (credential != null) {
+        setState(() => _checkingRedirectResult = false);
+        await _showSuccessAndReturn('Signed in successfully!');
+        return;
       }
+
+      setState(() => _checkingRedirectResult = false);
     } on FirebaseAuthException catch (e) {
       if (!mounted) return;
-      setState(() => _error = e.message ?? 'Google sign-in failed.');
-    } catch (_) {
-      // No pending redirect / benign — nothing to show the user.
-    } finally {
-      if (mounted) setState(() => _googleLoading = false);
+      setState(() {
+        _checkingRedirectResult = false;
+        _error = e.message ?? 'Google sign-in failed.';
+      });
+    } catch (e) {
+      if (!mounted) return;
+      setState(() => _checkingRedirectResult = false);
     }
-  }
-
-  void _onCurrentUserChanged() {
-    if (AuthService.instance.currentUser.value != null) {
-      _handleSuccessfulGoogleSignIn();
-    }
-  }
-
-  void _handleSuccessfulGoogleSignIn() {
-    if (_handledGoogleRedirect || !mounted) return;
-    // Only auto-navigate here if we're actually the ones that were waiting
-    // on a Google sign-in (avoids interfering with the email/password flow,
-    // which already does its own snackbar + navigation in _submit()).
-    if (!_googleLoading) return;
-    _handledGoogleRedirect = true;
-
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: const Text('Signed in successfully!'),
-        backgroundColor: _kSurface,
-        behavior: SnackBarBehavior.floating,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-        duration: const Duration(seconds: 2),
-      ),
-    );
-
-    Future.delayed(const Duration(milliseconds: 700), () {
-      if (mounted) _returnAfterSignIn();
-    });
   }
 
   void _checkForPasswordResetLink() {
@@ -238,9 +204,6 @@ class _AuthScreenState extends State<AuthScreen> {
         _confirmNewPasswordController.clear();
         _mode = _AuthMode.signIn;
       });
-      // Clean the reset params out of the address bar.
-      // This is a fresh entry into /auth (not something we pushed onto an
-      // existing stack), so going to the plain sign-in screen is correct here.
       context.go('/auth');
     } on FirebaseAuthException catch (e) {
       if (!mounted) return;
@@ -259,15 +222,12 @@ class _AuthScreenState extends State<AuthScreen> {
     setState(() {
       _mode = mode;
       _error = null;
+      _showResendVerification = false;
     });
   }
 
   /// After a successful sign-in, return the user to wherever they came from
-  /// (About page, Orders page, checkout, etc.) instead of always dumping
-  /// them on the home route. `/auth` is reached via `context.push(...)` from
-  /// those screens, so there's normally something to pop back to. Only fall
-  /// back to home if /auth was opened directly (e.g. a bookmarked/deep link)
-  /// and there's nothing underneath it on the stack.
+  /// instead of always dumping them on the home route.
   void _returnAfterSignIn() {
     if (!mounted) return;
     if (context.canPop()) {
@@ -277,21 +237,37 @@ class _AuthScreenState extends State<AuthScreen> {
     }
   }
 
-  /// Kicks off the Google sign-in redirect. On web this navigates the whole
-  /// page away to accounts.google.com and back — there is nothing to await
-  /// here that resumes after success. Success/failure is instead handled by
-  /// _checkGoogleRedirectResult() / _onCurrentUserChanged() above, which run
-  /// again once this screen (re)mounts after the redirect returns.
+  /// Shows a brief success snackbar, then returns the user to where they
+  /// came from. Shared by Google popup, Google redirect, and email sign-in.
+  Future<void> _showSuccessAndReturn(String message) async {
+    if (!mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(message),
+        backgroundColor: _kSurface,
+        behavior: SnackBarBehavior.floating,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+        duration: const Duration(seconds: 2),
+      ),
+    );
+    await Future.delayed(const Duration(milliseconds: 700));
+    _returnAfterSignIn();
+  }
+
   Future<void> _signInWithGoogle() async {
     if (_googleLoading) return;
     setState(() {
       _googleLoading = true;
       _error = null;
+      _showResendVerification = false;
     });
     try {
       await AuthService.instance.signInWithGoogle();
-      // On web, execution never really reaches here — the page navigates
-      // away first. This path matters mainly for non-web platforms.
+      if (!mounted) return;
+      // If this fell back to signInWithRedirect(), the page is about to
+      // navigate away and nothing below runs — the result is picked up by
+      // _checkRedirectResult() on next load.
+      await _showSuccessAndReturn('Signed in successfully!');
     } on FirebaseAuthException catch (e) {
       if (mounted) {
         setState(() => _error = e.message ?? 'Google sign-in failed.');
@@ -338,6 +314,7 @@ class _AuthScreenState extends State<AuthScreen> {
     setState(() {
       _submitLoading = true;
       _error = null;
+      _showResendVerification = false;
     });
 
     try {
@@ -347,40 +324,234 @@ class _AuthScreenState extends State<AuthScreen> {
           password,
           rememberMe: _rememberMe,
         );
+        if (!mounted) return;
+        await _showSuccessAndReturn('Signed in successfully!');
       } else {
         await AuthService.instance.signUpWithEmailPassword(
           email,
           password,
           rememberMe: _rememberMe,
         );
+        if (!mounted) return;
+        // Don't treat this as a completed sign-up yet — the dialog only
+        // reports success (and navigates away) once the email is verified.
+        await _showVerifyEmailDialog(email);
       }
-      if (!mounted) return;
-
-      // Confirm success before navigating away so the user actually sees it.
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(
-            wasSignIn
-                ? 'Signed in successfully!'
-                : 'Account created successfully!',
-          ),
-          backgroundColor: _kSurface,
-          behavior: SnackBarBehavior.floating,
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-          duration: const Duration(seconds: 2),
-        ),
-      );
-
-      await Future.delayed(const Duration(milliseconds: 700));
-      _returnAfterSignIn();
     } on FirebaseAuthException catch (e) {
       if (!mounted) return;
-      setState(() => _error = _friendlyAuthError(e.code) ?? e.message);
+      setState(() {
+        _error = _friendlyAuthError(e.code) ?? e.message;
+        _showResendVerification = e.code == 'email-not-verified';
+      });
     } catch (e) {
       if (!mounted) return;
       setState(() => _error = 'Something went wrong. Please try again.');
     } finally {
       if (mounted) setState(() => _submitLoading = false);
+    }
+  }
+
+  /// Resends a verification email after a blocked sign-in attempt, using
+  /// whatever's currently in the email/password fields.
+  Future<void> _resendVerificationFromSignIn() async {
+    final email = _emailController.text.trim();
+    final password = _passwordController.text;
+    if (email.isEmpty || password.isEmpty || _resendingVerification) return;
+
+    setState(() => _resendingVerification = true);
+    try {
+      await AuthService.instance.resendVerificationEmail(email, password);
+      if (!mounted) return;
+      setState(() {
+        _error = 'Verification email resent. Check your inbox.';
+        _showResendVerification = false;
+      });
+    } on FirebaseAuthException catch (e) {
+      if (!mounted) return;
+      setState(() => _error = _friendlyAuthError(e.code) ?? e.message);
+    } catch (e) {
+      if (!mounted) return;
+      setState(() => _error = 'Could not resend verification email.');
+    } finally {
+      if (mounted) setState(() => _resendingVerification = false);
+    }
+  }
+
+  Future<void> _showVerifyEmailDialog(String email) async {
+    Timer? pollTimer;
+    bool checking = false;
+    bool resending = false;
+    bool closed = false;
+    String? dialogError;
+    String? dialogInfo;
+    bool verified = false;
+
+    void closeDialog(BuildContext dialogContext) {
+      if (closed) return;
+      closed = true;
+      pollTimer?.cancel();
+      Navigator.of(dialogContext).pop();
+    }
+
+    await showDialog<void>(
+      context: context,
+      barrierDismissible: false,
+      builder: (dialogContext) {
+        return StatefulBuilder(
+          builder: (dialogContext, setDialogState) {
+            Future<void> checkNow({bool reportIfNotVerified = false}) async {
+              if (checking || closed) return;
+              checking = true;
+              if (!closed) setDialogState(() => dialogError = null);
+
+              final isVerified = await AuthService.instance
+                  .reloadAndCheckEmailVerified();
+              if (!mounted || closed || !dialogContext.mounted) return;
+
+              if (isVerified) {
+                verified = true;
+
+                closeDialog(dialogContext);
+                return;
+              }
+
+              checking = false;
+              if (reportIfNotVerified) {
+                setDialogState(() {
+                  dialogError =
+                      "Still not verified. Click the link in the email, then try again.";
+                });
+              }
+            }
+
+            pollTimer ??= Timer.periodic(
+              const Duration(seconds: 3),
+              (_) => checkNow(),
+            );
+
+            return PopScope(
+              canPop: false,
+              child: AlertDialog(
+                backgroundColor: _kSurface,
+                insetPadding: const EdgeInsets.symmetric(horizontal: 40),
+                title: const Text(
+                  'Verify your email',
+                  style: TextStyle(color: Colors.white, fontSize: 17),
+                ),
+                content: SizedBox(
+                  width: 260,
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'We sent a verification link to $email. please check you inbox and click the link to verify.',
+                        style: TextStyle(
+                          color: Colors.white.withValues(alpha: 0.65),
+                          fontSize: 12.5,
+                        ),
+                      ),
+                      const SizedBox(height: 14),
+                      Row(
+                        children: [
+                          const SizedBox(
+                            width: 13,
+                            height: 13,
+                            child: CircularProgressIndicator(
+                              strokeWidth: 2,
+                              color: _kAmber,
+                            ),
+                          ),
+                          const SizedBox(width: 9),
+                          Text(
+                            'Waiting for verification…',
+                            style: TextStyle(
+                              color: Colors.white.withValues(alpha: 0.5),
+                              fontSize: 12,
+                            ),
+                          ),
+                        ],
+                      ),
+                      if (dialogError != null) ...[
+                        const SizedBox(height: 10),
+                        Text(
+                          dialogError!,
+                          style: const TextStyle(
+                            color: Colors.redAccent,
+                            fontSize: 12,
+                          ),
+                        ),
+                      ],
+                      if (dialogInfo != null) ...[
+                        const SizedBox(height: 10),
+                        Text(
+                          dialogInfo!,
+                          style: const TextStyle(color: _kAmber, fontSize: 12),
+                        ),
+                      ],
+                    ],
+                  ),
+                ),
+                actionsPadding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
+                actions: [
+                  TextButton(
+                    onPressed: resending
+                        ? null
+                        : () async {
+                            setDialogState(() {
+                              resending = true;
+                              dialogInfo = null;
+                              dialogError = null;
+                            });
+                            try {
+                              await AuthService.instance
+                                  .sendEmailVerification();
+                              if (closed) return;
+                              setDialogState(
+                                () => dialogInfo = 'Verification email resent.',
+                              );
+                            } catch (_) {
+                              if (closed) return;
+                              setDialogState(
+                                () => dialogError =
+                                    'Could not resend the email. Try again shortly.',
+                              );
+                            } finally {
+                              if (!closed) {
+                                setDialogState(() => resending = false);
+                              }
+                            }
+                          },
+                    child: Text(
+                      resending ? 'Sending…' : 'Resend email',
+                      style: const TextStyle(
+                        color: _kAmber,
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            );
+          },
+        );
+      },
+    );
+
+    pollTimer?.cancel();
+    if (!mounted) return;
+
+    if (verified) {
+      setState(() => _mode = _AuthMode.signIn);
+      await _showSuccessAndReturn("Account verified — you're in!");
+    } else {
+      // Not verified — sign-up is NOT considered complete for this user.
+      setState(() {
+        _mode = _AuthMode.signIn;
+        _error =
+            'Email not verified, so the account isn\'t active yet. '
+            'Sign in once you\'ve verified, or sign up again.';
+      });
     }
   }
 
@@ -399,6 +570,8 @@ class _AuthScreenState extends State<AuthScreen> {
         return 'That email address looks invalid.';
       case 'too-many-requests':
         return 'Too many attempts. Please wait a moment and try again.';
+      case 'email-not-verified':
+        return 'Please verify your email before signing in — check your inbox for the link.';
       default:
         return null;
     }
@@ -553,6 +726,13 @@ class _AuthScreenState extends State<AuthScreen> {
   Widget build(BuildContext context) {
     if (_isPasswordResetMode) {
       return _buildResetPasswordScreen();
+    }
+
+    if (_checkingRedirectResult) {
+      return const Scaffold(
+        backgroundColor: _kBg,
+        body: Center(child: CircularProgressIndicator(color: _kAmber)),
+      );
     }
 
     final isSignIn = _mode == _AuthMode.signIn;
@@ -797,6 +977,32 @@ class _AuthScreenState extends State<AuthScreen> {
                       fontSize: 13,
                     ),
                     textAlign: TextAlign.center,
+                  ),
+                ],
+
+                if (_showResendVerification) ...[
+                  const SizedBox(height: 8),
+                  Center(
+                    child: TextButton(
+                      onPressed: _resendingVerification
+                          ? null
+                          : _resendVerificationFromSignIn,
+                      style: TextButton.styleFrom(
+                        padding: EdgeInsets.zero,
+                        minimumSize: const Size(0, 0),
+                        tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                      ),
+                      child: Text(
+                        _resendingVerification
+                            ? 'Sending…'
+                            : 'Resend verification email',
+                        style: const TextStyle(
+                          color: _kAmber,
+                          fontSize: 12.5,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                    ),
                   ),
                 ],
 

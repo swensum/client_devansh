@@ -3,6 +3,7 @@ import 'package:devansh/models/blogmodel.dart';
 import 'package:devansh/widgets/blogwidgets.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'package:url_launcher/link.dart';
 
 import 'package:devansh/services/blogservice.dart';
 
@@ -119,40 +120,48 @@ class _SeeMoreButtonState extends State<_SeeMoreButton> {
       cursor: SystemMouseCursors.click,
       onEnter: (_) => setState(() => _isHovered = true),
       onExit: (_) => setState(() => _isHovered = false),
-      child: GestureDetector(
-        onTap: widget.onTap,
-        child: AnimatedContainer(
-          duration: const Duration(milliseconds: 200),
-          padding: const EdgeInsets.symmetric(horizontal: 26, vertical: 14),
-          decoration: BoxDecoration(
-            color: _isHovered ? kBlogAccent : Colors.transparent,
-            borderRadius: BorderRadius.circular(6),
-            border: Border.all(color: kBlogAccent, width: 1.5),
-          ),
-          child: Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Text(
-                "See More",
-                style: TextStyle(
-                  fontSize: 14,
-                  fontWeight: FontWeight.w600,
-                  color: _isHovered ? Colors.black : kBlogAccent,
-                ),
+      // Real <a href="/blog"> underneath the tappable widget — matches
+      // the pattern used for header links, product cards, etc. onTap
+      // still drives the actual SPA navigation via widget.onTap.
+      child: Link(
+        uri: Uri.parse('/blog'),
+        builder: (context, followLink) {
+          return GestureDetector(
+            onTap: widget.onTap,
+            child: AnimatedContainer(
+              duration: const Duration(milliseconds: 200),
+              padding: const EdgeInsets.symmetric(horizontal: 26, vertical: 14),
+              decoration: BoxDecoration(
+                color: _isHovered ? kBlogAccent : Colors.transparent,
+                borderRadius: BorderRadius.circular(6),
+                border: Border.all(color: kBlogAccent, width: 1.5),
               ),
-              const SizedBox(width: 8),
-              AnimatedRotation(
-                duration: const Duration(milliseconds: 200),
-                turns: _isHovered ? 0.125 : 0.0,
-                child: Icon(
-                  Icons.arrow_forward,
-                  size: 16,
-                  color: _isHovered ? Colors.black : kBlogAccent,
-                ),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Text(
+                    "See More",
+                    style: TextStyle(
+                      fontSize: 14,
+                      fontWeight: FontWeight.w600,
+                      color: _isHovered ? Colors.black : kBlogAccent,
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  AnimatedRotation(
+                    duration: const Duration(milliseconds: 200),
+                    turns: _isHovered ? 0.125 : 0.0,
+                    child: Icon(
+                      Icons.arrow_forward,
+                      size: 16,
+                      color: _isHovered ? Colors.black : kBlogAccent,
+                    ),
+                  ),
+                ],
               ),
-            ],
-          ),
-        ),
+            ),
+          );
+        },
       ),
     );
   }

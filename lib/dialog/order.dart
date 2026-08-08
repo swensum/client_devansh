@@ -1,7 +1,7 @@
 import 'package:devansh/services/orderservice.dart';
-import 'package:flutter/material.dart';
+import 'package:flutter/material.dart' hide MaterialType;
 
-import 'package:devansh/models/catalogmodels.dart' hide MaterialType;
+import 'package:devansh/models/catalogmodels.dart';
 import 'package:go_router/go_router.dart';
 
 const _kBg = Color(0xFF0A1929);
@@ -10,6 +10,7 @@ const _kSurface = Color(0xFF12233A);
 const _kSurfaceRaised = Color(0xFF16304F);
 const _kAmber = Color.fromRGBO(245, 171, 30, 1);
 const _kGreen = Color(0xFF4CAF50);
+const _kRed = Color(0xFFEF5350);
 const _kBorder = Colors.white24;
 const _kBorderSubtle = Color.fromRGBO(245, 171, 30, 0.18);
 
@@ -73,6 +74,11 @@ class _OrderDialogState extends State<_OrderDialog> {
   int _quantity = 1;
   bool _submitting = false;
 
+  // Per-model quantity for products that are sold as multiple variants
+  // (e.g. kitchen baskets with different sizes). Keyed by variant.model.
+  // Empty / unused for ordinary single-SKU products.
+  Map<String, int> _variantQuantities = {};
+
   // The full pool of products this dialog knows about — the product it
   // was originally opened with, plus whatever related products were
   // passed in. Whichever one is NOT currently shown as the main image
@@ -84,6 +90,7 @@ class _OrderDialogState extends State<_OrderDialog> {
   void initState() {
     super.initState();
     _product = widget.product;
+    _resetVariantQuantities();
 
     final seenIds = <String>{};
     _allKnownProducts = [widget.product, ...widget.relatedProducts]
@@ -91,27 +98,77 @@ class _OrderDialogState extends State<_OrderDialog> {
         .toList();
   }
 
+  bool get _hasVariants => _product.hasVariants;
+
+  void _resetVariantQuantities() {
+    _variantQuantities = {for (final v in _product.variants) v.model: 0};
+  }
+
   void _incrementQty() => setState(() => _quantity++);
   void _decrementQty() {
     if (_quantity > 1) setState(() => _quantity--);
+  }
+
+  void _incrementVariantQty(String model) {
+    setState(() {
+      _variantQuantities[model] = (_variantQuantities[model] ?? 0) + 1;
+    });
+  }
+
+  void _decrementVariantQty(String model) {
+    final current = _variantQuantities[model] ?? 0;
+    if (current <= 0) return;
+    setState(() => _variantQuantities[model] = current - 1);
   }
 
   void _switchProduct(Product newProduct) {
     setState(() {
       _product = newProduct;
       _quantity = 1;
+      _resetVariantQuantities();
     });
   }
 
+  bool get _canSubmit {
+    if (!_hasVariants) return true;
+    return _variantQuantities.values.any((q) => q > 0);
+  }
+
   Future<void> _submit() async {
+    if (!_canSubmit) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Please choose a quantity for at least one model.'),
+          backgroundColor: _kSurfaceRaised,
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
+      return;
+    }
+
     setState(() => _submitting = true);
 
-    // Queues this item into the shared pending-orders cart — shown as a
+    // Queues item(s) into the shared pending-orders cart — shown as a
     // count badge on the header's order icon, and reviewed/finalized on
     // the Orders page (where user details are collected and the real
     // Firestore write happens).
     await Future.delayed(const Duration(milliseconds: 400));
-    OrderCartService.instance.addItem(_product, _quantity);
+
+    if (_hasVariants) {
+      for (final entry in _variantQuantities.entries) {
+        if (entry.value <= 0) continue;
+        final variant = _product.variants.firstWhere(
+          (v) => v.model == entry.key,
+        );
+        OrderCartService.instance.addItem(
+          _product,
+          entry.value,
+          variant: variant,
+        );
+      }
+    } else {
+      OrderCartService.instance.addItem(_product, _quantity);
+    }
 
     if (!mounted) return;
     setState(() => _submitting = false);
@@ -142,7 +199,9 @@ class _OrderDialogState extends State<_OrderDialog> {
       'Brand': isOriginalProduct ? widget.company?.name : null,
       'Finish': product.finish,
       'Material': isOriginalProduct ? widget.material?.name : null,
-      'Availability': product.availability,
+      // Skip the generic Availability row when the product has per-model
+      // availability instead — each model shows its own status below.
+      'Availability': product.hasVariants ? null : product.availability,
     }..removeWhere((key, value) => value == null || value.trim().isEmpty);
 
     final otherRelated = _allKnownProducts
@@ -248,6 +307,9 @@ class _OrderDialogState extends State<_OrderDialog> {
                         quantity: _quantity,
                         onIncrement: _incrementQty,
                         onDecrement: _decrementQty,
+                        variantQuantities: _variantQuantities,
+                        onIncrementVariant: _incrementVariantQty,
+                        onDecrementVariant: _decrementVariantQty,
                       );
 
                       if (isNarrow) {
@@ -289,7 +351,7 @@ class _OrderDialogState extends State<_OrderDialog> {
                 child: SizedBox(
                   width: double.infinity,
                   child: ElevatedButton(
-                    onPressed: _submitting ? null : _submit,
+                    onPressed: (_submitting || !_canSubmit) ? null : _submit,
                     style: ElevatedButton.styleFrom(
                       backgroundColor: _kAmber,
                       foregroundColor: Colors.black,
@@ -326,9 +388,6 @@ class _OrderDialogState extends State<_OrderDialog> {
     );
   }
 }
-
-/// Small extension so the amber glow shadow above reads as one clean
-/// expression instead of a nested function call.
 
 class _CloseButton extends StatefulWidget {
   final VoidCallback onTap;
@@ -530,14 +589,18 @@ class _RelatedThumbnailState extends State<_RelatedThumbnail> {
   }
 }
 
-/// Right pane — name, description, the same spec grid style as the
-/// product detail page (no price), and a quantity stepper for the order.
+/// Right pane — name, description, spec grid, and either a plain
+/// quantity stepper (ordinary products) or a per-model selector
+/// (products sold as multiple variants, e.g. kitchen baskets).
 class _ProductDetailsPane extends StatelessWidget {
   final Product product;
   final Map<String, String?> specs;
   final int quantity;
   final VoidCallback onIncrement;
   final VoidCallback onDecrement;
+  final Map<String, int> variantQuantities;
+  final ValueChanged<String> onIncrementVariant;
+  final ValueChanged<String> onDecrementVariant;
 
   const _ProductDetailsPane({
     required this.product,
@@ -545,10 +608,15 @@ class _ProductDetailsPane extends StatelessWidget {
     required this.quantity,
     required this.onIncrement,
     required this.onDecrement,
+    required this.variantQuantities,
+    required this.onIncrementVariant,
+    required this.onDecrementVariant,
   });
 
   @override
   Widget build(BuildContext context) {
+    final hasVariants = product.hasVariants;
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -600,35 +668,226 @@ class _ProductDetailsPane extends StatelessWidget {
         ],
 
         const SizedBox(height: 22),
-        Text(
-          'Quantity / Pieces',
-          style: TextStyle(
-            color: Colors.white.withValues(alpha: 0.75),
-            fontSize: 14.5,
-            fontWeight: FontWeight.w600,
+
+        if (hasVariants)
+          _VariantSelector(
+            variants: product.variants,
+            quantities: variantQuantities,
+            onIncrement: onIncrementVariant,
+            onDecrement: onDecrementVariant,
+          )
+        else ...[
+          Text(
+            'Quantity / Pieces',
+            style: TextStyle(
+              color: Colors.white.withValues(alpha: 0.75),
+              fontSize: 14.5,
+              fontWeight: FontWeight.w600,
+            ),
           ),
-        ),
-        const SizedBox(height: 10),
+          const SizedBox(height: 10),
+          Row(
+            children: [
+              _QtyButton(icon: Icons.remove, onTap: onDecrement),
+              Container(
+                width: 54,
+                alignment: Alignment.center,
+                padding: const EdgeInsets.symmetric(vertical: 10),
+                child: Text(
+                  '$quantity',
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontSize: 17,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ),
+              _QtyButton(icon: Icons.add, onTap: onIncrement),
+            ],
+          ),
+        ],
+      ],
+    );
+  }
+}
+
+/// Lets the customer pick a quantity per model — used for products like
+/// kitchen baskets that come in several sizes, each with its own stock
+/// status. Only models with quantity > 0 get added to the cart.
+class _VariantSelector extends StatelessWidget {
+  final List<ProductVariant> variants;
+  final Map<String, int> quantities;
+  final ValueChanged<String> onIncrement;
+  final ValueChanged<String> onDecrement;
+
+  const _VariantSelector({
+    required this.variants,
+    required this.quantities,
+    required this.onIncrement,
+    required this.onDecrement,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final totalSelected = quantities.values.fold<int>(0, (a, b) => a + b);
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
         Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
-            _QtyButton(icon: Icons.remove, onTap: onDecrement),
-            Container(
-              width: 54,
-              alignment: Alignment.center,
-              padding: const EdgeInsets.symmetric(vertical: 10),
-              child: Text(
-                '$quantity',
+            Text(
+              'Select Models & Quantity',
+              style: TextStyle(
+                color: Colors.white.withValues(alpha: 0.75),
+                fontSize: 14.5,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+            if (totalSelected > 0)
+              Text(
+                '$totalSelected selected',
                 style: const TextStyle(
-                  color: Colors.white,
-                  fontSize: 17,
+                  color: _kAmber,
+                  fontSize: 13,
                   fontWeight: FontWeight.w600,
                 ),
               ),
-            ),
-            _QtyButton(icon: Icons.add, onTap: onIncrement),
           ],
         ),
+        const SizedBox(height: 10),
+        Container(
+          decoration: BoxDecoration(
+            color: _kSurface.withValues(alpha: 0.5),
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(color: _kBorderSubtle),
+          ),
+          child: Column(
+            children: [
+              for (int i = 0; i < variants.length; i++) ...[
+                _VariantRow(
+                  variant: variants[i],
+                  quantity: quantities[variants[i].model] ?? 0,
+                  onIncrement: () => onIncrement(variants[i].model),
+                  onDecrement: () => onDecrement(variants[i].model),
+                ),
+                if (i != variants.length - 1)
+                  Divider(
+                    height: 1,
+                    thickness: 1,
+                    color: Colors.white.withValues(alpha: 0.06),
+                  ),
+              ],
+            ],
+          ),
+        ),
       ],
+    );
+  }
+}
+
+class _VariantRow extends StatelessWidget {
+  final ProductVariant variant;
+  final int quantity;
+  final VoidCallback onIncrement;
+  final VoidCallback onDecrement;
+
+  const _VariantRow({
+    required this.variant,
+    required this.quantity,
+    required this.onIncrement,
+    required this.onDecrement,
+  });
+
+  bool get _isInStock {
+    final v = (variant.availability ?? '').toLowerCase();
+    return v.contains('stock') && !v.contains('out');
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final dims = [
+      if ((variant.width ?? '').isNotEmpty) 'W ${variant.width}',
+      if ((variant.depth ?? '').isNotEmpty) 'D ${variant.depth}',
+      if ((variant.height ?? '').isNotEmpty) 'H ${variant.height}',
+    ].join('  ·  ');
+
+    final selected = quantity > 0;
+
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+      child: Row(
+        children: [
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: [
+                    Text(
+                      variant.model,
+                      style: TextStyle(
+                        color: selected ? _kAmber : Colors.white,
+                        fontSize: 15,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                    if ((variant.availability ?? '').isNotEmpty) ...[
+                      const SizedBox(width: 8),
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 6,
+                          vertical: 2,
+                        ),
+                        decoration: BoxDecoration(
+                          color: (_isInStock ? _kGreen : _kRed).withValues(
+                            alpha: 0.12,
+                          ),
+                          borderRadius: BorderRadius.circular(4),
+                        ),
+                        child: Text(
+                          variant.availability!,
+                          style: TextStyle(
+                            color: _isInStock ? _kGreen : _kRed,
+                            fontSize: 10.5,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ],
+                ),
+                if (dims.isNotEmpty) ...[
+                  const SizedBox(height: 3),
+                  Text(
+                    '$dims mm',
+                    style: TextStyle(
+                      color: Colors.grey.shade400,
+                      fontSize: 12.5,
+                    ),
+                  ),
+                ],
+              ],
+            ),
+          ),
+          const SizedBox(width: 10),
+          _QtyButton(icon: Icons.remove, onTap: onDecrement),
+          Container(
+            width: 32,
+            alignment: Alignment.center,
+            child: Text(
+              '$quantity',
+              style: TextStyle(
+                color: selected ? Colors.white : Colors.white38,
+                fontSize: 15,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+          ),
+          _QtyButton(icon: Icons.add, onTap: onIncrement),
+        ],
+      ),
     );
   }
 }
@@ -655,8 +914,8 @@ class _QtyButtonState extends State<_QtyButton> {
         onTap: widget.onTap,
         child: AnimatedContainer(
           duration: const Duration(milliseconds: 150),
-          width: 36,
-          height: 36,
+          width: 32,
+          height: 32,
           decoration: BoxDecoration(
             color: _isHovered ? _kSurfaceRaised : _kSurface,
             borderRadius: BorderRadius.circular(8),
@@ -667,7 +926,7 @@ class _QtyButtonState extends State<_QtyButton> {
           child: Icon(
             widget.icon,
             color: _isHovered ? _kAmber : Colors.white70,
-            size: 18,
+            size: 16,
           ),
         ),
       ),

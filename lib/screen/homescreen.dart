@@ -14,6 +14,7 @@ import 'package:flutter/material.dart';
 import 'dart:async';
 
 import 'package:go_router/go_router.dart';
+import 'package:url_launcher/link.dart';
 
 class HomePage extends StatefulWidget {
   const HomePage({super.key});
@@ -475,55 +476,58 @@ class _HeroSlideViewState extends State<_HeroSlideView> {
                         MouseRegion(
                           onEnter: (_) => setState(() => _isHovered = true),
                           onExit: (_) => setState(() => _isHovered = false),
-                          child: AnimatedScale(
-                            scale: _isHovered ? 1.005 : 1.0,
-                            duration: const Duration(milliseconds: 200),
-                            child: ElevatedButton(
-                              onPressed: () {
-                                context.push('/products');
-                              },
-                              style: ElevatedButton.styleFrom(
-                                backgroundColor: _isHovered
-                                    ? const Color.fromRGBO(255, 181, 40, 1)
-                                    : const Color.fromRGBO(245, 171, 30, 1),
-                                foregroundColor: Colors.black,
-                                padding: EdgeInsets.symmetric(
-                                  horizontal: r.btnPaddingH,
-                                  vertical: r.btnPaddingV,
-                                ),
-                                shape: RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(6),
-                                ),
-                                elevation: _isHovered ? 8 : 2,
-                              ),
-                              child: FittedBox(
-                                fit: BoxFit.scaleDown,
-                                child: Row(
-                                  mainAxisSize: MainAxisSize.min,
-                                  children: [
-                                    Text(
-                                      "Explore Collection",
-                                      style: TextStyle(
-                                        fontSize: r.btnFontSize,
-                                        fontWeight: FontWeight.w600,
-                                      ),
+                          child: Link(
+                            uri: Uri.parse('/products'),
+                            builder: (context, followLink) {
+                              return AnimatedScale(
+                                scale: _isHovered ? 1.005 : 1.0,
+                                duration: const Duration(milliseconds: 200),
+                                child: ElevatedButton(
+                                  onPressed: () => context.push('/products'),
+                                  style: ElevatedButton.styleFrom(
+                                    backgroundColor: _isHovered
+                                        ? const Color.fromRGBO(255, 181, 40, 1)
+                                        : const Color.fromRGBO(245, 171, 30, 1),
+                                    foregroundColor: Colors.black,
+                                    padding: EdgeInsets.symmetric(
+                                      horizontal: r.btnPaddingH,
+                                      vertical: r.btnPaddingV,
                                     ),
-                                    SizedBox(width: r.btnFontSize * 0.6),
-                                    AnimatedRotation(
-                                      duration: const Duration(
-                                        milliseconds: 300,
-                                      ),
-                                      turns: _isHovered ? 0.125 : 0.0,
-                                      child: Icon(
-                                        Icons.arrow_forward,
-                                        size: r.iconSize,
-                                        color: Colors.black,
-                                      ),
+                                    shape: RoundedRectangleBorder(
+                                      borderRadius: BorderRadius.circular(6),
                                     ),
-                                  ],
+                                    elevation: _isHovered ? 8 : 2,
+                                  ),
+                                  child: FittedBox(
+                                    fit: BoxFit.scaleDown,
+                                    child: Row(
+                                      mainAxisSize: MainAxisSize.min,
+                                      children: [
+                                        Text(
+                                          "Explore Collection",
+                                          style: TextStyle(
+                                            fontSize: r.btnFontSize,
+                                            fontWeight: FontWeight.w600,
+                                          ),
+                                        ),
+                                        SizedBox(width: r.btnFontSize * 0.6),
+                                        AnimatedRotation(
+                                          duration: const Duration(
+                                            milliseconds: 300,
+                                          ),
+                                          turns: _isHovered ? 0.125 : 0.0,
+                                          child: Icon(
+                                            Icons.arrow_forward,
+                                            size: r.iconSize,
+                                            color: Colors.black,
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
                                 ),
-                              ),
-                            ),
+                              );
+                            },
                           ),
                         ),
                       ],

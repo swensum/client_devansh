@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'package:devansh/dialog/order.dart';
 import 'package:devansh/homecomponents/footer.dart';
 import 'package:devansh/homecomponents/header.dart';
 import 'package:devansh/homecomponents/topbar.dart';
@@ -8,21 +9,26 @@ import 'package:devansh/data/catalog.dart';
 import 'package:devansh/models/catalogmodels.dart';
 import 'package:devansh/services/catalogservice.dart';
 import 'package:devansh/widgets/app_page_scaffold_widgets.dart';
+
 import 'package:flutter/material.dart' hide MaterialType;
+import 'package:flutter/services.dart' show Clipboard, ClipboardData;
 
 import 'package:flutter_markdown_plus/flutter_markdown_plus.dart';
 import 'package:go_router/go_router.dart';
+import 'package:url_launcher/link.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 const _kAmber = Color.fromRGBO(245, 171, 30, 1);
 const _kGreen = Color(0xFF4CAF50);
+const _kWhatsAppGreen = Color(0xFF25D366);
 
 const double _kImageHeight = 420;
 const double _kImageHeightNarrow = 300;
 const double _kBannerHeight = 100;
 
-// Below this width, the image and details stack vertically instead of
-// sitting side-by-side in a Row.
 const double _kDetailStackBreakpoint = 800;
+
+const String _kAdminWhatsAppNumber = '9779857033614';
 
 class ProductDetailPage extends StatefulWidget {
   final Product product;
@@ -36,12 +42,70 @@ class ProductDetailPage extends StatefulWidget {
 class _ProductDetailPageState extends State<ProductDetailPage> {
   final CatalogService _catalogService = CatalogService();
 
+  Future<void> _inquireOnWhatsApp(
+    Product product,
+    Category category,
+    Company? company,
+    Map<String, String?> specs,
+  ) async {
+    final buffer = StringBuffer()
+      ..writeln("Hi, I'd like to ask about this product:")
+      ..writeln()
+      ..writeln(product.name)
+      ..writeln('Category: ${category.name}');
+
+    for (final entry in specs.entries) {
+      if (entry.value == null || entry.value!.trim().isEmpty) continue;
+      buffer.writeln('${entry.key}: ${entry.value}');
+    }
+
+    if (product.hasVariants) {
+      final models = product.variants.map((v) => v.model).join(', ');
+      buffer.writeln('Available Models: $models');
+    }
+
+    if (product.imageUrl.isNotEmpty) {
+      buffer.writeln();
+      buffer.writeln(product.imageUrl);
+    }
+
+    final message = buffer.toString();
+
+    await Clipboard.setData(ClipboardData(text: message));
+
+    final whatsappUri = Uri.parse(
+      'https://wa.me/$_kAdminWhatsAppNumber?text=${Uri.encodeComponent(message)}',
+    );
+
+    var launched = false;
+    try {
+      launched = await launchUrl(
+        whatsappUri,
+        mode: LaunchMode.externalApplication,
+        webOnlyWindowName: '_blank',
+      );
+    } catch (_) {
+      launched = false;
+    }
+
+    if (!mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(
+          launched
+              ? "Product details copied — they're pre-filled in WhatsApp."
+              : "Couldn't open WhatsApp automatically. Product details were copied to your clipboard instead.",
+        ),
+        backgroundColor: const Color(0xFF1D1D1D),
+        behavior: SnackBarBehavior.floating,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final product = widget.product;
-
-    // Live lookup data — companies, materials, categories, and all
-    // products (needed to find related items in the same category).
     return StreamBuilder<List<Company>>(
       stream: _catalogService.watchCompanies(),
       builder: (context, companySnap) {
@@ -195,14 +259,6 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
                                           fontWeight: FontWeight.w600,
                                         ),
                                       ),
-
-                                      // ─────────────────────────────────────
-                                      // Description — rendered as Markdown so
-                                      // headings ("## Product Highlights"),
-                                      // bullet lists ("- item"), and tables
-                                      // ("| Spec | Details |") all display
-                                      // properly instead of as plain text.
-                                      // ─────────────────────────────────────
                                       if (product.description != null &&
                                           product.description!
                                               .trim()
@@ -316,28 +372,20 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
                                         ),
                                       ),
                                       const SizedBox(height: 30),
-                                      SizedBox(
-                                        width: double.infinity,
-                                        child: ElevatedButton(
-                                          onPressed: () {},
-                                          style: ElevatedButton.styleFrom(
-                                            backgroundColor: _kAmber,
-                                            foregroundColor: Colors.black,
-                                            minimumSize: const Size(
-                                              double.infinity,
-                                              46,
-                                            ),
-                                            shape: RoundedRectangleBorder(
-                                              borderRadius:
-                                                  BorderRadius.circular(8),
-                                            ),
-                                          ),
-                                          child: const Text(
-                                            'Place Order',
-                                            style: TextStyle(
-                                              fontWeight: FontWeight.w600,
-                                            ),
-                                          ),
+                                      _ActionButtons(
+                                        isNarrow: isNarrow,
+                                        onPlaceOrder: () => handleOrderTap(
+                                          context,
+                                          product,
+                                          company: company,
+                                          material: material,
+                                          relatedProducts: relatedProducts,
+                                        ),
+                                        onInquire: () => _inquireOnWhatsApp(
+                                          product,
+                                          category,
+                                          company,
+                                          specs,
                                         ),
                                       ),
                                     ],
@@ -393,6 +441,71 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
           },
         );
       },
+    );
+  }
+}
+
+class _ActionButtons extends StatelessWidget {
+  final bool isNarrow;
+  final VoidCallback onPlaceOrder;
+  final VoidCallback onInquire;
+
+  const _ActionButtons({
+    required this.isNarrow,
+    required this.onPlaceOrder,
+    required this.onInquire,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final placeOrderButton = ElevatedButton.icon(
+      onPressed: onPlaceOrder,
+      icon: const Icon(Icons.shopping_bag_outlined, size: 18),
+      label: const Text(
+        'Place Order',
+        style: TextStyle(fontWeight: FontWeight.w600),
+      ),
+      style: ElevatedButton.styleFrom(
+        backgroundColor: _kAmber,
+        foregroundColor: Colors.black,
+        minimumSize: const Size(double.infinity, 46),
+        elevation: 0,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+      ),
+    );
+
+    final inquireButton = OutlinedButton.icon(
+      onPressed: onInquire,
+      icon: const Icon(
+        Icons.chat_bubble_outline,
+        size: 18,
+        color: _kWhatsAppGreen,
+      ),
+      label: const Text(
+        'Inquire on WhatsApp',
+        style: TextStyle(fontWeight: FontWeight.w600),
+      ),
+      style: OutlinedButton.styleFrom(
+        foregroundColor: Colors.white,
+        minimumSize: const Size(double.infinity, 46),
+        side: BorderSide(color: _kWhatsAppGreen.withValues(alpha: 0.6)),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+      ),
+    );
+
+    if (isNarrow) {
+      return Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [placeOrderButton, const SizedBox(height: 12), inquireButton],
+      );
+    }
+
+    return Row(
+      children: [
+        Expanded(child: placeOrderButton),
+        const SizedBox(width: 12),
+        Expanded(child: inquireButton),
+      ],
     );
   }
 }
@@ -459,8 +572,6 @@ class _RelatedProductsSectionState extends State<_RelatedProductsSection> {
   int _currentIndex = 0;
   int _virtualIndex = 0;
 
-  // Responsive — how many related-product cards are visible at once.
-  // Updated in build() based on available width.
   int _itemsPerPage = 4;
 
   int get _itemCount => widget.products.length;
@@ -532,9 +643,6 @@ class _RelatedProductsSectionState extends State<_RelatedProductsSection> {
     _startAutoSlide();
   }
 
-  // Swaps the PageController for a new viewportFraction after the current
-  // frame, so a resize (e.g. browser window) updates how many cards are
-  // shown without rebuilding mid-layout.
   void _scheduleItemsPerPageChange(int newItemsPerPage) {
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!mounted) return;
@@ -581,8 +689,6 @@ class _RelatedProductsSectionState extends State<_RelatedProductsSection> {
                         constraints.maxWidth,
                       );
                       if (desiredItemsPerPage != _itemsPerPage) {
-                        // Use the current controller for this frame; the
-                        // rebuild with the new controller happens right after.
                         _scheduleItemsPerPageChange(desiredItemsPerPage);
                       }
 
@@ -720,181 +826,193 @@ class _RelatedProductCardState extends State<_RelatedProductCard>
     final product = widget.product;
     final company = Catalog.companyFor(product, widget.companies);
 
+    final route = '/product/${product.id}';
+
     return MouseRegion(
       cursor: SystemMouseCursors.click,
       onEnter: (_) => _setHovered(true),
       onExit: (_) => _setHovered(false),
-      child: GestureDetector(
-        onTap: () {
-          context.push('/product/${product.id}', extra: product);
-        },
-        child: RepaintBoundary(
-          child: ScaleTransition(
-            scale: _scaleAnimation,
-            child: Container(
-              decoration: BoxDecoration(
-                color: Colors.white.withValues(alpha: 0.08),
-                borderRadius: BorderRadius.circular(_cardRadius),
-                border: Border.all(
-                  color: _isHovered
-                      ? _kAmber.withValues(alpha: 0.6)
-                      : Colors.white.withValues(alpha: 0.12),
-                  width: 1.5,
-                ),
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.black.withValues(
-                      alpha: _isHovered ? 0.15 : 0.06,
+      child: Link(
+        uri: Uri.parse(route),
+        builder: (context, followLink) {
+          return GestureDetector(
+            onTap: () {
+              context.push(route, extra: product);
+            },
+            child: RepaintBoundary(
+              child: ScaleTransition(
+                scale: _scaleAnimation,
+                child: Container(
+                  decoration: BoxDecoration(
+                    color: Colors.white.withValues(alpha: 0.08),
+                    borderRadius: BorderRadius.circular(_cardRadius),
+                    border: Border.all(
+                      color: _isHovered
+                          ? _kAmber.withValues(alpha: 0.6)
+                          : Colors.white.withValues(alpha: 0.12),
+                      width: 1.5,
                     ),
-                    blurRadius: _isHovered ? 20 : 8,
-                    offset: Offset(0, _isHovered ? 8 : 4),
-                    spreadRadius: _isHovered ? 2 : 0,
-                  ),
-                ],
-              ),
-              clipBehavior: Clip.antiAlias,
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Expanded(
-                    child: ClipRRect(
-                      borderRadius: const BorderRadius.only(
-                        topLeft: Radius.circular(_cardRadius),
-                        topRight: Radius.circular(_cardRadius),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black.withValues(
+                          alpha: _isHovered ? 0.15 : 0.06,
+                        ),
+                        blurRadius: _isHovered ? 20 : 8,
+                        offset: Offset(0, _isHovered ? 8 : 4),
+                        spreadRadius: _isHovered ? 2 : 0,
                       ),
-                      child: Container(
-                        width: double.infinity,
-                        color: Colors.grey.shade900,
-                        child: Stack(
-                          fit: StackFit.expand,
-                          children: [
-                            product.imageUrl.isNotEmpty
-                                ? Image.network(
-                                    product.imageUrl,
-                                    fit: BoxFit.cover,
-                                    loadingBuilder: (context, child, progress) {
-                                      if (progress == null) return child;
-                                      return const Center(
-                                        child: CircularProgressIndicator(
-                                          color: _kAmber,
-                                          strokeWidth: 2,
-                                        ),
-                                      );
-                                    },
-                                    errorBuilder:
-                                        (
-                                          context,
-                                          error,
-                                          stackTrace,
-                                        ) => Container(
-                                          color: Colors.grey.shade800,
-                                          child: const Center(
-                                            child: Icon(
-                                              Icons
-                                                  .image_not_supported_outlined,
-                                              color: Colors.white38,
+                    ],
+                  ),
+                  clipBehavior: Clip.antiAlias,
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Expanded(
+                        child: ClipRRect(
+                          borderRadius: const BorderRadius.only(
+                            topLeft: Radius.circular(_cardRadius),
+                            topRight: Radius.circular(_cardRadius),
+                          ),
+                          child: Container(
+                            width: double.infinity,
+                            color: Colors.grey.shade900,
+                            child: Stack(
+                              fit: StackFit.expand,
+                              children: [
+                                product.imageUrl.isNotEmpty
+                                    ? Image.network(
+                                        product.imageUrl,
+                                        fit: BoxFit.cover,
+                                        loadingBuilder:
+                                            (context, child, progress) {
+                                              if (progress == null) {
+                                                return child;
+                                              }
+                                              return const Center(
+                                                child:
+                                                    CircularProgressIndicator(
+                                                      color: _kAmber,
+                                                      strokeWidth: 2,
+                                                    ),
+                                              );
+                                            },
+                                        errorBuilder:
+                                            (
+                                              context,
+                                              error,
+                                              stackTrace,
+                                            ) => Container(
+                                              color: Colors.grey.shade800,
+                                              child: const Center(
+                                                child: Icon(
+                                                  Icons
+                                                      .image_not_supported_outlined,
+                                                  color: Colors.white38,
+                                                ),
+                                              ),
                                             ),
+                                      )
+                                    : Container(
+                                        color: Colors.grey.shade800,
+                                        child: const Center(
+                                          child: Icon(
+                                            Icons.image_not_supported_outlined,
+                                            color: Colors.white38,
                                           ),
                                         ),
-                                  )
-                                : Container(
-                                    color: Colors.grey.shade800,
-                                    child: const Center(
-                                      child: Icon(
-                                        Icons.image_not_supported_outlined,
-                                        color: Colors.white38,
+                                      ),
+                                AnimatedOpacity(
+                                  duration: const Duration(milliseconds: 200),
+                                  opacity: _isHovered ? 0.3 : 0.0,
+                                  child: Container(
+                                    decoration: BoxDecoration(
+                                      gradient: LinearGradient(
+                                        begin: Alignment.topCenter,
+                                        end: Alignment.bottomCenter,
+                                        colors: [
+                                          Colors.transparent,
+                                          Colors.black.withValues(alpha: 0.7),
+                                        ],
                                       ),
                                     ),
                                   ),
-                            AnimatedOpacity(
-                              duration: const Duration(milliseconds: 200),
-                              opacity: _isHovered ? 0.3 : 0.0,
-                              child: Container(
-                                decoration: BoxDecoration(
-                                  gradient: LinearGradient(
-                                    begin: Alignment.topCenter,
-                                    end: Alignment.bottomCenter,
-                                    colors: [
-                                      Colors.transparent,
-                                      Colors.black.withValues(alpha: 0.7),
-                                    ],
+                                ),
+                                Positioned(
+                                  top: 10,
+                                  right: 10,
+                                  child: AnimatedOpacity(
+                                    duration: const Duration(milliseconds: 200),
+                                    opacity: _isHovered ? 1.0 : 0.0,
+                                    child: _buildQuickActionButton(
+                                      Icons.favorite_border,
+                                      Colors.white,
+                                    ),
                                   ),
                                 ),
+                              ],
+                            ),
+                          ),
+                        ),
+                      ),
+                      Padding(
+                        padding: const EdgeInsets.all(10),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              product.name,
+                              maxLines: 2,
+                              overflow: TextOverflow.ellipsis,
+                              style: const TextStyle(
+                                color: Colors.white,
+                                fontWeight: FontWeight.w600,
+                                fontSize: 12.5,
                               ),
                             ),
-                            Positioned(
-                              top: 10,
-                              right: 10,
-                              child: AnimatedOpacity(
-                                duration: const Duration(milliseconds: 200),
-                                opacity: _isHovered ? 1.0 : 0.0,
-                                child: _buildQuickActionButton(
-                                  Icons.favorite_border,
-                                  Colors.white,
+                            const SizedBox(height: 4),
+                            if (company != null)
+                              Text(
+                                company.name,
+                                style: TextStyle(
+                                  color: Colors.white.withValues(alpha: 0.55),
+                                  fontSize: 11,
                                 ),
                               ),
+                            const SizedBox(height: 6),
+                            Row(
+                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                              children: [
+                                Text(
+                                  '\$${product.price.toStringAsFixed(2)}',
+                                  style: const TextStyle(
+                                    color: _kAmber,
+                                    fontWeight: FontWeight.bold,
+                                    fontSize: 13.5,
+                                  ),
+                                ),
+
+                                AnimatedOpacity(
+                                  duration: const Duration(milliseconds: 200),
+                                  opacity: _isHovered ? 1.0 : 0.0,
+                                  child: _buildQuickActionButton(
+                                    Icons.shopping_bag_outlined,
+                                    Colors.black,
+                                    backgroundColor: _kAmber,
+                                    borderColor: Colors.transparent,
+                                  ),
+                                ),
+                              ],
                             ),
                           ],
                         ),
                       ),
-                    ),
+                    ],
                   ),
-                  Padding(
-                    padding: const EdgeInsets.all(10),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          product.name,
-                          maxLines: 2,
-                          overflow: TextOverflow.ellipsis,
-                          style: const TextStyle(
-                            color: Colors.white,
-                            fontWeight: FontWeight.w600,
-                            fontSize: 12.5,
-                          ),
-                        ),
-                        const SizedBox(height: 4),
-                        if (company != null)
-                          Text(
-                            company.name,
-                            style: TextStyle(
-                              color: Colors.white.withValues(alpha: 0.55),
-                              fontSize: 11,
-                            ),
-                          ),
-                        const SizedBox(height: 6),
-                        Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                          children: [
-                            Text(
-                              '\$${product.price.toStringAsFixed(2)}',
-                              style: const TextStyle(
-                                color: _kAmber,
-                                fontWeight: FontWeight.bold,
-                                fontSize: 13.5,
-                              ),
-                            ),
-                            AnimatedOpacity(
-                              duration: const Duration(milliseconds: 200),
-                              opacity: _isHovered ? 1.0 : 0.0,
-                              child: _buildQuickActionButton(
-                                Icons.shopping_bag_outlined,
-                                Colors.black,
-                                backgroundColor: _kAmber,
-                                borderColor: Colors.transparent,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ],
-                    ),
-                  ),
-                ],
+                ),
               ),
             ),
-          ),
-        ),
+          );
+        },
       ),
     );
   }
