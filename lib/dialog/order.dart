@@ -1,7 +1,7 @@
 import 'package:devansh/services/orderservice.dart';
-import 'package:flutter/material.dart';
+import 'package:flutter/material.dart' hide MaterialType;
 
-import 'package:devansh/models/catalogmodels.dart' hide MaterialType;
+import 'package:devansh/models/catalogmodels.dart';
 import 'package:go_router/go_router.dart';
 
 const _kBg = Color(0xFF0A1929);

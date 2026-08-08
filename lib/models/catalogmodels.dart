@@ -54,6 +54,8 @@ class ProductType {
   }
 }
 
+/// A single sellable model/variant of a product — e.g. one basket size,
+/// identified by `model` code, with its own dimensions and stock status.
 class ProductVariant {
   final String model;
   final String? width;
@@ -77,6 +79,16 @@ class ProductVariant {
       height: data['height']?.toString(),
       availability: data['availability']?.toString(),
     );
+  }
+
+  Map<String, dynamic> toMap() {
+    return {
+      'model': model,
+      'width': width,
+      'depth': depth,
+      'height': height,
+      'availability': availability,
+    };
   }
 }
 
@@ -141,9 +153,34 @@ class Product {
       isTopProduct: data['isTopProduct'] ?? false,
       variants:
           (data['variants'] as List<dynamic>?)
-              ?.map((v) => ProductVariant.fromMap(v as Map<String, dynamic>))
+              ?.map(
+                (v) =>
+                    ProductVariant.fromMap(Map<String, dynamic>.from(v as Map)),
+              )
               .toList() ??
           const [],
     );
+  }
+
+  /// Mirrors `fromMap` — does NOT include `id` (same convention as
+  /// Firestore documents, where the id is the doc id, not a field).
+  Map<String, dynamic> toMap() {
+    return {
+      'name': name,
+      'imageUrl': imageUrl,
+      'price': price,
+      'categoryId': categoryId,
+      'companyId': companyId,
+      'materialId': materialId,
+      'typeId': typeId,
+      'description': description,
+      'thickness': thickness,
+      'size': size,
+      'quantity': quantity,
+      'finish': finish,
+      'availability': availability,
+      'isTopProduct': isTopProduct,
+      'variants': variants.map((v) => v.toMap()).toList(),
+    };
   }
 }

@@ -5,8 +5,10 @@ import 'package:devansh/services/authservice.dart';
 import 'package:devansh/services/orderservice.dart';
 import 'package:devansh/services/catalogservice.dart';
 import 'package:devansh/models/catalogmodels.dart';
-import 'package:flutter/material.dart';
+import 'package:flutter/material.dart' hide MaterialType;
+import 'package:flutter/services.dart' show Clipboard, ClipboardData;
 import 'package:go_router/go_router.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 const _kBg = Colors.black;
 const _kSurface = Color(0xFF141414);
@@ -15,6 +17,31 @@ const _kAmber = Color.fromRGBO(245, 171, 30, 1);
 const _kBorderSubtle = Color.fromRGBO(245, 171, 30, 0.16);
 
 const double _kMaxContentWidth = 1400;
+
+const String _kAdminWhatsAppNumber = '9779857033614';
+
+const String _kDivider = '━━━━━━━━━━━━━━━━━━━━';
+const String _kItemDivider = '┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈';
+
+const List<String> _kKeycapDigits = [
+  '1️⃣',
+  '2️⃣',
+  '3️⃣',
+  '4️⃣',
+  '5️⃣',
+  '6️⃣',
+  '7️⃣',
+  '8️⃣',
+  '9️⃣',
+];
+
+/// Numbers 1–9 render as WhatsApp keycap emoji; 10 as 🔟; anything past
+/// that just falls back to plain "11." etc.
+String _numberEmoji(int n) {
+  if (n >= 1 && n <= 9) return _kKeycapDigits[n - 1];
+  if (n == 10) return '🔟';
+  return '$n.';
+}
 
 class OrdersPage extends StatefulWidget {
   const OrdersPage({super.key});
@@ -29,7 +56,11 @@ class _OrdersPageState extends State<OrdersPage> {
 
   final CatalogService _catalogService = CatalogService();
   Map<String, String> _categoryNames = {};
+  Map<String, String> _companyNames = {};
+  Map<String, String> _materialNames = {};
   StreamSubscription<List<Category>>? _categoriesSub;
+  StreamSubscription<List<Company>>? _companiesSub;
+  StreamSubscription<List<MaterialType>>? _materialsSub;
 
   final _shopNameController = TextEditingController();
   final _ownerNameController = TextEditingController();
@@ -54,6 +85,19 @@ class _OrdersPageState extends State<OrdersPage> {
       if (!mounted) return;
       setState(() {
         _categoryNames = {for (final c in categories) c.id: c.name};
+      });
+    });
+
+    _companiesSub = _catalogService.watchCompanies().listen((companies) {
+      if (!mounted) return;
+      setState(() {
+        _companyNames = {for (final c in companies) c.id: c.name};
+      });
+    });
+    _materialsSub = _catalogService.watchMaterials().listen((materials) {
+      if (!mounted) return;
+      setState(() {
+        _materialNames = {for (final m in materials) m.id: m.name};
       });
     });
   }
@@ -87,6 +131,8 @@ class _OrdersPageState extends State<OrdersPage> {
   void dispose() {
     AuthService.instance.currentUser.removeListener(_handleUserChanged);
     _categoriesSub?.cancel();
+    _companiesSub?.cancel();
+    _materialsSub?.cancel();
     _shopNameController.dispose();
     _ownerNameController.dispose();
     _phoneController.dispose();
@@ -100,12 +146,148 @@ class _OrdersPageState extends State<OrdersPage> {
 
   int _totalUnits(List<PendingOrderItem> items) =>
       items.fold(0, (sum, i) => sum + i.quantity);
+  List<String> _productSpecLines(Product product) {
+    final lines = <String>[];
+
+    final brand = _companyNames[product.companyId];
+    if (brand != null && brand.trim().isNotEmpty) {
+      lines.add('🏷️ Brand: $brand');
+    }
+
+    final material = _materialNames[product.materialId];
+    if (material != null && material.trim().isNotEmpty) {
+      lines.add('🧱 Material: $material');
+    }
+
+    if ((product.thickness ?? '').trim().isNotEmpty) {
+      lines.add('📏 Thickness: ${product.thickness}');
+    }
+    if ((product.size ?? '').trim().isNotEmpty) {
+      lines.add('📐 Size: ${product.size}');
+    }
+    if ((product.finish ?? '').trim().isNotEmpty) {
+      lines.add('✨ Finish: ${product.finish}');
+    }
+    if ((product.quantity ?? '').trim().isNotEmpty) {
+      lines.add('📦 Pack: ${product.quantity}');
+    }
+    if (!product.hasVariants &&
+        (product.availability ?? '').trim().isNotEmpty) {
+      lines.add('✅ Availability: ${product.availability}');
+    }
+
+    return lines;
+  }
+
+  String? _variantLine(ProductVariant variant) {
+    final dims = [
+      if ((variant.width ?? '').trim().isNotEmpty) 'W${variant.width}',
+      if ((variant.depth ?? '').trim().isNotEmpty) 'D${variant.depth}',
+      if ((variant.height ?? '').trim().isNotEmpty) 'H${variant.height}',
+    ].join(' × ');
+
+    final availability = (variant.availability ?? '').trim();
+    final availabilitySuffix = availability.isNotEmpty
+        ? ' — $availability'
+        : '';
+    final dimsSuffix = dims.isNotEmpty ? ' ($dims mm)' : '';
+
+    return '🔩 Model: ${variant.model}$dimsSuffix$availabilitySuffix';
+  }
+
+  String _buildWhatsAppMessage(List<PendingOrderItem> items) {
+    final buffer = StringBuffer();
+
+    buffer.writeln('🧾 *NEW ORDER REQUEST*');
+    buffer.writeln(_kDivider);
+    buffer.writeln();
+    buffer.writeln('📍 *Shop & Delivery Details*');
+    buffer.writeln('🏪 Shop: ${_shopNameController.text.trim()}');
+    buffer.writeln('👤 Owner: ${_ownerNameController.text.trim()}');
+    buffer.writeln('📞 Phone: ${_phoneController.text.trim()}');
+    if (_emailController.text.trim().isNotEmpty) {
+      buffer.writeln('✉️ Email: ${_emailController.text.trim()}');
+    }
+    buffer.writeln('🏠 Address: ${_addressController.text.trim()}');
+    if (_cityController.text.trim().isNotEmpty) {
+      buffer.writeln('📍 City / Area: ${_cityController.text.trim()}');
+    }
+    if (_taxIdController.text.trim().isNotEmpty) {
+      buffer.writeln('🧾 VAT / PAN: ${_taxIdController.text.trim()}');
+    }
+    if (_noteController.text.trim().isNotEmpty) {
+      buffer.writeln('📝 Note: ${_noteController.text.trim()}');
+    }
+
+    buffer.writeln();
+    buffer.writeln(_kDivider);
+    buffer.writeln('🛒 *ORDER ITEMS* (${items.length})');
+    buffer.writeln(_kDivider);
+
+    for (var i = 0; i < items.length; i++) {
+      final item = items[i];
+      final product = item.product;
+      final categoryName =
+          _categoryNames[product.categoryId] ?? product.categoryId;
+
+      buffer.writeln();
+      buffer.writeln('${_numberEmoji(i + 1)} *${product.name}*');
+      buffer.writeln('📂 Category: $categoryName');
+
+      for (final line in _productSpecLines(product)) {
+        buffer.writeln(line);
+      }
+
+      if (item.variant != null) {
+        final variantLine = _variantLine(item.variant!);
+        if (variantLine != null) buffer.writeln(variantLine);
+      }
+
+      buffer.writeln('🔢 Quantity: *${item.quantity}* pcs');
+
+      if (product.imageUrl.isNotEmpty) {
+        buffer.writeln('🖼️ ${product.imageUrl}');
+      }
+
+      if (i != items.length - 1) buffer.writeln(_kItemDivider);
+    }
+
+    final totalUnits = _totalUnits(items);
+    buffer.writeln();
+    buffer.writeln(_kDivider);
+    buffer.writeln(
+      '📦 *Total Quantity:* $totalUnits ${totalUnits == 1 ? 'unit' : 'units'}',
+    );
+    buffer.writeln(_kDivider);
+    buffer.writeln();
+    buffer.writeln('_Sent via the Devansh website_');
+
+    return buffer.toString();
+  }
 
   Future<void> _submitAllOrders(List<PendingOrderItem> items) async {
     setState(() => _submitting = true);
-    await Future.delayed(const Duration(milliseconds: 700));
+
+    final message = _buildWhatsAppMessage(items);
+    await Clipboard.setData(ClipboardData(text: message));
+
+    final whatsappUri = Uri.parse(
+      'https://wa.me/$_kAdminWhatsAppNumber?text=${Uri.encodeComponent(message)}',
+    );
+
+    var launched = false;
+    try {
+      launched = await launchUrl(
+        whatsappUri,
+        mode: LaunchMode.externalApplication,
+        webOnlyWindowName: '_blank',
+      );
+    } catch (_) {
+      launched = false;
+    }
 
     if (!mounted) return;
+
     OrderCartService.instance.clear();
     setState(() {
       _submitting = false;
@@ -114,8 +296,10 @@ class _OrdersPageState extends State<OrdersPage> {
 
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
-        content: const Text(
-          'Your order has been submitted. We\'ll contact you to confirm.',
+        content: Text(
+          launched
+              ? "Order sent — continue in WhatsApp to confirm with us."
+              : "Couldn't open WhatsApp automatically. Your order details were copied — please paste them into a chat with us.",
         ),
         backgroundColor: _kSurfaceRaised,
         behavior: SnackBarBehavior.floating,
@@ -773,7 +957,8 @@ class _FormField extends StatelessWidget {
 
 /// Right pane — order line items (name, model if applicable, category,
 /// quantity — no pricing shown), plus a total-quantity summary at the
-/// bottom.
+/// bottom. (This on-screen card stays compact; the full-detail version
+/// with brand/material/dimensions goes out in the WhatsApp message.)
 class _OrdersSummaryPane extends StatelessWidget {
   final _OrdersResponsive r;
   final List<PendingOrderItem> items;

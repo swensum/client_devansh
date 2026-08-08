@@ -377,10 +377,6 @@ class _AuthScreenState extends State<AuthScreen> {
     }
   }
 
-  /// Shown right after sign-up. Polls every few seconds for email
-  /// verification and closes itself automatically once verified. If the
-  /// user cancels instead, they're signed back out so the account is left
-  /// as if sign-up never completed.
   Future<void> _showVerifyEmailDialog(String email) async {
     Timer? pollTimer;
     bool checking = false;
@@ -410,10 +406,11 @@ class _AuthScreenState extends State<AuthScreen> {
 
               final isVerified = await AuthService.instance
                   .reloadAndCheckEmailVerified();
-              if (!mounted || closed) return;
+              if (!mounted || closed || !dialogContext.mounted) return;
 
               if (isVerified) {
                 verified = true;
+
                 closeDialog(dialogContext);
                 return;
               }
