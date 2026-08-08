@@ -1,7 +1,6 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:devansh/services/orderservice.dart';
 
-
 /// One line of a submitted order. Stores a full snapshot of the product
 /// (and variant, if any) at the time of order — not just IDs — so that
 /// later edits or deletions in the catalog never change what a past

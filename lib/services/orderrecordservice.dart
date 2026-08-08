@@ -17,8 +17,9 @@ class OrderRecordService {
         .orderBy('createdAt', descending: true)
         .snapshots()
         .map(
-          (snap) =>
-              snap.docs.map((d) => OrderRecord.fromMap(d.id, d.data())).toList(),
+          (snap) => snap.docs
+              .map((d) => OrderRecord.fromMap(d.id, d.data()))
+              .toList(),
         );
   }
 
@@ -31,8 +32,9 @@ class OrderRecordService {
         .orderBy('createdAt', descending: true)
         .snapshots()
         .map(
-          (snap) =>
-              snap.docs.map((d) => OrderRecord.fromMap(d.id, d.data())).toList(),
+          (snap) => snap.docs
+              .map((d) => OrderRecord.fromMap(d.id, d.data()))
+              .toList(),
         );
   }
 
@@ -44,8 +46,9 @@ class OrderRecordService {
         .orderBy('createdAt', descending: true)
         .snapshots()
         .map(
-          (snap) =>
-              snap.docs.map((d) => OrderRecord.fromMap(d.id, d.data())).toList(),
+          (snap) => snap.docs
+              .map((d) => OrderRecord.fromMap(d.id, d.data()))
+              .toList(),
         );
   }
 

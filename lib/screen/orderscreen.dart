@@ -176,7 +176,8 @@ class _OrdersPageState extends State<OrdersPage> {
     if ((product.quantity ?? '').trim().isNotEmpty) {
       lines.add('📦 Pack: ${product.quantity}');
     }
-    if (!product.hasVariants && (product.availability ?? '').trim().isNotEmpty) {
+    if (!product.hasVariants &&
+        (product.availability ?? '').trim().isNotEmpty) {
       lines.add('✅ Availability: ${product.availability}');
     }
 
@@ -191,7 +192,9 @@ class _OrdersPageState extends State<OrdersPage> {
     ].join(' × ');
 
     final availability = (variant.availability ?? '').trim();
-    final availabilitySuffix = availability.isNotEmpty ? ' — $availability' : '';
+    final availabilitySuffix = availability.isNotEmpty
+        ? ' — $availability'
+        : '';
     final dimsSuffix = dims.isNotEmpty ? ' ($dims mm)' : '';
 
     return '🔩 Model: ${variant.model}$dimsSuffix$availabilitySuffix';
@@ -267,10 +270,8 @@ class _OrdersPageState extends State<OrdersPage> {
     return buffer.toString();
   }
 
-  
   OrderRecord _buildOrderRecord(List<PendingOrderItem> items, AppUser? user) {
     return OrderRecord(
-   
       userId: user?.email,
       shopName: _shopNameController.text.trim(),
       ownerName: _ownerNameController.text.trim(),
@@ -292,8 +293,7 @@ class _OrdersPageState extends State<OrdersPage> {
         for (final item in items)
           OrderItemRecord.fromPendingItem(
             item,
-            _categoryNames[item.product.categoryId] ??
-                item.product.categoryId,
+            _categoryNames[item.product.categoryId] ?? item.product.categoryId,
           ),
       ],
       totalUnits: _totalUnits(items),
@@ -599,7 +599,6 @@ class _TopBar extends StatelessWidget {
       children: [
         Row(
           children: [
-           
             const SizedBox(width: 18),
             Text(
               'Your Orders',
@@ -627,7 +626,6 @@ class _TopBar extends StatelessWidget {
     );
   }
 }
-
 
 /// Left pane — business/shop details, gated behind sign-in.
 class _DetailsPane extends StatelessWidget {

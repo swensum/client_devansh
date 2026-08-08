@@ -1,14 +1,19 @@
 import 'dart:ui_web' as ui_web;
 
-import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:devansh/homecomponents/footer.dart';
 import 'package:devansh/homecomponents/header.dart';
 import 'package:devansh/homecomponents/topbar.dart';
 
 import 'package:devansh/widgets/app_page_scaffold_widgets.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart' show Clipboard, ClipboardData;
+import 'package:url_launcher/url_launcher.dart';
 import 'package:visibility_detector/visibility_detector.dart';
 import 'package:web/web.dart' as web;
+
+const String _kAdminWhatsAppNumber = '9779857033614';
+
+const String _kDivider = '━━━━━━━━━━━━━━━━━━━━';
 
 class ContactPage extends StatefulWidget {
   const ContactPage({super.key});
@@ -49,43 +54,73 @@ class _ContactPageState extends State<ContactPage> {
     super.dispose();
   }
 
+  String _buildWhatsAppMessage() {
+    final buffer = StringBuffer();
+
+    buffer.writeln('📩 *New Contact Message*');
+    buffer.writeln(_kDivider);
+    buffer.writeln();
+    buffer.writeln('👤 Name: ${_nameController.text.trim()}');
+    buffer.writeln('✉️ Email: ${_emailController.text.trim()}');
+    buffer.writeln('📞 Phone: ${_phoneController.text.trim()}');
+    buffer.writeln('🏠 Address: ${_addressController.text.trim()}');
+    buffer.writeln();
+    buffer.writeln('📝 *Message*');
+    buffer.writeln(_messageController.text.trim());
+    buffer.writeln();
+    buffer.writeln(_kDivider);
+    buffer.writeln('_Sent via the Devansh website contact form_');
+
+    return buffer.toString();
+  }
+
   Future<void> _handleSubmit() async {
     if (!_formKey.currentState!.validate()) return;
 
     setState(() => _isSubmitting = true);
 
+    final message = _buildWhatsAppMessage();
+    await Clipboard.setData(ClipboardData(text: message));
+
+    final whatsappUri = Uri.parse(
+      'https://wa.me/$_kAdminWhatsAppNumber?text=${Uri.encodeComponent(message)}',
+    );
+
+    var launched = false;
     try {
-      await FirebaseFirestore.instance.collection('contact_messages').add({
-        'name': _nameController.text.trim(),
-        'email': _emailController.text.trim(),
-        'phone': _phoneController.text.trim(),
-        'address': _addressController.text.trim(),
-        'message': _messageController.text.trim(),
-        'createdAt': FieldValue.serverTimestamp(),
-        'read': false, // admin panel can use this to flag unread messages
-      });
-
-      if (!mounted) return;
-      setState(() {
-        _isSubmitting = false;
-        _submitted = true;
-      });
-
-      _nameController.clear();
-      _emailController.clear();
-      _phoneController.clear();
-      _addressController.clear();
-      _messageController.clear();
-      Future.delayed(const Duration(seconds: 3), () {
-        if (mounted) setState(() => _submitted = false);
-      });
+      launched = await launchUrl(
+        whatsappUri,
+        mode: LaunchMode.externalApplication,
+        webOnlyWindowName: '_blank',
+      );
     } catch (e) {
-      debugPrint('Contact submit error: $e'); // add this line
-      if (!mounted) return;
-      setState(() => _isSubmitting = false);
+      debugPrint('Contact WhatsApp launch error: $e');
+      launched = false;
+    }
+
+    if (!mounted) return;
+
+    setState(() {
+      _isSubmitting = false;
+      _submitted = true;
+    });
+
+    _nameController.clear();
+    _emailController.clear();
+    _phoneController.clear();
+    _addressController.clear();
+    _messageController.clear();
+
+    Future.delayed(const Duration(seconds: 3), () {
+      if (mounted) setState(() => _submitted = false);
+    });
+
+    if (!launched) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
-          content: Text("Failed to send message. Please try again."),
+          content: Text(
+            "Couldn't open WhatsApp automatically. Your message was copied — please paste it into a chat with us.",
+          ),
         ),
       );
     }
