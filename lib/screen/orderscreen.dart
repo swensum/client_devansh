@@ -1,8 +1,11 @@
 import 'dart:async';
 
 import 'package:devansh/models/authmodel.dart';
+import 'package:devansh/models/ordermodel.dart';
+
 import 'package:devansh/services/authservice.dart';
 import 'package:devansh/services/orderservice.dart';
+import 'package:devansh/services/orderrecordservice.dart';
 import 'package:devansh/services/catalogservice.dart';
 import 'package:devansh/models/catalogmodels.dart';
 import 'package:flutter/material.dart' hide MaterialType;
@@ -35,8 +38,6 @@ const List<String> _kKeycapDigits = [
   '9️⃣',
 ];
 
-/// Numbers 1–9 render as WhatsApp keycap emoji; 10 as 🔟; anything past
-/// that just falls back to plain "11." etc.
 String _numberEmoji(int n) {
   if (n >= 1 && n <= 9) return _kKeycapDigits[n - 1];
   if (n == 10) return '🔟';
@@ -55,6 +56,7 @@ class _OrdersPageState extends State<OrdersPage> {
   bool _termsAccepted = false;
 
   final CatalogService _catalogService = CatalogService();
+  final OrderRecordService _orderRecordService = OrderRecordService();
   Map<String, String> _categoryNames = {};
   Map<String, String> _companyNames = {};
   Map<String, String> _materialNames = {};
@@ -88,6 +90,8 @@ class _OrdersPageState extends State<OrdersPage> {
       });
     });
 
+    // Needed so the WhatsApp order message (and the stored order record)
+    // can show brand/material names instead of just raw IDs.
     _companiesSub = _catalogService.watchCompanies().listen((companies) {
       if (!mounted) return;
       setState(() {
@@ -146,6 +150,7 @@ class _OrdersPageState extends State<OrdersPage> {
 
   int _totalUnits(List<PendingOrderItem> items) =>
       items.fold(0, (sum, i) => sum + i.quantity);
+
   List<String> _productSpecLines(Product product) {
     final lines = <String>[];
 
@@ -171,8 +176,7 @@ class _OrdersPageState extends State<OrdersPage> {
     if ((product.quantity ?? '').trim().isNotEmpty) {
       lines.add('📦 Pack: ${product.quantity}');
     }
-    if (!product.hasVariants &&
-        (product.availability ?? '').trim().isNotEmpty) {
+    if (!product.hasVariants && (product.availability ?? '').trim().isNotEmpty) {
       lines.add('✅ Availability: ${product.availability}');
     }
 
@@ -187,9 +191,7 @@ class _OrdersPageState extends State<OrdersPage> {
     ].join(' × ');
 
     final availability = (variant.availability ?? '').trim();
-    final availabilitySuffix = availability.isNotEmpty
-        ? ' — $availability'
-        : '';
+    final availabilitySuffix = availability.isNotEmpty ? ' — $availability' : '';
     final dimsSuffix = dims.isNotEmpty ? ' ($dims mm)' : '';
 
     return '🔩 Model: ${variant.model}$dimsSuffix$availabilitySuffix';
@@ -265,10 +267,60 @@ class _OrdersPageState extends State<OrdersPage> {
     return buffer.toString();
   }
 
+  
+  OrderRecord _buildOrderRecord(List<PendingOrderItem> items, AppUser? user) {
+    return OrderRecord(
+   
+      userId: user?.email,
+      shopName: _shopNameController.text.trim(),
+      ownerName: _ownerNameController.text.trim(),
+      phone: _phoneController.text.trim(),
+      email: _emailController.text.trim().isEmpty
+          ? null
+          : _emailController.text.trim(),
+      address: _addressController.text.trim(),
+      city: _cityController.text.trim().isEmpty
+          ? null
+          : _cityController.text.trim(),
+      taxId: _taxIdController.text.trim().isEmpty
+          ? null
+          : _taxIdController.text.trim(),
+      note: _noteController.text.trim().isEmpty
+          ? null
+          : _noteController.text.trim(),
+      items: [
+        for (final item in items)
+          OrderItemRecord.fromPendingItem(
+            item,
+            _categoryNames[item.product.categoryId] ??
+                item.product.categoryId,
+          ),
+      ],
+      totalUnits: _totalUnits(items),
+    );
+  }
+
   Future<void> _submitAllOrders(List<PendingOrderItem> items) async {
     setState(() => _submitting = true);
 
+    final user = AuthService.instance.currentUser.value;
+    final orderRecord = _buildOrderRecord(items, user);
+
+    // Save to Firestore first so the order exists for the admin panel
+    // even if the person never finishes (or accidentally closes) the
+    // WhatsApp step that follows. A failure here is logged but doesn't
+    // block the WhatsApp handoff — the order still reaches the admin
+    // that way either way.
+    try {
+      await _orderRecordService.submitOrder(orderRecord);
+    } catch (e) {
+      debugPrint('OrdersPage: failed to save order to Firestore: $e');
+    }
+
     final message = _buildWhatsAppMessage(items);
+
+    // Copy too, so the shop's order details aren't lost even if the
+    // WhatsApp link fails to open (popup blocked, app not installed, etc).
     await Clipboard.setData(ClipboardData(text: message));
 
     final whatsappUri = Uri.parse(
@@ -298,8 +350,8 @@ class _OrdersPageState extends State<OrdersPage> {
       SnackBar(
         content: Text(
           launched
-              ? "Order sent — continue in WhatsApp to confirm with us."
-              : "Couldn't open WhatsApp automatically. Your order details were copied — please paste them into a chat with us.",
+              ? "Order saved — continue in WhatsApp to confirm with us."
+              : "Order saved, but WhatsApp didn't open automatically. Your order details were copied — please paste them into a chat with us.",
         ),
         backgroundColor: _kSurfaceRaised,
         behavior: SnackBarBehavior.floating,
@@ -547,7 +599,7 @@ class _TopBar extends StatelessWidget {
       children: [
         Row(
           children: [
-            _RoundIconButton(icon: Icons.arrow_back, onTap: onBack),
+           
             const SizedBox(width: 18),
             Text(
               'Your Orders',
@@ -576,49 +628,6 @@ class _TopBar extends StatelessWidget {
   }
 }
 
-class _RoundIconButton extends StatefulWidget {
-  final IconData icon;
-  final VoidCallback onTap;
-  const _RoundIconButton({required this.icon, required this.onTap});
-
-  @override
-  State<_RoundIconButton> createState() => _RoundIconButtonState();
-}
-
-class _RoundIconButtonState extends State<_RoundIconButton> {
-  bool _isHovered = false;
-
-  @override
-  Widget build(BuildContext context) {
-    return MouseRegion(
-      cursor: SystemMouseCursors.click,
-      onEnter: (_) => setState(() => _isHovered = true),
-      onExit: (_) => setState(() => _isHovered = false),
-      child: GestureDetector(
-        onTap: widget.onTap,
-        child: AnimatedContainer(
-          duration: const Duration(milliseconds: 150),
-          width: 42,
-          height: 42,
-          decoration: BoxDecoration(
-            color: _isHovered ? _kSurfaceRaised : _kSurface,
-            shape: BoxShape.circle,
-            border: Border.all(
-              color: _isHovered
-                  ? _kAmber.withValues(alpha: 0.5)
-                  : _kBorderSubtle,
-            ),
-          ),
-          child: Icon(
-            widget.icon,
-            color: _isHovered ? _kAmber : Colors.white70,
-            size: 20,
-          ),
-        ),
-      ),
-    );
-  }
-}
 
 /// Left pane — business/shop details, gated behind sign-in.
 class _DetailsPane extends StatelessWidget {
@@ -958,7 +967,8 @@ class _FormField extends StatelessWidget {
 /// Right pane — order line items (name, model if applicable, category,
 /// quantity — no pricing shown), plus a total-quantity summary at the
 /// bottom. (This on-screen card stays compact; the full-detail version
-/// with brand/material/dimensions goes out in the WhatsApp message.)
+/// with brand/material/dimensions goes into the WhatsApp message and the
+/// Firestore order record.)
 class _OrdersSummaryPane extends StatelessWidget {
   final _OrdersResponsive r;
   final List<PendingOrderItem> items;
