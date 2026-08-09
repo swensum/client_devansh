@@ -56,7 +56,7 @@ class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp.router(
-      title: 'Devansh Hardware',
+      title: 'Devansh Suppliers',
       debugShowCheckedModeBanner: false,
       routerConfig: appRouter,
 

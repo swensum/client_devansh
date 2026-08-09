@@ -86,7 +86,7 @@ class _TermsOfServicePageState extends State<TermsOfServicePage> {
                       heading: '6. Intellectual Property',
                       body:
                           'All content on this site, including text, images, '
-                          'and logos, is the property of Devansh Hardware and '
+                          'and logos, is the property of Devansh Suppliers and '
                           'may not be reproduced without permission.',
                     ),
                     _LegalSection(
