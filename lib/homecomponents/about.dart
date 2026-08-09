@@ -129,7 +129,7 @@ class _WhoAreWe extends StatelessWidget {
           visible: visible,
           delay: const Duration(milliseconds: 300),
           child: Text(
-            "At Devansh Hardware, we are committed to providing premium-quality "
+            "At Devansh Suppliers, we are committed to providing premium-quality "
             "hardware solutions that combine durability, functionality, and modern "
             "design. Our carefully selected range includes cabinet handles, door "
             "fittings, mortice locks, aldrops, tower bolts, hinges, and other "

@@ -168,7 +168,7 @@ class _FooterState extends State<Footer> {
                   builder: (context, constraints) {
                     final isWide = constraints.maxWidth > 700;
                     final copyright = Text(
-                      "© ${DateTime.now().year} Devansh Hardware. All rights reserved.",
+                      "© ${DateTime.now().year} Devansh Suppliers. All rights reserved.",
                       style: TextStyle(
                         fontSize: 13,
                         color: Colors.white.withValues(alpha: 0.5),

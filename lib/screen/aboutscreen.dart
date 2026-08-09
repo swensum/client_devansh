@@ -284,7 +284,7 @@ class _WelcomeText extends StatelessWidget {
         const SizedBox(height: 24),
         Text(
           "Namaste everyone from the DEVANSH family.\n"
-          "At Devansh Hardware, we are committed to providing premium-quality "
+          "At Devansh Suppliers, we are committed to providing premium-quality "
           "hardware solutions that combine durability, functionality, and modern "
           "design. Our carefully selected range includes cabinet handles, door "
           "fittings, mortice locks, aldrops, tower bolts, hinges, and other "
