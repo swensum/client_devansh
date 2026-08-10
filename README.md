@@ -15,11 +15,20 @@ update the paths below to match your actual filenames.
 
 | Home / Catalog | Product Details |
 |---|---|
-| ![Home screen](screenshots/home.png) | ![Product details](screenshots/product-details.png) |
+| ![Home screen](screenshots/home.png) | ![Product details](screenshots/products.png) |
+
+
+|---|---|
+| ![About screen](screenshots/about.png) | ![Blogs detail](screenshots/blogs.png) |
+
+
+|---|---|
+| ![brand screen](screenshots/brands.png) | ![Contact screen](screenshots/contact.png) |
+
 
 | Sign In | Order Placement |
 |---|---|
-| ![Auth screen](screenshots/auth.png) | ![Order flow](screenshots/order.png) |
+| ![Auth screen](screenshots/auth.png) | ![Orders screen ](screenshots/orders.png) |
 
 ---
 
@@ -91,15 +100,6 @@ firebase deploy --only hosting
 
 Deployment is also automated via **GitHub Actions** — every push to `main` triggers a build and deploy to Firebase Hosting.
 
-## 📁 Project Structure
-
-```
-lib/
-├── screens/        # App screens (auth, catalog, orders, etc.)
-├── services/        # Firebase/Auth/Firestore service wrappers
-├── widgets/         # Reusable UI components
-└── main.dart         # App entry point
-```
 
 ## 📄 License
 
