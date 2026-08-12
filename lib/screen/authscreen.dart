@@ -51,6 +51,7 @@ class _AuthScreenState extends State<AuthScreen> {
   @override
   void initState() {
     super.initState();
+    debugPrint('[AuthScreen] initState: url=${Uri.base}');
     _checkForPasswordResetLink();
     if (!_isPasswordResetMode) {
       _checkRedirectResult();
@@ -69,12 +70,14 @@ class _AuthScreenState extends State<AuthScreen> {
     super.dispose();
   }
 
-  /// Picks up the result of a signInWithRedirect() call from a previous
-  /// page load (used as a fallback when popup sign-in is blocked by
-  /// Safari's ITP or Brave Shields).
   Future<void> _checkRedirectResult() async {
+    debugPrint('[AuthScreen] _checkRedirectResult: start');
     try {
       final credential = await AuthService.instance.getRedirectResult();
+      debugPrint(
+        '[AuthScreen] _checkRedirectResult: got credential='
+        '${credential != null}',
+      );
       if (!mounted) return;
 
       if (credential != null) {
@@ -85,12 +88,18 @@ class _AuthScreenState extends State<AuthScreen> {
 
       setState(() => _checkingRedirectResult = false);
     } on FirebaseAuthException catch (e) {
+      debugPrint(
+        '[AuthScreen] _checkRedirectResult: FirebaseAuthException '
+        'code="${e.code}" message="${e.message}"',
+      );
       if (!mounted) return;
       setState(() {
         _checkingRedirectResult = false;
         _error = e.message ?? 'Google sign-in failed.';
       });
-    } catch (e) {
+    } catch (e, st) {
+      debugPrint('[AuthScreen] _checkRedirectResult: unexpected error: $e');
+      debugPrint('$st');
       if (!mounted) return;
       setState(() => _checkingRedirectResult = false);
     }
@@ -226,8 +235,6 @@ class _AuthScreenState extends State<AuthScreen> {
     });
   }
 
-  /// After a successful sign-in, return the user to wherever they came from
-  /// instead of always dumping them on the home route.
   void _returnAfterSignIn() {
     if (!mounted) return;
     if (context.canPop()) {
@@ -237,8 +244,6 @@ class _AuthScreenState extends State<AuthScreen> {
     }
   }
 
-  /// Shows a brief success snackbar, then returns the user to where they
-  /// came from. Shared by Google popup, Google redirect, and email sign-in.
   Future<void> _showSuccessAndReturn(String message) async {
     if (!mounted) return;
     ScaffoldMessenger.of(context).showSnackBar(
@@ -256,6 +261,7 @@ class _AuthScreenState extends State<AuthScreen> {
 
   Future<void> _signInWithGoogle() async {
     if (_googleLoading) return;
+    debugPrint('[AuthScreen] _signInWithGoogle: button pressed');
     setState(() {
       _googleLoading = true;
       _error = null;
@@ -263,16 +269,23 @@ class _AuthScreenState extends State<AuthScreen> {
     });
     try {
       await AuthService.instance.signInWithGoogle();
+      debugPrint(
+        '[AuthScreen] _signInWithGoogle: signInWithGoogle() returned '
+        'normally (mounted=$mounted)',
+      );
       if (!mounted) return;
-      // If this fell back to signInWithRedirect(), the page is about to
-      // navigate away and nothing below runs — the result is picked up by
-      // _checkRedirectResult() on next load.
       await _showSuccessAndReturn('Signed in successfully!');
     } on FirebaseAuthException catch (e) {
+      debugPrint(
+        '[AuthScreen] _signInWithGoogle: FirebaseAuthException '
+        'code="${e.code}" message="${e.message}"',
+      );
       if (mounted) {
         setState(() => _error = e.message ?? 'Google sign-in failed.');
       }
-    } catch (e) {
+    } catch (e, st) {
+      debugPrint('[AuthScreen] _signInWithGoogle: unexpected error: $e');
+      debugPrint('$st');
       if (mounted) {
         setState(() => _error = 'Google sign-in was cancelled or failed.');
       }
@@ -333,8 +346,6 @@ class _AuthScreenState extends State<AuthScreen> {
           rememberMe: _rememberMe,
         );
         if (!mounted) return;
-        // Don't treat this as a completed sign-up yet — the dialog only
-        // reports success (and navigates away) once the email is verified.
         await _showVerifyEmailDialog(email);
       }
     } on FirebaseAuthException catch (e) {
@@ -351,8 +362,6 @@ class _AuthScreenState extends State<AuthScreen> {
     }
   }
 
-  /// Resends a verification email after a blocked sign-in attempt, using
-  /// whatever's currently in the email/password fields.
   Future<void> _resendVerificationFromSignIn() async {
     final email = _emailController.text.trim();
     final password = _passwordController.text;

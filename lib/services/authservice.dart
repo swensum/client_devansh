@@ -28,18 +28,43 @@ class AuthService {
     final provider = GoogleAuthProvider()
       ..setCustomParameters({'prompt': 'select_account'});
 
+    debugPrint('[Auth] signInWithGoogle: start (kIsWeb=$kIsWeb)');
+
     if (!kIsWeb) {
       await _auth.signInWithPopup(provider);
       return;
     }
 
     try {
-      await _auth.signInWithPopup(provider);
+      debugPrint('[Auth] signInWithGoogle: calling signInWithPopup');
+      final result = await _auth.signInWithPopup(provider);
+      debugPrint(
+        '[Auth] signInWithGoogle: popup SUCCESS, uid=${result.user?.uid}',
+      );
     } on FirebaseAuthException catch (e) {
+      debugPrint(
+        '[Auth] signInWithGoogle: popup FAILED code="${e.code}" '
+        'message="${e.message}"',
+      );
       if (_shouldFallBackToRedirect(e.code)) {
+        debugPrint(
+          '[Auth] signInWithGoogle: code matched fallback list, '
+          'calling signInWithRedirect (page should navigate away now)',
+        );
         await _auth.signInWithRedirect(provider);
+        debugPrint(
+          '[Auth] signInWithGoogle: signInWithRedirect() returned WITHOUT '
+          'navigating away — this itself is suspicious, note it.',
+        );
         return;
       }
+      debugPrint(
+        '[Auth] signInWithGoogle: code NOT in fallback list, rethrowing',
+      );
+      rethrow;
+    } catch (e, st) {
+      debugPrint('[Auth] signInWithGoogle: NON-FirebaseAuthException: $e');
+      debugPrint('$st');
       rethrow;
     }
   }
@@ -51,17 +76,32 @@ class AuthService {
       case 'cancelled-popup-request':
       case 'web-storage-unsupported':
       case 'operation-not-supported-in-this-environment':
+        debugPrint('[Auth] _shouldFallBackToRedirect("$code") -> true');
         return true;
       default:
+        debugPrint('[Auth] _shouldFallBackToRedirect("$code") -> false');
         return false;
     }
   }
 
   Future<UserCredential?> getRedirectResult() async {
     if (!kIsWeb) return null;
-    final result = await _auth.getRedirectResult();
-    if (result.user == null) return null;
-    return result;
+    debugPrint('[Auth] getRedirectResult: calling _auth.getRedirectResult()');
+    try {
+      final result = await _auth.getRedirectResult();
+      debugPrint(
+        '[Auth] getRedirectResult: returned, user=${result.user?.uid}, '
+        'credential=${result.credential}',
+      );
+      if (result.user == null) return null;
+      return result;
+    } on FirebaseAuthException catch (e) {
+      debugPrint(
+        '[Auth] getRedirectResult: FAILED code="${e.code}" '
+        'message="${e.message}"',
+      );
+      rethrow;
+    }
   }
 
   // --- Persistence: controls "Remember me" ---
