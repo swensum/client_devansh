@@ -23,7 +23,7 @@ jobs:
 
       - run: flutter pub get
 
-      - run: flutter build web --wasm --release --no-tree-shake-icons
+      - run: flutter build web --release
 
       - uses: FirebaseExtended/action-hosting-deploy@v0
         with:
