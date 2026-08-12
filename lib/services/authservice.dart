@@ -24,84 +24,16 @@ class AuthService {
   final ValueNotifier<AppUser?> currentUser = ValueNotifier<AppUser?>(null);
 
   Stream<User?> get authStateChanges => _auth.authStateChanges();
-  Future<void> signInWithGoogle() async {
+
+  // --- Google sign-in (simple popup-only approach) ---
+  Future<UserCredential> signInWithGoogle() async {
     final provider = GoogleAuthProvider()
       ..setCustomParameters({'prompt': 'select_account'});
 
-    debugPrint('[Auth] signInWithGoogle: start (kIsWeb=$kIsWeb)');
-
-    if (!kIsWeb) {
-      await _auth.signInWithPopup(provider);
-      return;
-    }
-
-    try {
-      debugPrint('[Auth] signInWithGoogle: calling signInWithPopup');
-      final result = await _auth.signInWithPopup(provider);
-      debugPrint(
-        '[Auth] signInWithGoogle: popup SUCCESS, uid=${result.user?.uid}',
-      );
-    } on FirebaseAuthException catch (e) {
-      debugPrint(
-        '[Auth] signInWithGoogle: popup FAILED code="${e.code}" '
-        'message="${e.message}"',
-      );
-      if (_shouldFallBackToRedirect(e.code)) {
-        debugPrint(
-          '[Auth] signInWithGoogle: code matched fallback list, '
-          'calling signInWithRedirect (page should navigate away now)',
-        );
-        await _auth.signInWithRedirect(provider);
-        debugPrint(
-          '[Auth] signInWithGoogle: signInWithRedirect() returned WITHOUT '
-          'navigating away — this itself is suspicious, note it.',
-        );
-        return;
-      }
-      debugPrint(
-        '[Auth] signInWithGoogle: code NOT in fallback list, rethrowing',
-      );
-      rethrow;
-    } catch (e, st) {
-      debugPrint('[Auth] signInWithGoogle: NON-FirebaseAuthException: $e');
-      debugPrint('$st');
-      rethrow;
-    }
-  }
-
-  bool _shouldFallBackToRedirect(String code) {
-    switch (code) {
-      case 'popup-closed-by-user':
-      case 'popup-blocked':
-      case 'cancelled-popup-request':
-      case 'web-storage-unsupported':
-      case 'operation-not-supported-in-this-environment':
-        debugPrint('[Auth] _shouldFallBackToRedirect("$code") -> true');
-        return true;
-      default:
-        debugPrint('[Auth] _shouldFallBackToRedirect("$code") -> false');
-        return false;
-    }
-  }
-
-  Future<UserCredential?> getRedirectResult() async {
-    if (!kIsWeb) return null;
-    debugPrint('[Auth] getRedirectResult: calling _auth.getRedirectResult()');
-    try {
-      final result = await _auth.getRedirectResult();
-      debugPrint(
-        '[Auth] getRedirectResult: returned, user=${result.user?.uid}, '
-        'credential=${result.credential}',
-      );
-      if (result.user == null) return null;
-      return result;
-    } on FirebaseAuthException catch (e) {
-      debugPrint(
-        '[Auth] getRedirectResult: FAILED code="${e.code}" '
-        'message="${e.message}"',
-      );
-      rethrow;
-    }
+    debugPrint('[Auth] signInWithGoogle: start');
+    final result = await _auth.signInWithPopup(provider);
+    debugPrint('[Auth] signInWithGoogle: SUCCESS uid=${result.user?.uid}');
+    return result;
   }
 
   // --- Persistence: controls "Remember me" ---

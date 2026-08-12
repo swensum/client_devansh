@@ -34,9 +34,6 @@ class _AuthScreenState extends State<AuthScreen> {
   bool _showResendVerification = false;
   bool _resendingVerification = false;
 
-  // --- Redirect sign-in (Safari/Brave popup fallback) ---
-  bool _checkingRedirectResult = true;
-
   bool _isPasswordResetMode = false;
   bool _resetVerifying = true;
   String? _resetOobCode;
@@ -53,11 +50,6 @@ class _AuthScreenState extends State<AuthScreen> {
     super.initState();
     debugPrint('[AuthScreen] initState: url=${Uri.base}');
     _checkForPasswordResetLink();
-    if (!_isPasswordResetMode) {
-      _checkRedirectResult();
-    } else {
-      _checkingRedirectResult = false;
-    }
   }
 
   @override
@@ -68,41 +60,6 @@ class _AuthScreenState extends State<AuthScreen> {
     _newPasswordController.dispose();
     _confirmNewPasswordController.dispose();
     super.dispose();
-  }
-
-  Future<void> _checkRedirectResult() async {
-    debugPrint('[AuthScreen] _checkRedirectResult: start');
-    try {
-      final credential = await AuthService.instance.getRedirectResult();
-      debugPrint(
-        '[AuthScreen] _checkRedirectResult: got credential='
-        '${credential != null}',
-      );
-      if (!mounted) return;
-
-      if (credential != null) {
-        setState(() => _checkingRedirectResult = false);
-        await _showSuccessAndReturn('Signed in successfully!');
-        return;
-      }
-
-      setState(() => _checkingRedirectResult = false);
-    } on FirebaseAuthException catch (e) {
-      debugPrint(
-        '[AuthScreen] _checkRedirectResult: FirebaseAuthException '
-        'code="${e.code}" message="${e.message}"',
-      );
-      if (!mounted) return;
-      setState(() {
-        _checkingRedirectResult = false;
-        _error = e.message ?? 'Google sign-in failed.';
-      });
-    } catch (e, st) {
-      debugPrint('[AuthScreen] _checkRedirectResult: unexpected error: $e');
-      debugPrint('$st');
-      if (!mounted) return;
-      setState(() => _checkingRedirectResult = false);
-    }
   }
 
   void _checkForPasswordResetLink() {
@@ -735,13 +692,6 @@ class _AuthScreenState extends State<AuthScreen> {
   Widget build(BuildContext context) {
     if (_isPasswordResetMode) {
       return _buildResetPasswordScreen();
-    }
-
-    if (_checkingRedirectResult) {
-      return const Scaffold(
-        backgroundColor: _kBg,
-        body: Center(child: CircularProgressIndicator(color: _kAmber)),
-      );
     }
 
     final isSignIn = _mode == _AuthMode.signIn;
