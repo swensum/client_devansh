@@ -56,6 +56,7 @@ class AuthService {
         return false;
     }
   }
+
   Future<UserCredential?> getRedirectResult() async {
     if (!kIsWeb) return null;
     final result = await _auth.getRedirectResult();
@@ -71,6 +72,7 @@ class AuthService {
       );
     }
   }
+
   Future<UserCredential> signInWithEmailPassword(
     String email,
     String password, {
@@ -106,17 +108,20 @@ class AuthService {
     await credential.user?.sendEmailVerification();
     return credential;
   }
+
   Future<void> sendEmailVerification() async {
     final user = _auth.currentUser;
     if (user == null) return;
     await user.sendEmailVerification();
   }
+
   Future<bool> reloadAndCheckEmailVerified() async {
     final user = _auth.currentUser;
     if (user == null) return false;
     await user.reload();
     return _auth.currentUser?.emailVerified ?? false;
   }
+
   Future<void> resendVerificationEmail(String email, String password) async {
     final credential = await _auth.signInWithEmailAndPassword(
       email: email,
