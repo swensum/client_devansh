@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:devansh/services/authservice.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
@@ -51,6 +52,7 @@ class _AuthScreenState extends State<AuthScreen> {
   @override
   void initState() {
     super.initState();
+    debugPrint('[AuthScreen] initState: url=${Uri.base}');
     _checkForPasswordResetLink();
     if (!_isPasswordResetMode) {
       _checkRedirectResult();
@@ -73,8 +75,13 @@ class _AuthScreenState extends State<AuthScreen> {
   /// page load (used as a fallback when popup sign-in is blocked by
   /// Safari's ITP or Brave Shields).
   Future<void> _checkRedirectResult() async {
+    debugPrint('[AuthScreen] _checkRedirectResult: start');
     try {
       final credential = await AuthService.instance.getRedirectResult();
+      debugPrint(
+        '[AuthScreen] _checkRedirectResult: got credential='
+        '${credential != null}',
+      );
       if (!mounted) return;
 
       if (credential != null) {
@@ -85,12 +92,18 @@ class _AuthScreenState extends State<AuthScreen> {
 
       setState(() => _checkingRedirectResult = false);
     } on FirebaseAuthException catch (e) {
+      debugPrint(
+        '[AuthScreen] _checkRedirectResult: FirebaseAuthException '
+        'code="${e.code}" message="${e.message}"',
+      );
       if (!mounted) return;
       setState(() {
         _checkingRedirectResult = false;
         _error = e.message ?? 'Google sign-in failed.';
       });
-    } catch (e) {
+    } catch (e, st) {
+      debugPrint('[AuthScreen] _checkRedirectResult: unexpected error: $e');
+      debugPrint('$st');
       if (!mounted) return;
       setState(() => _checkingRedirectResult = false);
     }
@@ -256,6 +269,7 @@ class _AuthScreenState extends State<AuthScreen> {
 
   Future<void> _signInWithGoogle() async {
     if (_googleLoading) return;
+    debugPrint('[AuthScreen] _signInWithGoogle: button pressed');
     setState(() {
       _googleLoading = true;
       _error = null;
@@ -263,16 +277,26 @@ class _AuthScreenState extends State<AuthScreen> {
     });
     try {
       await AuthService.instance.signInWithGoogle();
+      debugPrint(
+        '[AuthScreen] _signInWithGoogle: signInWithGoogle() returned '
+        'normally (mounted=$mounted)',
+      );
       if (!mounted) return;
       // If this fell back to signInWithRedirect(), the page is about to
       // navigate away and nothing below runs — the result is picked up by
       // _checkRedirectResult() on next load.
       await _showSuccessAndReturn('Signed in successfully!');
     } on FirebaseAuthException catch (e) {
+      debugPrint(
+        '[AuthScreen] _signInWithGoogle: FirebaseAuthException '
+        'code="${e.code}" message="${e.message}"',
+      );
       if (mounted) {
         setState(() => _error = e.message ?? 'Google sign-in failed.');
       }
-    } catch (e) {
+    } catch (e, st) {
+      debugPrint('[AuthScreen] _signInWithGoogle: unexpected error: $e');
+      debugPrint('$st');
       if (mounted) {
         setState(() => _error = 'Google sign-in was cancelled or failed.');
       }
