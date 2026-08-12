@@ -2,7 +2,6 @@ import 'dart:async';
 
 import 'package:devansh/services/authservice.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
@@ -71,9 +70,6 @@ class _AuthScreenState extends State<AuthScreen> {
     super.dispose();
   }
 
-  /// Picks up the result of a signInWithRedirect() call from a previous
-  /// page load (used as a fallback when popup sign-in is blocked by
-  /// Safari's ITP or Brave Shields).
   Future<void> _checkRedirectResult() async {
     debugPrint('[AuthScreen] _checkRedirectResult: start');
     try {
@@ -239,8 +235,6 @@ class _AuthScreenState extends State<AuthScreen> {
     });
   }
 
-  /// After a successful sign-in, return the user to wherever they came from
-  /// instead of always dumping them on the home route.
   void _returnAfterSignIn() {
     if (!mounted) return;
     if (context.canPop()) {
@@ -250,8 +244,6 @@ class _AuthScreenState extends State<AuthScreen> {
     }
   }
 
-  /// Shows a brief success snackbar, then returns the user to where they
-  /// came from. Shared by Google popup, Google redirect, and email sign-in.
   Future<void> _showSuccessAndReturn(String message) async {
     if (!mounted) return;
     ScaffoldMessenger.of(context).showSnackBar(
@@ -282,9 +274,6 @@ class _AuthScreenState extends State<AuthScreen> {
         'normally (mounted=$mounted)',
       );
       if (!mounted) return;
-      // If this fell back to signInWithRedirect(), the page is about to
-      // navigate away and nothing below runs — the result is picked up by
-      // _checkRedirectResult() on next load.
       await _showSuccessAndReturn('Signed in successfully!');
     } on FirebaseAuthException catch (e) {
       debugPrint(
@@ -357,8 +346,6 @@ class _AuthScreenState extends State<AuthScreen> {
           rememberMe: _rememberMe,
         );
         if (!mounted) return;
-        // Don't treat this as a completed sign-up yet — the dialog only
-        // reports success (and navigates away) once the email is verified.
         await _showVerifyEmailDialog(email);
       }
     } on FirebaseAuthException catch (e) {
@@ -375,8 +362,6 @@ class _AuthScreenState extends State<AuthScreen> {
     }
   }
 
-  /// Resends a verification email after a blocked sign-in attempt, using
-  /// whatever's currently in the email/password fields.
   Future<void> _resendVerificationFromSignIn() async {
     final email = _emailController.text.trim();
     final password = _passwordController.text;
