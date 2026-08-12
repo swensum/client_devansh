@@ -3,9 +3,8 @@ import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:web/web.dart' as web;
 
 class WhatsAppFloatButton extends StatefulWidget {
-  final String
-  phoneNumber; // digits only, with country code, e.g. "9779857033614"
-  final String? message; // optional prefilled message
+  final String phoneNumber;
+  final String? message;
   final Alignment alignment;
   final EdgeInsets margin;
 

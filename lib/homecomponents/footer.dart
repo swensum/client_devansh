@@ -1,8 +1,8 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
+import 'package:flutter_svg/flutter_svg.dart';
 
-import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:go_router/go_router.dart';
 import 'package:url_launcher/link.dart';
 import 'package:web/web.dart' as web;
@@ -24,19 +24,19 @@ class Footer extends StatefulWidget {
 
   static const List<_SocialIconData> _socials = [
     _SocialIconData(
-      icon: FontAwesomeIcons.facebookF,
+      assetPath: "assets/icons/facebook.svg",
       url: "https://facebook.com/devanshhardware",
     ),
     _SocialIconData(
-      icon: FontAwesomeIcons.instagram,
+      assetPath: "assets/icons/instagram.svg",
       url: "https://instagram.com/devanshhardware",
     ),
     _SocialIconData(
-      icon: FontAwesomeIcons.whatsapp,
+      assetPath: "assets/icons/whatsapp.svg",
       url: "https://wa.me/9779857033614",
     ),
     _SocialIconData(
-      icon: FontAwesomeIcons.tiktok,
+      assetPath: "assets/icons/tiktok.svg",
       url: "https://tiktok.com/@devanshhardware",
     ),
   ];
@@ -233,7 +233,7 @@ class _FooterState extends State<Footer> {
                 .map(
                   (s) => Padding(
                     padding: const EdgeInsets.only(right: 10),
-                    child: _SocialIcon(icon: s.icon, url: s.url),
+                    child: _SocialIcon(assetPath: s.assetPath, url: s.url),
                   ),
                 )
                 .toList(),
@@ -360,9 +360,9 @@ class _FooterLink {
 }
 
 class _SocialIconData {
-  final FaIconData icon;
+  final String assetPath;
   final String url;
-  const _SocialIconData({required this.icon, required this.url});
+  const _SocialIconData({required this.assetPath, required this.url});
 }
 
 class _ContactRow extends StatelessWidget {
@@ -500,9 +500,9 @@ class _LegalLinkState extends State<_LegalLink> {
 }
 
 class _SocialIcon extends StatefulWidget {
-  final FaIconData icon;
+  final String assetPath;
   final String url;
-  const _SocialIcon({required this.icon, required this.url});
+  const _SocialIcon({required this.assetPath, required this.url});
 
   @override
   State<_SocialIcon> createState() => _SocialIconState();
@@ -533,12 +533,14 @@ class _SocialIconState extends State<_SocialIcon> {
                 : Colors.white.withValues(alpha: 0.15),
           ),
         ),
-        child: FaIcon(
-          widget.icon,
-          size: 15,
-          color: _isHovered
-              ? Colors.black
-              : Colors.white.withValues(alpha: 0.8),
+        child: SvgPicture.asset(
+          widget.assetPath,
+          width: 18,
+          height: 18,
+          colorFilter: ColorFilter.mode(
+            _isHovered ? Colors.black : Colors.white.withValues(alpha: 0.8),
+            BlendMode.srcIn,
+          ),
         ),
       ),
     );
