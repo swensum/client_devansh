@@ -473,6 +473,10 @@ class _ProductsResponsive {
   final double cardTitleFont;
   final double cardPriceFont;
   final bool showNavArrows;
+  // True only for the mobile (phone-width) breakpoint. Used to keep the
+  // quick-action icon always visible/tappable on mobile, since there's no
+  // hover state on touch devices. Desktop/tablet behavior is untouched.
+  final bool isMobile;
 
   const _ProductsResponsive({
     required this.crossAxisCount,
@@ -488,6 +492,7 @@ class _ProductsResponsive {
     required this.cardTitleFont,
     required this.cardPriceFont,
     required this.showNavArrows,
+    required this.isMobile,
   });
 
   factory _ProductsResponsive.of(double w) {
@@ -506,6 +511,7 @@ class _ProductsResponsive {
         cardTitleFont: 14,
         cardPriceFont: 16,
         showNavArrows: true,
+        isMobile: false,
       );
     }
     if (w > 600) {
@@ -523,6 +529,7 @@ class _ProductsResponsive {
         cardTitleFont: 10.5,
         cardPriceFont: 12,
         showNavArrows: true,
+        isMobile: false,
       );
     }
     if (w > 400) {
@@ -540,6 +547,7 @@ class _ProductsResponsive {
         cardTitleFont: 13,
         cardPriceFont: 14.5,
         showNavArrows: false,
+        isMobile: true,
       );
     }
     return const _ProductsResponsive(
@@ -556,6 +564,7 @@ class _ProductsResponsive {
       cardTitleFont: 13,
       cardPriceFont: 14,
       showNavArrows: false,
+      isMobile: true,
     );
   }
 }
@@ -721,17 +730,6 @@ class _PremiumProductCardState extends State<_PremiumProductCard>
                                     ),
                                     Positioned(
                                       top: 10,
-                                      right: 10,
-                                      child: Opacity(
-                                        opacity: t,
-                                        child: _buildQuickActionButton(
-                                          Icons.favorite_border,
-                                          Colors.white,
-                                        ),
-                                      ),
-                                    ),
-                                    Positioned(
-                                      top: 10,
                                       left: 10,
                                       child: Container(
                                         padding: const EdgeInsets.symmetric(
@@ -823,8 +821,13 @@ class _PremiumProductCardState extends State<_PremiumProductCard>
                                 // place, NOT a navigation, so this stays a
                                 // plain GestureDetector (no Link) even
                                 // though it's nested inside the card's Link.
+                                //
+                                // On mobile there's no hover, so the icon is
+                                // always fully visible/tappable there. On
+                                // desktop/tablet it keeps the original
+                                // reveal-on-hover behavior (opacity: t).
                                 Opacity(
-                                  opacity: t,
+                                  opacity: r.isMobile ? 1.0 : t,
                                   child: GestureDetector(
                                     onTap: () async {
                                       final catalogService = CatalogService();

@@ -685,6 +685,10 @@ class _ProductListTileState extends State<_ProductListTile> {
     // Fixed per-item destination — shared by the real <a href> (Link) and
     // the SPA navigation (context.push) below, so they always agree.
     final route = '/product/${product.id}';
+    // No hover on touch devices, so always show the quick-action button on
+    // mobile-width screens. Desktop/tablet keep the original hover-only
+    // reveal behavior.
+    final isMobile = MediaQuery.sizeOf(context).width <= 600;
 
     return MouseRegion(
       cursor: SystemMouseCursors.click,
@@ -824,7 +828,7 @@ class _ProductListTileState extends State<_ProductListTile> {
                   // Link) even though it's nested inside the tile's Link.
                   AnimatedOpacity(
                     duration: const Duration(milliseconds: 200),
-                    opacity: _isHovered ? 1.0 : 0.0,
+                    opacity: isMobile ? 1.0 : (_isHovered ? 1.0 : 0.0),
                     child: GestureDetector(
                       onTap: () => _handleOrderTap(context),
                       child: Container(
@@ -917,6 +921,10 @@ class _ProductCardState extends State<_ProductCard>
     // Fixed per-item destination — shared by the real <a href> (Link) and
     // the SPA navigation (context.push) below, so they always agree.
     final route = '/product/${product.id}';
+    // No hover on touch devices, so always show the quick-action button on
+    // mobile-width screens. Desktop/tablet keep the original hover-only
+    // reveal behavior.
+    final isMobile = MediaQuery.sizeOf(context).width <= 600;
 
     return MouseRegion(
       cursor: SystemMouseCursors.click,
@@ -1027,31 +1035,26 @@ class _ProductCardState extends State<_ProductCard>
                                     ),
                                   ),
                                 ),
-                                Positioned(
-                                  top: 10,
-                                  right: 10,
-                                  child: AnimatedOpacity(
-                                    duration: const Duration(milliseconds: 200),
-                                    opacity: _isHovered ? 1.0 : 0.0,
-                                    child: _buildQuickActionButton(
-                                      Icons.favorite_border,
-                                      Colors.white,
-                                    ),
-                                  ),
-                                ),
                               ],
                             ),
                           ),
                         ),
                       ),
 
-                      Padding(
+                      Container(
+                        // Fixed height so this detail section takes up the
+                        // same space on every card regardless of whether the
+                        // product name wraps to 1 or 2 lines, or a company
+                        // name is present. Without this, the Expanded image
+                        // above ends up a different height per card.
+                        height: 76,
                         padding: const EdgeInsets.all(12),
                         child: Row(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             Expanded(
                               child: Column(
+                                mainAxisAlignment: MainAxisAlignment.center,
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
                                   Text(
@@ -1062,12 +1065,15 @@ class _ProductCardState extends State<_ProductCard>
                                       color: Colors.white,
                                       fontWeight: FontWeight.w600,
                                       fontSize: 13.5,
+                                      height: 1.25,
                                     ),
                                   ),
                                   const SizedBox(height: 4),
                                   if (company != null)
                                     Text(
                                       company.name,
+                                      maxLines: 1,
+                                      overflow: TextOverflow.ellipsis,
                                       style: TextStyle(
                                         color: Colors.white.withValues(
                                           alpha: 0.55,
@@ -1083,9 +1089,16 @@ class _ProductCardState extends State<_ProductCard>
                             // place, NOT a navigation, so this stays a
                             // plain GestureDetector (no Link) even though
                             // it's nested inside the card's Link.
+                            //
+                            // On mobile there's no hover, so the icon is
+                            // always fully visible/tappable there. On
+                            // desktop/tablet it keeps the original
+                            // reveal-on-hover behavior.
                             AnimatedOpacity(
                               duration: const Duration(milliseconds: 200),
-                              opacity: _isHovered ? 1.0 : 0.0,
+                              opacity: isMobile
+                                  ? 1.0
+                                  : (_isHovered ? 1.0 : 0.0),
                               child: GestureDetector(
                                 onTap: () => _handleOrderTap(context),
                                 child: _buildQuickActionButton(

@@ -567,6 +567,11 @@ class _RelatedProductsSectionState extends State<_RelatedProductsSection> {
   static const double _kCardGap = 18;
   static const double _kMaxSingleCardWidth = 340;
 
+  // Carousel viewport height. Bumped up from the original 290 so the
+  // product image inside each card has enough room and doesn't get
+  // visually clipped/cut short.
+  static const double _kCarouselHeight = 330;
+
   late PageController _pageController;
   Timer? _autoSlideTimer;
   int _currentIndex = 0;
@@ -682,7 +687,7 @@ class _RelatedProductsSectionState extends State<_RelatedProductsSection> {
                 ),
                 const SizedBox(height: 52),
                 SizedBox(
-                  height: 290,
+                  height: _kCarouselHeight,
                   child: LayoutBuilder(
                     builder: (context, constraints) {
                       final desiredItemsPerPage = _computeItemsPerPage(
@@ -827,6 +832,10 @@ class _RelatedProductCardState extends State<_RelatedProductCard>
     final company = Catalog.companyFor(product, widget.companies);
 
     final route = '/product/${product.id}';
+    // No hover on touch devices, so always show the quick-action button on
+    // mobile-width screens. Desktop/tablet keep the original hover-only
+    // reveal behavior.
+    final isMobile = MediaQuery.sizeOf(context).width <= 600;
 
     return MouseRegion(
       cursor: SystemMouseCursors.click,
@@ -937,18 +946,6 @@ class _RelatedProductCardState extends State<_RelatedProductCard>
                                     ),
                                   ),
                                 ),
-                                Positioned(
-                                  top: 10,
-                                  right: 10,
-                                  child: AnimatedOpacity(
-                                    duration: const Duration(milliseconds: 200),
-                                    opacity: _isHovered ? 1.0 : 0.0,
-                                    child: _buildQuickActionButton(
-                                      Icons.favorite_border,
-                                      Colors.white,
-                                    ),
-                                  ),
-                                ),
                               ],
                             ),
                           ),
@@ -980,20 +977,17 @@ class _RelatedProductCardState extends State<_RelatedProductCard>
                               ),
                             const SizedBox(height: 6),
                             Row(
-                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                              mainAxisAlignment: MainAxisAlignment.end,
                               children: [
-                                Text(
-                                  '\$${product.price.toStringAsFixed(2)}',
-                                  style: const TextStyle(
-                                    color: _kAmber,
-                                    fontWeight: FontWeight.bold,
-                                    fontSize: 13.5,
-                                  ),
-                                ),
-
+                                // Quick "order" action. On mobile there's no
+                                // hover, so it's always visible/tappable
+                                // there. On desktop/tablet it keeps the
+                                // original reveal-on-hover behavior.
                                 AnimatedOpacity(
                                   duration: const Duration(milliseconds: 200),
-                                  opacity: _isHovered ? 1.0 : 0.0,
+                                  opacity: isMobile
+                                      ? 1.0
+                                      : (_isHovered ? 1.0 : 0.0),
                                   child: _buildQuickActionButton(
                                     Icons.shopping_bag_outlined,
                                     Colors.black,
