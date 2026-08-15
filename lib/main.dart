@@ -29,6 +29,7 @@ Future<void> main() async {
         ),
       );
 
+      // Load environment configuration.
       await dotenv.load(fileName: ".env");
 
       await Firebase.initializeApp(
@@ -59,7 +60,6 @@ class MyApp extends StatelessWidget {
       title: 'Devansh Suppliers',
       debugShowCheckedModeBanner: false,
       routerConfig: appRouter,
-
       builder: (context, child) {
         return ScrollToTopOverlay(
           margin: const EdgeInsets.only(right: 24, bottom: 24),
@@ -67,7 +67,7 @@ class MyApp extends StatelessWidget {
             children: [
               ?child,
               const WhatsAppFloatButton(
-                phoneNumber: "9779857033614", // no + or spaces
+                phoneNumber: "9779857033614",
                 message: "Hi, I have a question about your products",
                 alignment: Alignment.bottomLeft,
                 margin: EdgeInsets.only(left: 24, bottom: 24),
