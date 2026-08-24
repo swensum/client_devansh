@@ -165,7 +165,6 @@ class _HeroCarouselState extends State<HeroCarousel>
   int _currentIndex = 0;
   int _pageCounter = _initialPage;
   Timer? _autoScrollTimer;
-  bool _imagesPrecached = false;
 
   @override
   void initState() {
@@ -173,17 +172,6 @@ class _HeroCarouselState extends State<HeroCarousel>
     WidgetsBinding.instance.addObserver(this);
     _pageController = PageController(initialPage: _initialPage);
     _startAutoScroll();
-  }
-
-  @override
-  void didChangeDependencies() {
-    super.didChangeDependencies();
-    if (!_imagesPrecached) {
-      _imagesPrecached = true;
-      for (final slide in _kSlides) {
-        precacheImage(AssetImage(slide.image), context);
-      }
-    }
   }
 
   @override
@@ -349,10 +337,6 @@ class _HeroResponsive {
     required this.iconSize,
   });
 
-  // Linearly interpolates a value between [min] and [max] based on where
-  // [width] falls between [minWidth] and [maxWidth], clamped at the ends.
-  // This gives smooth, continuous scaling instead of jumping between
-  // fixed breakpoint presets.
   static double _scale(
     double width, {
     required double min,

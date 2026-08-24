@@ -36,10 +36,6 @@ class GoRouterRefreshStream extends ChangeNotifier {
   }
 }
 
-final GoRouterRefreshStream _authRefresh = GoRouterRefreshStream(
-  FirebaseAuth.instance.authStateChanges(),
-);
-
 const List<String> _protectedPaths = ['/orders'];
 
 CustomTransitionPage<void> _slideFromRightPage({
@@ -63,156 +59,153 @@ CustomTransitionPage<void> _slideFromRightPage({
   );
 }
 
-final GoRouter appRouter = GoRouter(
-  debugLogDiagnostics: kDebugMode,
-  initialLocation: '/',
-  refreshListenable: _authRefresh,
-  redirect: (context, state) {
-    final user = FirebaseAuth.instance.currentUser;
-    final loggedIn = user != null && user.emailVerified;
-    final goingToAuth = state.matchedLocation == '/auth';
-    final goingToProtected = _protectedPaths.contains(state.matchedLocation);
+GoRouter createAppRouter() {
+  return GoRouter(
+    debugLogDiagnostics: kDebugMode,
 
-    if (!loggedIn && goingToProtected) {
-      return '/auth?redirect=${Uri.encodeComponent(state.matchedLocation)}';
-    }
-    if (loggedIn && goingToAuth) {
-      final redirectTo = state.uri.queryParameters['redirect'];
-      return (redirectTo != null && redirectTo.isNotEmpty) ? redirectTo : '/';
-    }
-    return null; // no redirect needed
-  },
-  routes: [
-    GoRoute(
-      path: '/',
-      name: 'home',
-      builder: (context, state) => const HomePage(),
-    ),
-    GoRoute(
-      path: '/products',
-      name: 'products',
-      pageBuilder: (context, state) {
-        final categoryId = state.uri.queryParameters['category'];
-        final companyId = state.uri.queryParameters['company'];
-        final typeId = state.uri.queryParameters['type'];
-        final searchQuery = state.uri.queryParameters['search'];
-        return _slideFromRightPage(
-          key: state.pageKey,
-          child: ProductsPage(
-            initialCategoryId: categoryId,
-            initialCompanyId: companyId,
-            initialTypeId: typeId,
-            initialSearchQuery: searchQuery,
-          ),
-        );
-      },
-    ),
-    GoRoute(
-      path: '/orders',
-      name: 'orders',
-      builder: (context, state) => const OrdersPage(),
-    ),
-    GoRoute(
-      path: '/auth',
-      name: 'auth',
-      pageBuilder: (context, state) {
-        return _slideFromRightPage(
-          key: state.pageKey,
-          child: const AuthScreen(),
-        );
-      },
-    ),
-    GoRoute(
-      path: '/about',
-      name: 'about',
-      pageBuilder: (context, state) {
-        return _slideFromRightPage(
-          key: state.pageKey,
-          child: const AboutPage(),
-        );
-      },
-    ),
-    GoRoute(
-      path: '/contact',
-      name: 'contact',
-      pageBuilder: (context, state) {
-        return _slideFromRightPage(
-          key: state.pageKey,
-          child: const ContactPage(),
-        );
-      },
-    ),
-    GoRoute(
-      path: '/privacy',
-      name: 'privacy',
-      pageBuilder: (context, state) {
-        return _slideFromRightPage(
-          key: state.pageKey,
-          child: const PrivacyPolicyPage(),
-        );
-      },
-    ),
-    GoRoute(
-      path: '/terms',
-      name: 'terms',
-      pageBuilder: (context, state) {
-        return _slideFromRightPage(
-          key: state.pageKey,
-          child: const TermsOfServicePage(),
-        );
-      },
-    ),
-    GoRoute(
-      path: '/blog',
-      name: 'blog',
-      builder: (context, state) => const BlogsListPage(),
-    ),
-    GoRoute(
-      path: '/blog/:slug',
-      name: 'blogDetail',
-      builder: (context, state) =>
-          BlogDetailPage(slug: state.pathParameters['slug']!),
-    ),
-    GoRoute(
-      path: '/product/:id',
-      name: 'productDetail',
-      pageBuilder: (context, state) {
-        final productId = state.pathParameters['id'];
-        final extraProduct = state.extra;
+    redirect: (context, state) {
+      final user = FirebaseAuth.instance.currentUser;
+      final loggedIn = user != null && user.emailVerified;
+      final goingToAuth = state.matchedLocation == '/auth';
+      final goingToProtected = _protectedPaths.contains(state.matchedLocation);
 
-        // Fast path: we arrived via an in-app tap (search suggestion,
-        // product card, etc.) that attached the full Product as `extra`.
-        if (extraProduct is Product) {
+      if (!loggedIn && goingToProtected) {
+        return '/auth?redirect=${Uri.encodeComponent(state.matchedLocation)}';
+      }
+      if (loggedIn && goingToAuth) {
+        final redirectTo = state.uri.queryParameters['redirect'];
+        return (redirectTo != null && redirectTo.isNotEmpty) ? redirectTo : '/';
+      }
+      return null; // no redirect needed
+    },
+    routes: [
+      GoRoute(
+        path: '/',
+        name: 'home',
+        builder: (context, state) => const HomePage(),
+      ),
+      GoRoute(
+        path: '/products',
+        name: 'products',
+        pageBuilder: (context, state) {
+          final categoryId = state.uri.queryParameters['category'];
+          final companyId = state.uri.queryParameters['company'];
+          final typeId = state.uri.queryParameters['type'];
+          final searchQuery = state.uri.queryParameters['search'];
           return _slideFromRightPage(
             key: state.pageKey,
-            child: ProductDetailPage(product: extraProduct),
+            child: ProductsPage(
+              initialCategoryId: categoryId,
+              initialCompanyId: companyId,
+              initialTypeId: typeId,
+              initialSearchQuery: searchQuery,
+            ),
           );
-        }
-
-        // Slow path: `extra` is never part of the URL, so it's null on
-        // browser back/forward, refresh, or a direct/shared link. Look the
-        // product up live from the catalog instead of the old kProducts
-        // list (which is never populated) so those cases work too.
-        if (productId == null) {
+        },
+      ),
+      GoRoute(
+        path: '/orders',
+        name: 'orders',
+        builder: (context, state) => const OrdersPage(),
+      ),
+      GoRoute(
+        path: '/auth',
+        name: 'auth',
+        pageBuilder: (context, state) {
           return _slideFromRightPage(
             key: state.pageKey,
-            child: const _ProductNotFoundPage(),
+            child: const AuthScreen(),
           );
-        }
-        return _slideFromRightPage(
-          key: state.pageKey,
-          child: _ProductDetailLoader(productId: productId),
-        );
-      },
-    ),
-  ],
-  errorBuilder: (context, state) => const _ProductNotFoundPage(),
-);
+        },
+      ),
+      GoRoute(
+        path: '/about',
+        name: 'about',
+        pageBuilder: (context, state) {
+          return _slideFromRightPage(
+            key: state.pageKey,
+            child: const AboutPage(),
+          );
+        },
+      ),
+      GoRoute(
+        path: '/contact',
+        name: 'contact',
+        pageBuilder: (context, state) {
+          return _slideFromRightPage(
+            key: state.pageKey,
+            child: const ContactPage(),
+          );
+        },
+      ),
+      GoRoute(
+        path: '/privacy',
+        name: 'privacy',
+        pageBuilder: (context, state) {
+          return _slideFromRightPage(
+            key: state.pageKey,
+            child: const PrivacyPolicyPage(),
+          );
+        },
+      ),
+      GoRoute(
+        path: '/terms',
+        name: 'terms',
+        pageBuilder: (context, state) {
+          return _slideFromRightPage(
+            key: state.pageKey,
+            child: const TermsOfServicePage(),
+          );
+        },
+      ),
+      GoRoute(
+        path: '/blog',
+        name: 'blog',
+        builder: (context, state) => const BlogsListPage(),
+      ),
+      GoRoute(
+        path: '/blog/:slug',
+        name: 'blogDetail',
+        builder: (context, state) =>
+            BlogDetailPage(slug: state.pathParameters['slug']!),
+      ),
+      GoRoute(
+        path: '/product/:id',
+        name: 'productDetail',
+        pageBuilder: (context, state) {
+          final productId = state.pathParameters['id'];
+          final extraProduct = state.extra;
 
-/// Looks a product up from the live catalog by id. Used whenever the
-/// product-detail route is reached without `extra` already attached —
-/// browser back/forward, a page refresh, or someone opening a shared link
-/// directly.
+          // Fast path: we arrived via an in-app tap (search suggestion,
+          // product card, etc.) that attached the full Product as `extra`.
+          if (extraProduct is Product) {
+            return _slideFromRightPage(
+              key: state.pageKey,
+              child: ProductDetailPage(product: extraProduct),
+            );
+          }
+
+          // Slow path: `extra` is never part of the URL, so it's null on
+          // browser back/forward, refresh, or a direct/shared link. Look the
+          // product up live from the catalog instead of the old kProducts
+          // list (which is never populated) so those cases work too.
+          if (productId == null) {
+            return _slideFromRightPage(
+              key: state.pageKey,
+              child: const _ProductNotFoundPage(),
+            );
+          }
+          return _slideFromRightPage(
+            key: state.pageKey,
+            child: _ProductDetailLoader(productId: productId),
+          );
+        },
+      ),
+    ],
+    errorBuilder: (context, state) => const _ProductNotFoundPage(),
+  );
+}
+
 class _ProductDetailLoader extends StatelessWidget {
   final String productId;
 
