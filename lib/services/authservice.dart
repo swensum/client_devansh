@@ -15,6 +15,19 @@ class AuthService {
           ? null
           : AppUser.fromFirebaseUser(firebaseUser);
     });
+
+    _checkRedirectResult();
+  }
+
+  Future<void> _checkRedirectResult() async {
+    try {
+      final result = await _auth.getRedirectResult();
+      if (result.user != null) {
+        debugPrint('[Auth] Redirect sign-in success: uid=${result.user!.uid}');
+      }
+    } on FirebaseAuthException catch (e) {
+      debugPrint('[Auth] Redirect sign-in error: ${e.code} ${e.message}');
+    }
   }
 
   static final AuthService instance = AuthService._internal();
@@ -26,14 +39,13 @@ class AuthService {
   Stream<User?> get authStateChanges => _auth.authStateChanges();
 
   // --- Google sign-in (simple popup-only approach) ---
-  Future<UserCredential> signInWithGoogle() async {
+  Future<void> signInWithGoogle() async {
     final provider = GoogleAuthProvider()
       ..setCustomParameters({'prompt': 'select_account'});
 
-    debugPrint('[Auth] signInWithGoogle: start');
-    final result = await _auth.signInWithPopup(provider);
-    debugPrint('[Auth] signInWithGoogle: SUCCESS uid=${result.user?.uid}');
-    return result;
+    debugPrint('[Auth] signInWithGoogle: starting redirect');
+    await _auth.signInWithRedirect(provider);
+    // Browser navigates away here — result is picked up after redirect back.
   }
 
   // --- Persistence: controls "Remember me" ---
