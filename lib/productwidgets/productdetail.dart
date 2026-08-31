@@ -952,53 +952,57 @@ class _RelatedProductCardState extends State<_RelatedProductCard>
                         ),
                       ),
                       Padding(
-  padding: const EdgeInsets.all(10),
-  child: Row(
-    crossAxisAlignment: CrossAxisAlignment.center,
-    children: [
-      Expanded(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              product.name,
-              maxLines: 2,
-              overflow: TextOverflow.ellipsis,
-              style: const TextStyle(
-                color: Colors.white,
-                fontWeight: FontWeight.w600,
-                fontSize: 12.5,
-              ),
-            ),
-            const SizedBox(height: 4),
-            if (company != null)
-              Text(
-                company.name,
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-                style: TextStyle(
-                  color: Colors.white.withValues(alpha: 0.55),
-                  fontSize: 11,
-                ),
-              ),
-          ],
-        ),
-      ),
-      const SizedBox(width: 8),
-      AnimatedOpacity(
-        duration: const Duration(milliseconds: 200),
-        opacity: isMobile ? 1.0 : (_isHovered ? 1.0 : 0.0),
-        child: _buildQuickActionButton(
-          Icons.shopping_bag_outlined,
-          Colors.black,
-          backgroundColor: _kAmber,
-          borderColor: Colors.transparent,
-        ),
-      ),
-    ],
-  ),
-),
+                        padding: const EdgeInsets.all(10),
+                        child: Row(
+                          crossAxisAlignment: CrossAxisAlignment.center,
+                          children: [
+                            Expanded(
+                              child: Column(
+                                mainAxisSize: MainAxisSize.min,
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    product.name,
+                                    maxLines: 2,
+                                    overflow: TextOverflow.ellipsis,
+                                    style: const TextStyle(
+                                      color: Colors.white,
+                                      fontWeight: FontWeight.w600,
+                                      fontSize: 12.5,
+                                    ),
+                                  ),
+                                  const SizedBox(height: 4),
+                                  if (company != null)
+                                    Text(
+                                      company.name,
+                                      maxLines: 1,
+                                      overflow: TextOverflow.ellipsis,
+                                      style: TextStyle(
+                                        color: Colors.white.withValues(
+                                          alpha: 0.55,
+                                        ),
+                                        fontSize: 11,
+                                      ),
+                                    ),
+                                ],
+                              ),
+                            ),
+                            const SizedBox(width: 8),
+                            AnimatedOpacity(
+                              duration: const Duration(milliseconds: 200),
+                              opacity: isMobile
+                                  ? 1.0
+                                  : (_isHovered ? 1.0 : 0.0),
+                              child: _buildQuickActionButton(
+                                Icons.shopping_bag_outlined,
+                                Colors.black,
+                                backgroundColor: _kAmber,
+                                borderColor: Colors.transparent,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
                     ],
                   ),
                 ),
